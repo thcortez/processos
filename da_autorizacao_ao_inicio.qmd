@@ -1,0 +1,71 @@
+---
+title: "Do Deferimento à Publicação: Atrasos, Normas e Impacto no Curso"
+format: html
+---
+
+## Da Autorização ao Início Efetivo do Afastamento
+
+Este bloco trata dos eventos compreendidos entre a manifestação favorável dos órgãos competentes do Senado e a efetiva publicação do afastamento. O período é marcado por atrasos administrativos que comprometeram o início regular do curso pelo servidor e impactaram diretamente sua trajetória acadêmica.
+
+### 1. **Encaminhamento pelo ILB para deliberação**
+Somente em **06 de novembro de 2020**, o Instituto Legislativo Brasileiro (ILB) encaminhou a solicitação do servidor para deliberação da Diretoria-Geral, apesar de a documentação necessária já estar disponível anteriormente (NUP 00100.031237/2020-66).
+
+> "O servidor juntou termo de compromisso, declarando estar ciente das disposições contidas no Anexo IV do Regulamento Administrativo do Senado Federal [...] e na Lei nº 8.112/1990" (p. 626, NUP 00100.100398/2020-15).
+
+O documento reafirma que o pedido **cumpria os requisitos do art. 96-A da Lei nº 8.112/1990** e dos **arts. 27, 39 e 51 do Anexo IV da Resolução nº 13/2018**.
+
+### 2. **Reafirmação da compatibilidade institucional e legalidade**
+- O parecer favorável do Coordenador de Políticas de Pessoal confirma a **compatibilidade entre a capacitação e o cargo** do servidor (p. 627);
+- Reconhecimento explícito da pandemia como fator justificante do novo cronograma, com referência à **Resolução CEPE 59/2020 da UnB** e ao **Ato da Diretoria-Geral nº 05/2020** do Senado Federal (p. 627-628).
+
+> “Ficam suspensas as autorizações para participação, no país, de missão oficial, atividades de capacitação, competições desportivas e licenças capacitações na modalidade presencial.” (ADG nº 05/2020)
+
+### 3. **Declaração da UnB: curso com dedicação exclusiva e previsão de término em julho de 2024**
+A declaração da UnB (NUP 00100.100088/2020-92) confirma que o curso:
+- Iniciou-se em março de 2020;
+- Requer dedicação exclusiva;
+- Teve o primeiro semestre desconsiderado do prazo total em virtude da pandemia;
+- Tem término previsto para julho de 2024.
+
+### 4. **Reconhecimento da ausência de edital e avaliação das circunstâncias**
+> O ILB admitiu a ausência de instrumento editalício exigido pela Portaria ILB nº 01/2017, mas destacou:
+> - Qualidade do programa de estudos;
+> - Endosso das chefias;
+> - Conformidade da modalidade de ensino às determinações sanitárias;
+> - Correspondência entre a duração do afastamento e a duração regular do curso (p. 628).
+
+### 5. **Inconsistência temporal e prejuízo acadêmico**
+Mesmo com pareceres favoráveis emitidos ainda em 2020, **o Senado só publicou oficialmente o deferimento do afastamento em abril de 2021** (BASF nº 7778). Durante esse intervalo:
+
+- O servidor já estava **matriculado em disciplina obrigatória do 1º semestre de 2021**, essencial para posterior qualificação;
+- O atraso comprometeu a aprovação naquela disciplina, que teve de ser cursada novamente em outro semestre;
+- Esse prejuízo contribuiu significativamente para os atrasos subsequentes no programa, impactando todo o cronograma do doutorado.
+
+### 6. **Advertência precoce do ILB mesmo sem conclusão da deliberação**
+Já em novembro de 2020 — **antes mesmo de haver decisão administrativa definitiva** sobre o afastamento — o ILB registrou que:
+
+> “Recomendamos que o período de afastamento solicitado [...] não exima o servidor de cumprir as obrigações dispostas nos arts. 40 e 41 do Anexo IV do Regulamento Administrativo do Senado Federal e de concluir a integralidade do doutorado requerido.” (p. 629, NUP 00100.100398/2020-15)
+
+Essa manifestação precoce revela **rigor excessivo** dirigido ao servidor e **falta de razoabilidade**, sobretudo diante do contexto emergencial da pandemia e da morosidade da própria Administração na condução do processo.
+
+### 7. **Aprovação pelo Comitê Científico-Pedagógico e Formalização Administrativa**
+- Em **06 de novembro de 2020**, o Comitê Científico-Pedagógico do ILB aprovou formalmente o afastamento (pp. 631-632, NUP 00100.106506/2020-55);
+- O ato foi fundamentado no art. 96-A da Lei nº 8.112/90 e nos arts. 35 e 36 do Anexo IV do RASF (Resolução nº 13/2018);
+- Em **26 de fevereiro de 2021**, o Presidente do Senado assinou a autorização (p. 633);
+- A **Diretoria-Geral deferiu formalmente** o afastamento em **31 de março de 2021** (pp. 634-638), destacando a modalidade de **ônus limitado** e reforçando a compatibilidade com a Carta de Compromissos do Senado Federal.
+
+### 8. **Publicação oficial com mais de um ano de atraso**
+- A decisão foi **publicada em 06 de abril de 2021**, no BASF nº 7778 (pp. 639-643);
+- O processo havia sido autuado em **18 de março de 2020**;
+- **Um ano e um mês de atraso** entre o protocolo e a publicação, prejudicando severamente a organização acadêmica do servidor e demonstrando ineficiência da Administração Pública.
+
+### 9. **Convergência normativa com o bloco de legislação de regência**
+As normas invocadas nas decisões da DGER e da Presidência confirmam a plena **conformidade com o arcabouço legal identificado no bloco `legislacao_de_regencia.qmd`**, incluindo:
+- **Lei nº 8.112/1990, art. 96-A**;
+- **Anexo IV do RASF, Resolução nº 13/2018**, especialmente arts. 27, 29, 35, 36, 39, 40 e 41;
+- Nenhuma referência indevida ao art. 49 (licença capacitação) nesta fase.
+
+---
+
+Este bloco demonstra que, embora todos os requisitos legais tenham sido satisfeitos e reconhecidos pelos órgãos competentes, o servidor foi **penalizado pelos próprios atrasos da Administração**, sofrendo prejuízos acadêmicos sem qualquer responsabilização institucional pela morosidade processual. Isso constitui falha relevante da Administração Pública e elemento fundamental para a defesa do servidor.
+

@@ -1,0 +1,575 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+
+# Instale os pacotes necessários (se ainda não estiverem instalados)
+if (!require(pdftools)) install.packages("pdftools")
+if (!require(stringr)) install.packages("stringr")
+if (!require(tesseract)) install.packages("tesseract")
+
+# Diretório onde os arquivos PDF estão armazenados
+directory <- "D:/thiag_q/Downloads/PROCESSOS/pdf_processo/pdf_origem" # Substitua pelo caminho da sua pasta
+
+# Lista de arquivos PDF na pasta
+pdf_files <- list.files(directory, pattern = "\\.pdf$", full.names = TRUE)
+
+# Função para processar cada PDF
+process_pdf <- function(pdf_path) {
+  # Captura texto usando pdftools ou OCR
+  pdf_text <- tryCatch({
+    pdftools::pdf_text(pdf_path)
+  }, error = function(e) {
+    warning("Erro ao processar com pdftools: ", pdf_path, ". Tentando OCR.")
+    pdf_images <- pdftools::pdf_convert(pdf_path, dpi = 300)
+    ocr_text <- sapply(pdf_images, tesseract::ocr)
+    return(ocr_text)
+  })
+
+  # Verifica se o texto foi capturado
+  if (is.null(pdf_text) || length(pdf_text) == 0) {
+    warning("Nenhum texto capturado no arquivo: ", pdf_path)
+    return(NULL)
+  }
+
+  # Nome do arquivo sem a extensão
+  file_name <- tools::file_path_sans_ext(basename(pdf_path))
+
+  # Inicializa um vetor para armazenar o texto processado
+  processed_text <- c()
+
+  # Itera sobre cada página do PDF
+  for (i in seq_along(pdf_text)) {
+    page_text <- pdf_text[i]
+
+    # Remove quebras de linha internas que não iniciam novos parágrafos
+    page_text <- str_replace_all(page_text, "(\\S)\\n(\\S)", "\\1 \\2")
+
+    # Insere delimitadores de parágrafos
+    page_text <- str_replace_all(page_text, "\\n{2,}", "\n<PARÁGRAFO>\n")
+    paragraphs <- str_split(page_text, "<PARÁGRAFO>")[[1]]
+    paragraphs <- str_trim(paragraphs) # Remove espaços extras
+    paragraphs <- paragraphs[paragraphs != ""] # Remove parágrafos vazios
+
+    # Reduz espaçamentos excessivos
+    paragraphs <- str_replace_all(paragraphs, "\\s{2,}", " ")
+
+    # Adiciona marcador de página e parágrafo
+    paragraphs <- paste0("p.", i, " Parágrafo ", seq_along(paragraphs), "| ", paragraphs)
+
+    # Adiciona o texto processado da página
+    processed_text <- c(processed_text, paragraphs)
+  }
+
+  # Salva o texto processado como arquivo .txt
+  output_path <- file.path(directory, paste0(file_name, ".txt"))
+  writeLines(processed_text, output_path)
+}
+
+
+pdf_files <- pdf_files
+
+
+# Itera sobre todos os arquivos PDF na pasta
+lapply(pdf_files, process_pdf)
+
+cat("Processamento concluído! Arquivos .txt salvos na mesma pasta dos PDFs.")
+
+pdf_files <- "D:/thiag_q/Dropbox/TC/arquivos migraçao nuvem/2024 06 03 00200 003561 2020 66 Processo Principal sem as páginas atribuídas como sigilosas.pdf"
+
+process_pdf(pdf_files)
+
+
+```
+```{r}
+
+# Instale os pacotes necessários (se ainda não estiverem instalados)
+if (!require(pdftools)) install.packages("pdftools")
+if (!require(stringr)) install.packages("stringr")
+if (!require(tesseract)) install.packages("tesseract")
+
+# Diretório onde os arquivos PDF estão armazenados
+directory <- "D:/thiag_q/Downloads/PROCESSOS/Processos em 24 a 26-01-2025/pdf_processo" # Substitua pelo caminho da sua pasta
+
+# Lista de arquivos PDF na pasta
+pdf_files <- list.files(directory, pattern = "\\.pdf$", full.names = TRUE)
+
+# Função para processar cada PDF usando pdftools
+process_pdf_pdftools <- function(pdf_path) {
+  # Captura texto usando pdftools
+  pdf_text <- pdftools::pdf_text(pdf_path)
+
+  # Nome do arquivo sem a extensão
+  file_name <- tools::file_path_sans_ext(basename(pdf_path))
+
+  # Inicializa um vetor para armazenar o texto processado
+  processed_text <- c()
+
+  # Itera sobre cada página do PDF
+  for (i in seq_along(pdf_text)) {
+    page_text <- pdf_text[i]
+
+    # Remove quebras de linha internas que não iniciam novos parágrafos
+    page_text <- str_replace_all(page_text, "(\\S)\\n(\\S)", "\\1 \\2")
+
+    # Insere delimitadores de parágrafos
+    page_text <- str_replace_all(page_text, "\\n{2,}", "\n<;PARÁGRAFO>\n")
+    paragraphs <- str_split(page_text, "<;PARÁGRAFO>")[[1]]
+    paragraphs <- str_trim(paragraphs) # Remove espaços extras
+    paragraphs <- paragraphs[paragraphs != ""] # Remove parágrafos vazios
+
+    # Reduz espaçamentos excessivos
+    paragraphs <- str_replace_all(paragraphs, "\\s{2,}", " ")
+
+    # Adiciona marcador de página e parágrafo
+    paragraphs <- paste0(";p.", i, " Parágrafo ", seq_along(paragraphs), "| ", paragraphs)
+
+    # Adiciona o texto processado da página
+    processed_text <- c(processed_text, paragraphs)
+  }
+
+  # Salva o texto processado como arquivo .txt
+  output_path <- file.path(directory, paste0(file_name, "_pdftools.txt"))
+  writeLines(processed_text, output_path)
+}
+
+# Itera sobre todos os arquivos PDF na pasta usando pdftools
+lapply(pdf_files, process_pdf_pdftools)
+
+cat("Processamento concluído com pdftools! Arquivos .txt salvos na mesma pasta dos PDFs.")
+
+# Função para processar cada PDF usando tesseract
+process_pdf_tesseract <- function(pdf_path) {
+  # Converte o PDF em imagens
+  pdf_images <- pdftools::pdf_convert(pdf_path, dpi = 300)
+
+  # Aplica OCR em cada imagem
+  ocr_text <- sapply(pdf_images, tesseract::ocr)
+
+  # Nome do arquivo sem a extensão
+  file_name <- tools::file_path_sans_ext(basename(pdf_path))
+
+  # Processa o texto extraído por OCR
+  processed_text <- c()
+  for (i in seq_along(ocr_text)) {
+    page_text <- ocr_text[i]
+
+    # Remove quebras de linha internas que não iniciam novos parágrafos
+    page_text <- str_replace_all(page_text, "(\\S)\\n(\\S)", "\\1 \\2")
+
+    # Insere delimitadores de parágrafos
+    page_text <- str_replace_all(page_text, "\\n{2,}", "\n<;PARÁGRAFO>\n")
+    paragraphs <- str_split(page_text, "<;PARÁGRAFO>")[[1]]
+    paragraphs <- str_trim(paragraphs) # Remove espaços extras
+    paragraphs <- paragraphs[paragraphs != ""] # Remove parágrafos vazios
+
+    # Reduz espaçamentos excessivos
+    paragraphs <- str_replace_all(paragraphs, "\\s{2,}", " ")
+
+    # Adiciona marcador de página e parágrafo
+    paragraphs <- paste0(";p.", i, " Parágrafo ", seq_along(paragraphs), "| ", paragraphs)
+
+    # Adiciona o texto processado da página
+    processed_text <- c(processed_text, paragraphs)
+  }
+
+  # Salva o texto processado como arquivo .txt
+  output_path <- file.path(directory, paste0(file_name, "_tesseract.txt"))
+  writeLines(processed_text, output_path)
+}
+
+# Função para processar cada PDF usando pdf2text
+process_pdf_pdf2text <- function(pdf_path) {
+  # Usa pdf_text para extrair texto diretamente (substituir por pdf2text se usar outro binário)
+  pdf_text <- pdftools::pdf_text(pdf_path)
+
+  # Nome do arquivo sem a extensão
+  file_name <- tools::file_path_sans_ext(basename(pdf_path))
+
+  # Inicializa um vetor para armazenar o texto processado
+  processed_text <- c()
+
+  # Itera sobre cada página do PDF
+  for (i in seq_along(pdf_text)) {
+    page_text <- pdf_text[i]
+
+    # Remove quebras de linha internas que não iniciam novos parágrafos
+    page_text <- str_replace_all(page_text, "(\\S)\\n(\\S)", "\\1 \\2")
+
+    # Insere delimitadores de parágrafos
+    page_text <- str_replace_all(page_text, "\\n{2,}", "\n<;PARÁGRAFO>\n")
+    paragraphs <- str_split(page_text, "<;PARÁGRAFO>")[[1]]
+    paragraphs <- str_trim(paragraphs) # Remove espaços extras
+    paragraphs <- paragraphs[paragraphs != ""] # Remove parágrafos vazios
+
+    # Reduz espaçamentos excessivos
+    paragraphs <- str_replace_all(paragraphs, "\\s{2,}", " ")
+
+    # Adiciona marcador de página e parágrafo
+    paragraphs <- paste0(";p.", i, " Parágrafo ", seq_along(paragraphs), "| ", paragraphs)
+
+    # Adiciona o texto processado da página
+    processed_text <- c(processed_text, paragraphs)
+  }
+
+  # Salva o texto processado como arquivo .txt
+  output_path <- file.path(directory, paste0(file_name, "_pdf2text.txt"))
+  writeLines(processed_text, output_path)
+}
+
+
+
+# Função para processar cada PDF usando Poppler
+process_pdf_poppler <- function(pdf_path) {
+  # Usa pdf_text para extrair texto diretamente (substituir por comandos poppler se usar outro binário)
+  pdf_text <- pdftools::pdf_text(pdf_path)
+
+  # Nome do arquivo sem a extensão
+  file_name <- tools::file_path_sans_ext(basename(pdf_path))
+
+  # Inicializa um vetor para armazenar o texto processado
+  processed_text <- c()
+
+  # Itera sobre cada página do PDF
+  for (i in seq_along(pdf_text)) {
+    page_text <- pdf_text[i]
+
+    # Remove quebras de linha internas que não iniciam novos parágrafos
+    page_text <- str_replace_all(page_text, "(\\S)\\n(\\S)", "\\1 \\2")
+
+    # Insere delimitadores de parágrafos
+    page_text <- str_replace_all(page_text, "\\n{2,}", "\n<;PARÁGRAFO>\n")
+    paragraphs <- str_split(page_text, "<;PARÁGRAFO>")[[1]]
+    paragraphs <- str_trim(paragraphs) # Remove espaços extras
+    paragraphs <- paragraphs[paragraphs != ""] # Remove parágrafos vazios
+
+    # Reduz espaçamentos excessivos
+    paragraphs <- str_replace_all(paragraphs, "\\s{2,}", " ")
+
+    # Adiciona marcador de página e parágrafo
+    paragraphs <- paste0(";p.", i, " Parágrafo ", seq_along(paragraphs), "| ", paragraphs)
+
+    # Adiciona o texto processado da página
+    processed_text <- c(processed_text, paragraphs)
+  }
+
+  # Salva o texto processado como arquivo .txt
+  output_path <- file.path(directory, paste0(file_name, "_poppler.txt"))
+  writeLines(processed_text, output_path)
+}
+
+# Itera sobre todos os arquivos PDF usando tesseract, pdf2text e poppler
+lapply(pdf_files, process_pdf_tesseract)
+lapply(pdf_files, process_pdf_pdf2text)
+lapply(pdf_files, process_pdf_poppler)
+lapply(pdf_files, process_pdf_pdftools)
+
+cat("Processamento concluído com todos os métodos! Arquivos .txt salvos na mesma pasta dos PDFs.")
+
+```
+
+
+```{r}
+
+# Função para processar cada PDF usando tesseract de forma incremental
+process_pdf_tesseramental <- function(pdf_path, output_directory) {
+  # Nome do arquivo sem a extensão
+  file_name <- tools::file_path_sans_ext(basename(pdf_path))
+  output_path <- file.path(output_directory, paste0(file_name, "_tesseract.txt"))
+  
+  # Obtém o número total de páginas do PDF
+  pdf_info <- pdftools::pdf_info(pdf_path)
+  total_pages <- pdf_info$pages
+  
+  processed_text <- c()  # Vetor para acumular o texto processado
+  
+  # Processa página a página
+  for (i in seq_len(total_pages)) {
+    message(sprintf("Processando página %d de %d...", i, total_pages))
+    
+    # Converte apenas a página i em imagem (gera um arquivo temporário)
+    page_image <- pdftools::pdf_convert(pdf_path, pages = i, dpi = 300)
+    
+    # Aplica OCR à imagem da página
+    page_text <- tesseract::ocr(page_image)
+    
+    # Remove o arquivo de imagem temporário para liberar espaço em disco
+    unlink(page_image)
+    
+    ## Processa o texto extraído da página ##
+    # Remove quebras de linha internas que não iniciam novos parágrafos
+    page_text <- stringr::str_replace_all(page_text, "(\\S)\\n(\\S)", "\\1 \\2")
+    
+    # Insere delimitadores de parágrafos: duas ou mais quebras de linha
+    page_text <- stringr::str_replace_all(page_text, "\\n{2,}", "\n<;PARÁGRAFO>\n")
+    
+    # Divide o texto em parágrafos
+    paragraphs <- unlist(stringr::str_split(page_text, "<;PARÁGRAFO>"))
+    paragraphs <- stringr::str_trim(paragraphs)  # Remove espaços extras
+    paragraphs <- paragraphs[paragraphs != ""]   # Remove parágrafos vazios
+    
+    # Reduz espaçamentos excessivos dentro de cada parágrafo
+    paragraphs <- stringr::str_replace_all(paragraphs, "\\s{2,}", " ")
+    
+    # Adiciona marcador de página e parágrafo em cada parágrafo
+    paragraphs <- paste0(";p.", i, " Parágrafo ", seq_along(paragraphs), "| ", paragraphs)
+    
+    # Acumula o texto processado
+    processed_text <- c(processed_text, paragraphs)
+  }
+  
+  # Salva o texto processado em um arquivo .txt
+  writeLines(processed_text, output_path)
+  
+  message("Processamento concluído. Arquivo salvo em: ", output_path)
+}
+
+# salvando a lista original de arquivos
+pdf_files_orig <- pdf_files
+
+# selecionando apenas o arquivo de teste
+pdf_files <- pdf_files_orig[[56]]
+
+# aplicando a função ao arquivo de teste
+process_pdf_tesseramental(pdf_path = pdf_files, output_directory = directory)
+
+```
+
+
+```{r}
+
+# Carregar pacotes necessários
+library(pdftools)
+library(tesseract)
+library(stringr)
+library(tools)
+
+# Função para processar o PDF em duas etapas:
+# 1. Extrair as páginas como imagens para a pasta "em_processamento"
+# 2. Aplicar OCR em cada imagem, processar o texto e salvar o resultado final
+process_pdf_tesseract_two_stage <- function(pdf_path, output_directory) {
+  # Determina o diretório onde o PDF se encontra
+  pdf_dir <- dirname(pdf_path)
+  
+  # Cria a pasta "em_processamento" dentro do diretório do PDF (se ainda não existir)
+  processing_dir <- file.path(pdf_dir, "em_processamento")
+  if (!dir.exists(processing_dir)) {
+    dir.create(processing_dir)
+  }
+  
+  # Obtém informações do PDF, como o número total de páginas
+  pdf_info_obj <- pdftools::pdf_info(pdf_path)
+  n_pages <- pdf_info_obj$pages
+  message(sprintf("O PDF possui %d páginas. Extraindo imagens...", n_pages))
+  
+  # Define os nomes dos arquivos de imagem a serem salvos
+  image_files <- file.path(processing_dir, sprintf("page_%03d.png", 1:n_pages))
+  
+  # Converte todas as páginas do PDF em imagens, salvando na pasta "em_processamento"
+  pdftools::pdf_convert(pdf_path, dpi = 300, pages = 1:n_pages, filenames = image_files)
+  message("Extração das imagens concluída!")
+  
+  # Inicializa um vetor para acumular o texto processado
+  processed_text <- c()
+  
+  # Para cada imagem, aplica OCR e processa o texto
+  for (i in seq_along(image_files)) {
+    message(sprintf("Processando OCR na página %d de %d...", i, n_pages))
+    
+    # Aplica OCR à imagem
+    page_text <- tesseract::ocr(image_files[i])
+    
+    ## Processamento do texto extraído:
+    # 1. Remove quebras de linha internas que não iniciam novos parágrafos
+    page_text <- stringr::str_replace_all(page_text, "(\\S)\\n(\\S)", "\\1 \\2")
+    
+    # 2. Insere delimitadores de parágrafos para quebras de linha duplas ou mais
+    page_text <- stringr::str_replace_all(page_text, "\\n{2,}", "\n<;PARÁGRAFO>\n")
+    
+    # 3. Divide o texto nos delimitadores criados
+    paragraphs <- unlist(stringr::str_split(page_text, "<;PARÁGRAFO>"))
+    
+    # 4. Limpa os parágrafos removendo espaços extras e linhas vazias
+    paragraphs <- stringr::str_trim(paragraphs)
+    paragraphs <- paragraphs[paragraphs != ""]
+    
+    # 5. Reduz espaçamentos excessivos dentro dos parágrafos
+    paragraphs <- stringr::str_replace_all(paragraphs, "\\s{2,}", " ")
+    
+    # 6. Adiciona marcadores identificando a página e o parágrafo
+    paragraphs <- paste0(";p.", i, " Parágrafo ", seq_along(paragraphs), "| ", paragraphs)
+    
+    # Acumula o texto processado
+    processed_text <- c(processed_text, paragraphs)
+  }
+  
+  # Define o nome do arquivo de saída (usando o nome do PDF sem a extensão)
+  file_name <- file_path_sans_ext(basename(pdf_path))
+  output_file <- file.path(output_directory, paste0(file_name, "_tesseract.txt"))
+  
+  # Garante que o diretório de saída exista
+  if (!dir.exists(output_directory)) {
+    dir.create(output_directory, recursive = TRUE)
+  }
+  
+  # Salva o texto processado no arquivo .txt
+  writeLines(processed_text, output_file)
+  message("Processamento concluído. Arquivo salvo em: ", output_file)
+}
+
+directory <- "D:/thiag_q/Downloads/PROCESSOS/provas/doutorado_colegas"
+
+pdf_files <- pdf_files_sel
+
+process_pdf_tesseract_two_stage(pdf_path = pdf_files, output_directory = directory)
+
+```
+
+# Processamento em Paralelo
+
+```{r}
+
+# Carregar os pacotes necessários
+library(pdftools)
+library(tesseract)
+library(stringr)
+library(tools)
+library(parallel)
+
+#defina o diretório de origem dos arquivos
+directory <- "D:/thiag_q/Downloads/PROCESSOS/provas/doutorado_colegas"
+
+# Lista de arquivos PDF na pasta
+pdf_files <- list.files(directory, pattern = "\\.pdf$", full.names = TRUE)
+
+pdf_files_sel <- pdf_files[57:78]
+
+  #file_names <- file_path_sans_ext(basename(pdf_files))
+  
+  
+
+# Função para processar cada PDF em duas etapas:
+# 1. Extrair as páginas como imagens para uma pasta temporária única
+# 2. Extrair o texto via OCR e processá-lo, salvando o resultado final
+# Ao final, a pasta temporária é removida.
+process_pdf_tesseract_two_stage_parallel <- function(pdf_path, output_directory) {
+  # Nome do arquivo sem a extensão
+  file_name <- file_path_sans_ext(basename(pdf_path)) 
+  
+  # Diretório onde o PDF está localizado
+  pdf_dir <- dirname(pdf_path)
+  
+  # Cria uma pasta temporária única para este PDF, dentro do diretório do PDF
+  processing_dir <- file.path(pdf_dir, paste0("process_", file_name))
+  if (!dir.exists(processing_dir)) {
+    dir.create(processing_dir)
+  }
+  
+  # Obtém informações do PDF e o número total de páginas
+  pdf_info_obj <- pdftools::pdf_info(pdf_path)
+  n_pages <- pdf_info_obj$pages
+  message(sprintf("Processando PDF '%s' com %d páginas...", basename(pdf_path), n_pages))
+  
+  # Define os nomes dos arquivos de imagem para cada página
+  image_files <- file.path(processing_dir, sprintf("page_%03d.png", 1:n_pages))
+  
+  # Converte todas as páginas do PDF em imagens, salvando na pasta temporária
+  pdftools::pdf_convert(pdf_path, dpi = 300, pages = 1:n_pages, filenames = image_files)
+  message("Extração das imagens concluída!")
+  
+  # Inicializa o vetor que acumulará o texto processado
+  processed_text <- c()
+  
+  # Para cada imagem, aplica o OCR e processa o texto
+  for (i in seq_along(image_files)) {
+    message(sprintf("Aplicando OCR na página %d de %d do PDF '%s'...", i, n_pages, basename(pdf_path)))
+    
+    # Executa o OCR na imagem da página
+    page_text <- tesseract::ocr(image_files[i])
+    
+    # Processa o texto extraído:
+    # 1. Remove quebras de linha internas que não iniciam novos parágrafos
+    page_text <- str_replace_all(page_text, "(\\S)\\n(\\S)", "\\1 \\2")
+    
+    # 2. Insere delimitadores para parágrafos onde há quebras de linha duplas ou mais
+    page_text <- str_replace_all(page_text, "\\n{2,}", "\n<;PARÁGRAFO>\n")
+    
+    # 3. Separa o texto em parágrafos usando o delimitador
+    paragraphs <- unlist(str_split(page_text, "<;PARÁGRAFO>"))
+    paragraphs <- str_trim(paragraphs)
+    paragraphs <- paragraphs[paragraphs != ""]
+    
+    # 4. Reduz espaçamentos excessivos
+    paragraphs <- str_replace_all(paragraphs, "\\s{2,}", " ")
+    
+    # 5. Adiciona um marcador indicando a página e o número do parágrafo
+    paragraphs <- paste0(";p.", i, " Parágrafo ", seq_along(paragraphs), "| ", paragraphs)
+    
+    # Acumula o texto processado
+    processed_text <- c(processed_text, paragraphs)
+  }
+  
+  # Garante que o diretório de saída exista; caso contrário, cria-o (recursivamente, se necessário)
+  if (!dir.exists(output_directory)) {
+    dir.create(output_directory, recursive = TRUE)
+  }
+  
+  # Define o caminho do arquivo de saída e salva o texto processado
+  output_file <- file.path(output_directory, paste0(file_name, "_tesseract.txt"))
+  writeLines(processed_text, output_file)
+  message("Processamento concluído para '", basename(pdf_path), "'. Arquivo salvo em: ", output_file)
+  
+  # Exclui a pasta temporária 'em_processamento'
+  unlink(processing_dir, recursive = TRUE)
+  message("Pasta temporária '", processing_dir, "' removida.")
+  
+  return(NULL)
+}
+
+### PROCESSAMENTO EM PARALELO
+
+# indique o path dos arquivos, isto é o endereço
+# directory <- "C:/user/files..."
+
+# Lista todos os PDFs na pasta de origem
+pdf_files <- list.files(path = directory, pattern = "\\.pdf$", full.names = TRUE)
+
+# OR selecione de uma lista já existente só alguns itens:
+
+pdf_files <- texto[57:78]
+
+# Define o diretório onde os arquivos de texto serão salvos
+output_directory <- paste0(directory, "/output_directory")
+
+# Determina o número de núcleos disponíveis e reserva, por exemplo, todos menos um
+num_cores <- detectCores() - 1
+
+# Utiliza processamento paralelo:
+# Em sistemas Linux ou MacOS, 'mclapply' é uma boa opção.
+# results <- mclapply(pdf_files, process_pdf_tesseract_two_stage_parallel, 
+#                     output_directory = output_directory, 
+#                     mc.cores = num_cores)
+
+# Se você estiver utilizando Windows, use uma abordagem baseada em clusters:
+cl <- makeCluster(num_cores)
+
+packs <- c("tools", "parallel","stringr", "tesseract", "pdftools")
+
+clusterExport(cl, varlist = c("process_pdf_tesseract_two_stage_parallel", 
+"output_directory", "packs"), envir = environment())
+
+clusterEvalQ(cl, library(tools))
+clusterEvalQ(cl, library(parallel))
+clusterEvalQ(cl, library(pdftools))
+clusterEvalQ(cl, library(tesseract))
+clusterEvalQ(cl, library(stringr))
+
+parLapply(cl, pdf_files_sel[4:22], process_pdf_tesseract_two_stage_parallel, 
+output_directory = output_directory)
+
+stopCluster(cl)
+
+
+```

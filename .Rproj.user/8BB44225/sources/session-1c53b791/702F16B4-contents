@@ -1,0 +1,101 @@
+---
+title: "Memorial Jurídico"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tibble)
+library(dplyr)
+library(knitr)
+
+
+# Vetores em R para dataframe/tibble do memorial jurídico
+
+# Vetor de títulos
+titulo <- c(
+  "Histórico do pedido inicial de afastamento",
+  "Impacto da pandemia e início do doutorado na UnB",
+  "Proibição de aulas presenciais no Senado e paralisação inicial do processo",
+  "Retomada do processo de afastamento com início das aulas à distância",
+  "Pareceres dos órgãos do Senado sobre o pedido de afastamento",
+  "Resolução CEPE 59/2020 da UnB",
+  "Análise e aprovação pelo Comitê Científico-Pedagógico do ILB e autoridades do Senado",
+  "Autorização pelo Presidente do Senado",
+  "Deferimento final pela Diretoria-Geral e publicação da decisão",
+  "Irregularidade: aplicação indevida do art. 49 do RASF (licença) ao caso de afastamento",
+  "Irregularidade: ocultação injustificada de documentos essenciais no processo",
+  "Consultas e questionamentos da DGER ao ILB sobre situação do servidor"
+)
+
+# Vetor de conteúdos
+conteudo <- c(
+  "Primeiro pedido de afastamento apresentado em 18/03/2020, período solicitado inicialmente de 17/04/2020 a 31/12/2023 (NUP 00100.031237/2020-66).",
+  "Curso de doutorado na UnB iniciou em março de 2020, coincidindo praticamente com o início da pandemia de COVID-19. O curso foi inicialmente suspenso temporariamente devido à pandemia, e metade do período ocorreu sob distanciamento social e aulas à distância, gerando impactos significativos.",
+  "Em razão da pandemia, o Senado proibiu atividades presenciais para servidores por meio do Ato da Diretoria Geral (ADG nº 05/2020, art. 2º), suspendendo assim autorizações para participação em capacitação presencial, o que levou à paralisação temporária do processo de afastamento.",
+  "A partir da adoção pela UnB das aulas à distância em agosto de 2020, foi protocolado novo pedido adaptado para o período de 24/10/2020 a 16/08/2024 (NUP 00100.075779/2020-41-2 e formulário p.176). A SEGP exigiu cumprimento de prazo prévio de 30 dias, tratando o novo pedido como distinto, causando atraso adicional no início efetivo do afastamento.",
+  "Órgãos como SEGP, ILB e DGER analisaram o pedido sob as normas vigentes (art. 96-A da Lei nº 8.112/90; art. 35 e 39 do Anexo IV do RASF - Resolução nº 13/2018). A SEGP confirmou compatibilidade temática (Ciência Política) com as funções do servidor (NUP 00100.086462/2020-30, 188-189). ILB reconheceu atrasos decorrentes da pandemia e confirmou cumprimento dos requisitos legais, apesar de apontar ausência de edital interno (Portaria ILB nº 01/2017). Finalmente, o ILB recomendou prazo máximo do afastamento até 16/08/2024, sem flexibilizar mesmo com impactos da pandemia (NUP 00100.106506/2020-55, p.629).",
+  "A Resolução CEPE 59/2020 da UnB, de 28/07/2020, determinou que o semestre 1/2020 não contaria para limites de permanência máxima e obrigava os programas de pós-graduação a prorrogarem prazos finais dos estudantes, descontando períodos de suspensão e de aulas à distância (art. 6º, §3º e art. 7º). Esta resolução integrava o processo desde o início e foi conhecida e considerada pelo Senado antes de aprovar o afastamento do servidor (NUP 00100.075779/2020-41-2).",
+  "O Comitê Científico-Pedagógico do ILB analisou detalhadamente a Resolução CEPE 59/2020 em reunião de 06/11/2020 (NUP 00100.106506/2020-55, p.631-632), aprovando expressamente o afastamento do servidor, ciente da extensão dos prazos definida pela UnB. Na sequência, a Diretoria-Geral do Senado e a Presidência autorizaram a participação do servidor no doutorado nos termos apresentados e debatidos.",
+  "Em 26/02/2021, o Presidente do Senado autorizou formalmente o afastamento do servidor, embora a Diretoria-Geral já pudesse ter autorizado anteriormente (NUP 00100.030498/2021-40, p.633).",
+  "O deferimento final pela Diretoria-Geral ocorreu em 31/03/2021, cumprindo os requisitos do art. 96-A da Lei nº 8.112/90 e dos arts. 27, 39 e 51 do Anexo IV do RASF (Resolução nº 13/2018), na modalidade ônus limitado, sendo devidas apenas as parcelas remuneratórias ordinárias. A decisão foi publicada no BASF nº 7778, em 06/04/2021, formalizando o afastamento no período de 24/10/2020 a 16/08/2024 (NUP 00100.030498/2021-40, p.634-638 e 639-643).",
+  "Identificada irregularidade nos ofícios e e-mails do SEPOS, reiteradamente citando o art. 49 do RASF, que trata especificamente de licença capacitação e não de afastamento para pós-graduação (NUPs p.644-645, 657, 662). A aplicação indevida dessa norma sugere tentativa de imposição de sanções ou ameaças não cabíveis ao caso do servidor, configurando equívoco normativo e desvio processual.",
+  "Ocultação injustificada e sem explicações das páginas 669-682 e 990-995, bem como 1044-1294 do processo. Esses documentos, sobretudo relatórios e comunicações com o SEPOS, são cruciais para demonstrar irregularidades apontadas pelo servidor quanto à atuação do ILB, prejudicando gravemente a defesa em fases decisivas. Essa ação reforça a tese de manipulação documental e prática danosa contra o servidor.",
+  "Questionamentos formais realizados pela DGER ao ILB sobre situação do servidor, incluindo dúvidas sobre relatórios e atividades acadêmicas apresentadas, com destaque para argumentos e esclarecimentos já antecipados pela defesa do servidor refutando eventuais alegações de ausência ou falta de comunicação (páginas 933, 996, 1035-1043)."
+)
+
+# Atualizando palavras-chave
+palavras_chave <- c("pedido inicial afastamento, datas solicitação",
+  "pandemia COVID-19, início curso doutorado, impacto aulas à distância",
+  "proibição aulas presenciais, paralisação processo, ADG nº 05/2020",
+  "novo pedido afastamento, aulas à distância, atraso administrativo",
+  "parecer SEGP, ILB, compatibilidade temática, requisitos legais afastamento",
+  "Resolução CEPE 59/2020, prorrogação prazo doutorado, pandemia",
+  "Comitê ILB, aprovação afastamento, conhecimento prorrogação prazos",
+  "autorização presidencial, atraso decisão administrativa",
+  "deferimento DGER, publicação oficial, modalidade ônus limitado",
+  "irregularidade, aplicação indevida norma, art. 49 RASF, licença capacitação, afastamento",
+  "ocultação documentos, irregularidade processual, prejuízo defesa, manipulação documental, SEPOS, ILB",
+  "ocultação documentos, irregularidade processual, prejuízo defesa, manipulação documental, SEPOS, ILB")
+  
+
+# Atualizando normas e referências jurídicas
+normas_referencias <- c("NUP 00100.031237/2020-66, datas solicitação original",
+  "ADG nº 05/2020, suspensão atividades presenciais Senado; Resolução CEPE 59/2020, UnB",
+  "ADG nº 05/2020 Senado Federal, proibição participação atividades presenciais",
+  "NUP 00100.075779/2020-41-2, formulário p.176; art. 96-A Lei nº 8.112/90",
+  "art. 96-A Lei nº 8.112/90; Anexo IV RASF (Resolução nº 13/2018, art. 35 e 39); NUP 00100.086462/2020-30; Portaria ILB nº 01/2017",
+  "Resolução CEPE 59/2020 UnB, art. 6º §3º e art. 7º; NUP 00100.075779/2020-41-2",
+  "NUP 00100.106506/2020-55, Comitê Científico-Pedagógico ILB, Resolução CEPE 59/2020 UnB",
+  "NUP 00100.030498/2021-40, autorização presidente Senado",
+  "art. 96-A Lei nº 8.112/90; Anexo IV RASF (arts. 27, 39, 51, Resolução nº 13/2018); BASF nº 7778, publicação oficial", "art. 49 RASF, licença capacitação; NUPs p.644-645, 657, 662","páginas ocultadas 669-682, 990-995, 1044-1294; NUP 00100.100844/2023-26, 00100.025718/2023-8, 00100.156021/2023-55","páginas ocultadas 669-682, 990-995, 1044-1294; NUP 00100.100844/2023-26, 00100.025718/2023-8, 00100.156021/2023-55")
+
+# Criação do dataframe atualizado em R
+memorial_df_parte1 <- tibble::tibble(
+  titulo = titulo,
+  conteudo = conteudo,
+  palavras_chave = palavras_chave,
+  normas_referencias = normas_referencias
+)
+
+memorial_df_parte1
+
+
+```
+
+
+```{r}
+
+# Iterar sobre cada linha do dataframe para gerar texto estruturado
+memorial_df_compilado <- memorial_df_parte1 %>%
+  rowwise() %>%
+  do({
+    cat("## ", .$titulo, "\n\n",
+        .$conteudo, "\n\n",
+        "**Palavras-chave:** ", .$palavras_chave, "\n\n",
+        "**Normas e Referências Jurídicas:** ", .$normas_referencias, "\n\n---\n\n", sep = "")
+    data.frame()
+  })
+
+
+memorial_df_compilado
+```

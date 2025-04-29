@@ -1,0 +1,456 @@
+---
+title: "Untitled"
+format: html
+---
+
+
+
+
+# Transformando a Base para o Formato "Long"
+
+A seguir, apresento uma sugestão de como reorganizar sua base para o formato “long” e, a partir dela, facilitar comparações página a página entre as extrações. Vou ilustrar com exemplos em R usando os pacotes tidyr e dplyr. A ideia é transformar os conjuntos de colunas referentes aos textos extraídos, aos textos normalizados e aos respectivos hashes em três “tibbles” em formato longo, para depois uni-los por “página” e “data de extração”. Em seguida, com essa estrutura você poderá aplicar filtros (por exemplo, utilizando os hashes) e depois aplicar as técnicas de comparação (como similaridade de cosseno ou outras) apenas às páginas em que os hashes indiquem mudanças.
+
+Vamos supor que seu objeto se chame tibble_p003561_b e que ele contenha as seguintes colunas (conforme listado):
+
+```{r}
+# Carregar os pacotes necessários
+library(tidyr)
+library(dplyr)
+library(lubridate)
+
+# Supondo que df já contenha a coluna 'pagina' e as demais colunas com nomes iniciando com "p"
+# Exemplo: df tem colunas: pagina, p123456_20250125, p123456_20250110, p123456_20241231, ...
+
+names(tibble_p003561_b)
+
+df <- tibble_p003561_b
+
+```
+
+
+# Converter os Dados para o Formato “Long”
+
+## Transformando as colunas de texto “bruto”
+As colunas que começam com “d” e que têm 8 dígitos representam os textos extraídos (brutos). Podemos pivotá-las usando o pivot_longer():
+
+
+```{r}
+
+# Pivotar os textos brutos
+df_raw <- tibble_p003561_b %>%
+  select(pagina, matches("^d\\d{8}$")) %>%  # seleciona colunas que começam com d e têm 8 dígitos
+  pivot_longer(
+    cols = -pagina,
+    names_to = "extracao",   # armazenará o nome da coluna, ex.: "d20240829"
+    values_to = "texto_raw"
+  )
+
+```
+
+
+## Transformando as colunas de textos normalizados
+
+As colunas de textos normalizados seguem o padrão dYYYYMMDD_norm. Podemos extrair a parte “dYYYYMMDD” e criar a variável “extracao” para facilitar o join:
+Observações:
+
+```{r}
+
+df_norm <- tibble_p003561_b %>%
+  select(pagina, matches("^d\\d{8}_norm$")) %>%
+  pivot_longer(
+    cols = -pagina,
+    names_to = "extracao",
+    values_to = "texto_norm",
+    names_pattern = "^(d\\d{8})_norm$"  # extrai apenas a parte dYYYYMMDD
+  )
+
+```
+
+## Transformando as colunas de hashes
+De forma semelhante, para as colunas de hash (nomeadas como hash_dYYYYMMDD):
+  
+```{r}
+
+df_hash <- tibble_p003561_b %>%
+  select(pagina, matches("^hash_d\\d{8}$")) %>%
+  pivot_longer(
+    cols = -pagina,
+    names_to = "extracao",
+    values_to = "hash_texto",
+    names_pattern = "^hash_(d\\d{8})$"  # extrai dYYYYMMDD
+  )
+
+```
+
+## Unindo os Dados
+Agora, junte os três conjuntos (usando left_join() pela coluna “pagina” e “extracao”):
+
+```{r}
+
+df_long <- df_raw %>%
+  left_join(df_norm, by = c("pagina", "extracao")) %>%
+  left_join(df_hash, by = c("pagina", "extracao"))
+
+```
+
+## Criando a Coluna de Data de Extração
+Sabendo que a coluna “extracao” tem o formato "dYYYYMMDD", podemos converter para data e, se desejado, formatar como "DD-MM-AAAA":
+
+```{r}
+
+df_long <- df_long %>%
+  mutate(
+    data_extracao = as.Date(sub("^d", "", extracao), format = "%Y%m%d"),
+    data_extracao = format(data_extracao, "%d-%m-%Y")
+  )
+
+```
+
+Agora, cada linha de df_long representa uma página de uma extração, contendo o número da página (pagina), o texto bruto, o texto normalizado, o hash e a data da extração.
+
+# Próximos Passos: Comparação Página a Página
+Com a base no formato “long” fica mais fácil, por exemplo, agrupar por página e comparar os conteúdos entre as extrações:
+
+## Filtragem Inicial com Hash
+Como você já calculou os hashes para cada extração, pode ser interessante filtrar as páginas que não sofreram alterações. Por exemplo, se você quiser usar a extração mais recente como referência (suponhamos que seja a de data "d20250125") e comparar com as demais, você pode fazer algo como:
+
+```{r}
+
+# Cria uma coluna de referência para o hash da extração mais recente
+df_long <- df_long %>%
+  group_by(pagina) %>%
+  mutate(
+    hash_ref = hash_texto[extracao == "d20250125"]  # define a extração mais recente como referência
+  ) %>%
+  ungroup()
+
+# Filtra apenas as páginas onde o hash é diferente do da extração mais recente
+df_diferencas <- df_long %>%
+  filter(hash_texto != hash_ref)
+
+
+```
+
+Dessa forma, você reduz o conjunto de páginas a serem analisadas com métodos mais pesados (por exemplo, cálculos de similaridade).
+
+## Análise de Similaridade de Texto
+Para as páginas sinalizadas, você pode aplicar uma abordagem de similaridade de cosseno utilizando vetores TF-IDF (ou outra abordagem robusta) para avaliar a magnitude da diferença. Uma sugestão é:
+
+### Tokenizar e normalizar os textos (se ainda não estiverem) – você pode utilizar pacotes como quanteda ou text2vec.
+
+### Criar a matriz de termos (TF ou TF-IDF) para os textos de cada página.
+
+### Calcular a similaridade de cosseno entre as versões da mesma página.
+
+### Sinalizar páginas cuja similaridade esteja abaixo de um determinado limiar para uma análise mais detalhada.
+
+Por exemplo, usando o quanteda:
+
+```{r}
+
+library(quanteda)
+
+# Supondo que você esteja interessado em comparar o texto normalizado
+# Primeiro, transforme os textos em um corpus:
+corpus_norm <- corpus(df_diferencas, text_field = "texto_norm", docid_field = "pagina")
+
+# Cria um documento-term matrix com TF-IDF
+dfm_norm <- dfm(corpus_norm, remove = stopwords("portuguese"), remove_punct = TRUE)
+dfm_norm_tfidf <- dfm_tfidf(dfm_norm)
+
+# Em seguida, você pode calcular a similaridade de cosseno entre os documentos
+similarity_matrix <- textstat_simil(dfm_norm_tfidf, method = "cosine")
+
+
+```
+Note que, para comparar extrações da mesma página, você pode primeiro agrupar por página e comparar os vetores referentes às diferentes datas. Se o número de páginas for muito grande, você pode iterar apenas sobre aquelas que foram sinalizadas pelo hash.
+
+# Otimizando o Processo
+## Uso do Hash para Filtragem:
+O uso prévio dos hashes para descartar páginas inalteradas é um ganho de desempenho significativo, pois evita o processamento pesado em textos idênticos.
+
+## Formato “Long” (Tidy Data):
+Ao ter cada página e cada extração como uma observação única, você pode utilizar funções do tidyverse como group_by() e filter() de forma vetorizada e até aplicar processamento paralelo se necessário (por exemplo, com os pacotes parallel ou furrr).
+
+## Abordagem em Duas Etapas:
+
+### Filtro Rápido: Use os hashes para identificar páginas com alterações.
+### Análise Mais Profunda: Em seguida, para as páginas sinalizadas, aplique métodos robustos (por exemplo, similaridade de cosseno ou até métodos baseados em embeddings) para entender a natureza da mudança.
+
+Essa abordagem em duas etapas permite otimizar recursos e focar o processamento pesado apenas onde há suspeita de adulteração.
+
+# Conclusão: Qual Opção Escolher?
+Dada a estrutura dos dados e o objetivo de identificar alterações (de pequenas a estruturais), a estratégia sugerida foi:
+
+## Reorganizar os dados no formato “long” (como demonstrado) para facilitar operações de agrupamento e comparação.
+
+##Usar os hashes como filtro inicial para descartar páginas inalteradas.
+
+##Aplicar a similaridade de cosseno baseada em TF-IDF (ou, se necessário, métodos baseados em embeddings para casos mais sutis) para as páginas sinalizadas.
+
+
+3.2. Comparação Detalhada nas Páginas Selecionadas
+Com as páginas que passaram pelo filtro dos hashes, você pode:
+  
+  Vetorização do Texto:
+  Transformar o texto de cada página em vetores TF-IDF utilizando pacotes como quanteda, tm ou text2vec.
+
+Cálculo de Similaridade de Cosseno:
+  Comparar os vetores TF-IDF entre as versões de uma mesma página para obter uma medida de similaridade. Se a similaridade estiver abaixo de um determinado limiar, essa página é candidata a ter sofrido alterações estruturais ou alterações semânticas relevantes.
+
+Métodos Adicionais (se necessário):
+  Se identificar alterações que parecem mais sutis (por exemplo, mudanças semânticas sem variação grande na frequência dos termos), pode-se empregar métodos baseados em embeddings para uma análise mais refinada.
+
+3.3. Organização e Processamento Eficiente
+Formato "Long" para Facilitar Operações:
+  Trabalhar com o data frame em formato "long" permite utilizar funções como group_by(pagina) e aplicar operações de forma vetorizada ou paralelizada (usando, por exemplo, os pacotes parallel ou furrr).
+
+Filtragem Preliminar com Hash:
+  Essa etapa já reduz significativamente o número de páginas a serem analisadas detalhadamente, otimizando o uso dos recursos.
+
+Pipeline Modular:
+  
+  Filtro rápido: Use os hashes para identificar páginas sem alterações.
+Análise intermediária: Aplique a similaridade de cosseno via TF-IDF para um primeiro nível de detecção de diferenças.
+Investigação detalhada: Para páginas sinalizadas, investigue com métodos mais robustos (por exemplo, embeddings ou análises de n-gramas).
+Essa abordagem hierárquica evita gastar tempo computacional em páginas invariantes e permite concentrar os esforços apenas onde há indícios de alterações.
+
+4. Conclusão e Recomendação
+Recomendamos utilizar a similaridade de cosseno baseada em TF-IDF como primeiro filtro detalhado para comparar as páginas que já foram sinalizadas como diferentes pelos hashes. Essa abordagem tem as seguintes vantagens:
+  
+  Eficiência Computacional: O cálculo de vetores TF-IDF e da similaridade de cosseno é relativamente rápido, especialmente depois de eliminar as páginas idênticas via hash.
+Robustez a Pequenas Alterações: Pequenas variações que não afetam muito a distribuição global de termos não acionarão um alerta desnecessário.
+Modularidade: Permite uma análise hierárquica, começando com um filtro rápido e passando para métodos mais robustos (como embeddings) somente quando necessário.
+Resumindo, com a reorganização dos seus dados para o formato “long” (usando pivot_longer e extraindo as informações de processo e data dos nomes das colunas) e o uso dos vetores de hash para filtrar páginas inalteradas, você otimiza o fluxo de trabalho. Em seguida, a aplicação da similaridade de cosseno via TF-IDF para as páginas restantes parece ser a estratégia mais equilibrada para detectar alterações estruturais relevantes, sem incorrer em processamento desnecessário.
+
+Essa estratégia modular e bem organizada tornará o processo de detecção de adulterações mais ágil e eficiente.
+
+Você pode utilizar o pacote dplyr para agrupar os dados pela coluna de extração (e, se preferir, também pela data) e contar o número de páginas distintas que apresentaram diferença. Veja um exemplo de como fazer isso:
+
+```{r}
+
+library(dplyr)
+
+# Supondo que df_diferencas já contenha apenas as páginas com diferenças
+df_contagem <- df_diferencas %>%
+  group_by(extracao, data_extracao) %>%  # agrupa por extração (e data, se preferir)
+  summarise(num_paginas = n_distinct(pagina)) %>%  # conta o número único de páginas
+  ungroup()
+
+# Exibe o resultado
+print(df_contagem)
+
+```
+
+```{r}
+
+df_na_long <- df_long %>%
+  filter(is.na(texto_raw)) %>%  # seleciona as linhas onde o texto está faltando
+  group_by(data_extracao) %>%
+  summarise(num_na = n_distinct(pagina)) %>%
+  ungroup()
+
+# Exibe o resultado
+print(df_na_long)
+
+```
+```{r}
+
+df_na_dif <- df_diferencas %>%
+  filter(is.na(texto_raw)) %>%  # seleciona as linhas onde o texto está faltando
+  group_by(data_extracao) %>%
+  summarise(num_na = n_distinct(pagina)) %>%
+  ungroup()
+
+# Exibe o resultado
+print(df_na_dif)
+
+
+```
+Explicação do Código
+group_by(extracao, data_extracao):
+Agrupa os dados por extração e pela data associada à extração.
+
+summarise(num_paginas = n_distinct(pagina)):
+Para cada grupo, conta o número de páginas distintas (n_distinct) que possuem diferenças.
+
+ungroup():
+Remove o agrupamento, deixando o dataframe pronto para outras operações ou para exibição.
+
+O resultado (df_contagem) será uma tabela onde cada linha representa uma extração (com sua data) e a coluna num_paginas indica em quantas páginas foi identificada alguma diferença.
+
+Se quiser ordenar os resultados por data ou extração, você pode adicionar um arrange():
+
+```{r}
+
+df_contagem <- df_contagem %>%
+  arrange(data_extracao)
+
+
+```
+
+
+# Contar as Páginas Totais e as com NA em df_long
+Utilizaremos a coluna texto_raw para identificar as páginas com conteúdo. Se a página estiver ausente, ela terá NA em texto_raw.
+
+```{r}
+
+# Agrupa por extração e data e calcula:
+# - total_paginas: número de páginas com conteúdo (não NA)
+# - total_na: número de páginas com NA
+df_total <- df_long %>%
+  group_by(data_extracao) %>%
+  summarise(
+    total_paginas = n() - sum(is.na(texto_raw)),  # total de páginas com conteúdo
+    total_na = sum(is.na(texto_raw))                # total de NAs
+  ) %>%
+  ungroup()
+
+view(df_total)
+
+```
+
+# Contar as Páginas com Diferença em df_diferencas
+Assumindo que cada página consta apenas uma vez por extração e que o filtro que gerou df_diferencas garante que cada linha representa uma página com diferença, podemos contar o número de páginas diferentes:
+
+```{r}
+df_diff <- df_diferencas %>%
+  group_by(data_extracao) %>%
+  summarise(diff_paginas = n_distinct(pagina)) %>%
+  ungroup()
+
+df_diff
+```
+
+# Unir as Informações em Uma Única Tabela
+Agora, juntamos as duas tabelas (df_total e df_diff) pela extração (e data) e, caso alguma extração não possua páginas com diferença, preenchemos com zero.
+
+```{r}
+library(tidyr)  # para replace_na()
+
+df_resumo <- df_total %>%
+  left_join(df_diff, by = ("data_extracao")) %>%
+  mutate(diff_paginas = replace_na(diff_paginas, 0)) %>%
+  arrange(data_extracao)
+
+# Visualiza a tabela final
+print(df_resumo)
+view(df_resumo)
+
+```
+
+Considerações Finais
+###total_paginas: 
+Conta apenas as páginas com conteúdo (não NA), ou seja, total de linhas em df_long−numero de NA em texto_raw.
+###total_na:
+Indica o número de páginas faltantes (com valor NA).
+###diff_paginas: 
+Representa a quantidade de páginas em que foi constatada diferença (segundo o filtro aplicado para gerar df_diferencas).
+Essa tabela fornece uma visão geral do processo para cada extração, permitindo monitorar tanto a integridade (páginas ausentes) quanto as alterações no conteúdo.
+
+A ideia é construir uma matriz em que as linhas e as colunas representem cada data de extração (ou, de forma equivalente, cada valor da coluna extracao) e em cada célula seja exibida a quantidade de páginas que diferem entre a extração da linha e a extração da coluna. Para isso, usaremos o dataframe df_long (que contém todas as páginas, com as colunas pagina, extracao e hash_texto, entre outras) e faremos comparações pareadas entre as extrações.
+
+Em linhas gerais, para cada par de extrações (digamos, extração i e extração j), o procedimento é:
+
+Filtrar as linhas correspondentes à extração i e à extração j, mantendo pelo menos as colunas pagina e hash_texto (você pode usar hash_texto para comparar, pois se os hashes são diferentes, o conteúdo mudou; se ambos forem NA ou iguais, consideramos iguais).
+Fazer um inner join desses subconjuntos pela variável pagina para comparar páginas que aparecem em ambas as extrações.
+Para cada página unida, verificar se:
+Algum dos hashes é NA (o que indica página faltante)
+OU
+Os hashes são diferentes.
+Contar quantos casos satisfazem a condição acima.
+Com isso, construiremos uma matriz 4 x 4 (se houver 4 extrações) em que a diagonal poderá ser definida como zero (já que comparar uma extração com ela mesma não gera diferença).
+
+Abaixo segue um exemplo de código R que implementa essa ideia:
+
+```{r}
+
+library(dplyr)
+
+# Suponha que df_long já esteja disponível e contenha as colunas:
+# "pagina", "extracao", "hash_texto", etc.
+# Obtenha as extrações únicas (supondo que sejam 4)
+extracoes <- sort(unique(df_long$extracao))
+
+# Cria uma matriz vazia com dimensões adequadas e nomes de linhas/colunas
+mat_diff <- matrix(NA,
+                   nrow = length(extracoes),
+                   ncol = length(extracoes),
+                   dimnames = list(extracoes, extracoes))
+
+# Loop para preencher a matriz com a contagem de páginas diferentes
+for(i in extracoes) {
+  for(j in extracoes) {
+    if(i == j) {
+      # Diagonal: mesma extração => diferença zero
+      mat_diff[i, j] <- 0
+    } else {
+      # Filtra as páginas para as extrações i e j
+      df_i <- df_long %>%
+        filter(extracao == i) %>%
+        select(pagina, hash_texto) %>%
+        rename(hash_i = hash_texto)
+      
+      df_j <- df_long %>%
+        filter(extracao == j) %>%
+        select(pagina, hash_texto) %>%
+        rename(hash_j = hash_texto)
+      
+      # Faz o join pelas páginas
+      df_join <- inner_join(df_i, df_j, by = "pagina")
+      
+      # Conta as páginas diferentes:
+      # Aqui, se alguma das páginas tiver hash NA ou se os hashes forem diferentes,
+      # consideramos que a página é diferente.
+      diff_count <- df_join %>%
+        mutate(diff = if_else(is.na(hash_i) | is.na(hash_j) | (hash_i != hash_j), 1, 0)) %>%
+        summarise(total = sum(diff)) %>%
+        pull(total)
+      
+      mat_diff[i, j] <- diff_count
+    }
+  }
+}
+
+# Exibe a matriz resultante
+print(mat_diff)
+
+view(mat_diff)
+```
+
+Explicação do Código
+Obtendo as extrações:
+
+r
+Copiar código
+extracoes <- sort(unique(df_long$extracao))
+Isso cria um vetor com os nomes (ou identificadores) das extrações. No seu caso, devem ser 4.
+
+Inicializando a matriz:
+A matriz mat_diff é criada com dimensões iguais ao número de extrações e com os nomes das linhas e colunas definidos pelo vetor extracoes.
+
+Loop duplo:
+Para cada par (i, j):
+
+Se i == j, atribuímos zero, pois a comparação de uma extração com ela mesma não gera diferença.
+Caso contrário, filtramos df_long para obter os dados de cada extração, renomeamos a coluna de hash para distinguir (hash_i e hash_j) e fazemos um inner join pela variável pagina.
+Comparação dos Hashes:
+Usamos o mutate() para criar uma coluna diff que vale 1 quando:
+
+Algum dos dois hashes é NA
+OU
+Os hashes são diferentes.
+Em seguida, somamos esses valores para obter a contagem de páginas diferentes entre as extrações i e j.
+Exibição da matriz:
+A matriz mat_diff é exibida e contém a contagem de páginas com diferença para cada par de extrações.
+
+Notas Adicionais
+Páginas Faltantes (NA):
+Caso você prefira tratar de forma diferente páginas que estão ausentes em uma extração (por exemplo, se não desejar contá-las), ajuste a condição dentro do if_else().
+
+Inner Join:
+Esse método compara somente páginas que aparecem em ambas as extrações. Se houver páginas que só aparecem em uma extração, elas não serão consideradas neste join. Se quiser levar em conta essas páginas (por exemplo, considerando-as automaticamente como diferentes), poderá realizar um full join e tratar os NA adequadamente.
+
+Essa abordagem gera uma matriz 4 x 4 onde cada célula [i, j] mostra quantas páginas diferem entre a extração i e a extração j, permitindo uma comparação cruzada entre as diferentes datas de extração.
+
+```

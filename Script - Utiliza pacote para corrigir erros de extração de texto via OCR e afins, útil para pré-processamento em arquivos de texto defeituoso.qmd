@@ -1,0 +1,64 @@
+---
+title: "Hunspell_pack for stemming, correcting OCR extractions, and other uses"
+format: html
+---
+
+# Este código procura palavras desconhecidas em textos extraídos, para corrigir problemas de mineração e/ou reconhecimento de texto erroneo. Tem pacote específico para Português!
+
+```{r}
+#pegando o texto a corrigir
+tokendados <- unlist(dados_consolidados_bckp)  
+
+tokendados <- sort(unique(tokendados))
+
+tokendados_checked <- hunspell_check(tokendados, dict = dictionary("pt_BR"))
+
+tokendados_checked
+
+tokendados_suggestions <- hunspell_suggest(tokendados, dict = dictionary("pt_BR"))
+
+# Se necessário, instale o pacote e o dicionário (em R):
+# install.packages("hunspell")
+install.packages("hunspell.pt.br") # Ou outro dicionário de PT
+
+library(hunspell)
+library(hunspell.pt.br) # Para dicionário português do Brasil (se disponível)
+
+# Função para corrigir um texto usando hunspell
+corrige_com_hunspell <- function(texto) {
+  # 1) separar em palavras (muito simples):
+  # Se quiser algo mais robusto, pode usar "tokenizers" ou "tidytext"
+  palavras <- unlist(strsplit(texto, "\\s+"))
+  
+  # 2) verificar quais palavras são incorretas
+  incorretas <- !hunspell_check(palavras, dict = dictionary("pt_BR"))
+  
+  # 3) para cada palavra incorreta, buscar sugestões
+  if (any(incorretas)) {
+    sugestoes <- hunspell_suggest(palavras[incorretas], dict = dictionary("pt_BR"))
+    
+    # sugestoes é uma lista de vetores de possíveis correções
+    # Ex: se a palavra "fungao" não existe, sugestoes[[1]] pode ser c("função", "fusão", ...)
+    
+    # Substituir a palavra incorreta pela primeira sugestão
+    # (Pode ser arriscado; talvez queira heurísticas melhores)
+    for (i in seq_along(sugestoes)) {
+      if (length(sugestoes[[i]]) > 0) {
+        palavras[which(incorretas)[i]] <- sugestoes[[i]][1]
+      }
+    }
+  }
+  
+  # Rejuntar as palavras num texto
+  texto_corrigido <- paste(palavras, collapse = " ")
+  return(texto_corrigido)
+}
+
+# Exemplo
+texto_errado <- "Tivemos uma grande fungao no meio da pagna, e entao surgio um problemma."
+texto_corrigido <- corrige_com_hunspell(hunspell::hunspell_check(dados_consolidados[[i]]tesseract, dict = dictionary("pt_BR")))
+texto_corrigido
+# => "Tivemos uma grande função no meio da página, e então surgiu um problema."
+
+
+```

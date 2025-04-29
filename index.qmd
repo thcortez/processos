@@ -1,0 +1,9 @@
+---
+title: "Introdução"
+format: html
+---
+# Apresentação
+
+Este documento compila de forma estruturada os fatos, normas e argumentos para subsidiar a elaboração da defesa do servidor afastado para cursar doutorado, conforme autorizado pelo Senado Federal, nos termos da Lei nº 8.112/1990.
+
+Os blocos a seguir organizam, em ordem cronológica e temática, os eventos e manifestações técnicas ocorridas durante o processo.

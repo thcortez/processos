@@ -1,0 +1,1786 @@
+---
+title: "Untitled"
+format: html
+---
+
+# Preparação para organizar arquivos, e simplificar a importação de dados
+
+```{r}
+arquivo <- "Análise Estruturada - Argumentos 020190 - Resumo da argumentação no processo FALTAS INJUSTIFICADAS.txt"
+pasta <- "D:/thiag_q/Downloads/PROCESSOS"
+
+```
+
+
+
+```{r}
+library(stringr)
+library(docxtractr)
+library(stringi)
+install.packages(c("docxtractr"))
+
+library(stringr)
+
+processar_
+
+processar_txt <- function(caminho_arquivo) {
+  linhas <- readLines(caminho_arquivo, encoding = "UTF-8")
+  
+  prompt <- list()
+  i <- 0
+  j <- 0
+  bloco <- ""
+  
+  for (linha in linhas) {
+    if (str_detect(linha, "servidor disse:")) {
+      i <- i + 1
+      j <- 0
+      bloco <- ""
+      next
+    }
+    
+    if (str_detect(linha, "jurista disse:")) {
+      prompt[[i]]$prompt <- bloco
+      bloco <- ""
+      next
+    }
+    
+    if (nchar(linha) > 0) {
+      bloco <- paste(bloco, linha, sep = " ")
+    }
+    
+    if (str_detect(linha, "Título/Ementa:")) {
+      j <- j + 1
+      prompt[[i]][[j]] <- list(
+        titulo = "",
+        descricao = "",
+        normas_citadas = "",
+        docs_citados = "",
+        posicao = ""
+      )
+    }
+    
+    if (j > 0) {
+      if (str_detect(linha, "Título/Ementa:")) {
+        prompt[[i]][[j]]$titulo <- str_trim(str_remove(linha, "Título/Ementa:"))
+      } else if (str_detect(linha, "Descrição:")) {
+        prompt[[i]][[j]]$descricao <- str_trim(str_remove(linha, "Descrição:"))
+      } else if (str_detect(linha, "Normas citadas:")) {
+        prompt[[i]][[j]]$normas_citadas <- str_trim(str_remove(linha, "Normas citadas:"))
+      } else if (str_detect(linha, "Documentos/processos citados:")) {
+        prompt[[i]][[j]]$docs_citados <- str_trim(str_remove(linha, "Documentos/processos citados:"))
+      } else if (str_detect(linha, "Posição:")) {
+        prompt[[i]][[j]]$posicao <- str_trim(str_remove(linha, "Posição:"))
+      }
+    }
+  }
+  
+  return(prompt)
+}
+
+print(pasta)
+
+# Listar arquivos .txt e processar:
+arquivos_txt <- list.files(path = pasta, pattern = "\\.txt$", full.names = TRUE)
+prompts_txt <- lapply(arquivos_txt, processar_txt)
+prompts <- arquivos_txt
+prompts <- processar_txt(arquivos_txt[[1]][[1]][[2]])
+prompts
+arquivos
+```
+
+
+
+```{r}
+
+# Instale os pacotes se ainda não os tiver:
+# install.packages(c("stringr", "dplyr"))
+
+library(stringr)
+library(dplyr)
+
+# Exemplo de diretório onde estão os arquivos .txt
+# Ajuste conforme seu caso:
+
+pasta <- "D:/thiag_q/Downloads/PROCESSOS/"
+
+diretorio_txt <- pasta
+
+
+
+# 1) Listar arquivos txt no diretório
+arquivos_txt <- list.files(
+  path       = diretorio_txt, 
+  pattern    = "\\.txt$",
+  full.names = TRUE
+)
+
+#arquivos_txt <- arquivos_txt[1:5]
+
+print(arquivos_txt)
+arquivo_019893_by_file_path <- "D:/thiag_q/Downloads/PROCESSOS/Análise Estruturada - Argumentos 019893 - Resumo da argumentação no processo.txt"
+arquivo_019893 <- arquivos_txt[[4]]
+arquivo_016807 <- arquivos_txt[[3]]
+arquivo_020190 <- arquivos_txt[[5]]
+arquivo_003561_1 <- arquivos_txt[[1]]
+arquivo_003561_2 <- arquivos_txt[[2]]
+arquivo_020190_by_file_path <- "D:/thiag_q/Downloads/PROCESSOS/Análise Estruturada - Argumentos 020190 - Resumo da argumentação no processo FALTAS INJUSTIFICADAS.txt"
+
+arquivos_txt <- c(arquivo_019893_by_file_path, 
+                  arquivo_019893 ,
+                  arquivo_016807,
+                  arquivo_020190, 
+                  arquivo_003561_1, 
+                  arquivo_003561_2,
+                  arquivo_020190_by_file_path)
+
+arquivos_txt_list <- list(
+  arquivo_019893_by_file_path,
+  arquivo_019893, 
+  arquivo_016807, 
+  arquivo_020190,
+  arquivo_003561_1,
+  arquivo_003561_2,
+  arquivo_020190_by_file_path
+  )
+
+view(arquivos_txt)
+view(arquivos_txt_list)
+
+# Definir palavras-gatilho de início (2.1) e palavras-gatilho de fim (2.2)
+# Notar que iremos usar regex, então é importante "escapar" ou ajustar 
+# alguns caracteres especiais caso apareçam
+
+# Primeira parte (só relembrando):
+inicio_triggers_1 <- c("voce disse\\:", "o servidor disse\\:", "servidor disse\\:", 
+                       "contexto\\:", "tarefa\\:", "forma\\:", "\\> tarefa\\:")
+
+fim_triggers_1 <- c("o jurista disse\\:", "jurista disse\\:", "chatgpt disse\\:")
+
+inicio_triggers_2 <- c("o jurista disse\\:", "jurista disse\\:", "chatgpt disse\\:")
+
+
+fim_triggers_2 <- c("voce disse\\:", "você disse\\:", "o servidor disse\\:",
+  "contexto\\:", "tarefa\\:", "forma\\:", "\\> tarefa\\:")
+
+# Função para remover acentos e caracteres especiais (exceto pontuações definidas)
+# Mantemos letras, dígitos, espaços e pontuações importantes (, . ! ? : ; - _ / \\ ( ) [ ] etc.)
+# Ajuste caso queira permitir outras pontuações específicas.
+limpar_texto <- function(texto) {
+  # 1. funçãp para limpar texto
+  texto <- tolower(texto)
+  
+  # 2. Remover acentos
+  #    A estratégia abaixo faz transliteração, passando para ASCII. Normalmente mantém pontuação.
+  texto <- iconv(texto, to = "ASCII//TRANSLIT")
+  
+  # 3. Remover caracteres especiais que não queira manter
+  #    Mantenha: letras, dígitos, espaço, pontuações como , . ! ? : ; ' " - ( ) [ ] / \ ...
+  #    A regex abaixo remove tudo que não for alfanumérico, pontuação ou espaço
+  #    Se precisar adicionar mais caracteres, inclua na classe de regex: [^ ... ]
+   texto <- gsub("[^a-z0-9,\\.!\\?\\:\\;\\-\\(\\)\\[\\]\\{\\}\\/'\"=_ \n\t]", "", texto)
+  
+  # Retornar texto "limpo"
+  return(texto)
+}
+
+# Criaremos uma função que processa UM arquivo txt e retorna um data frame
+processar_arquivo <- function(caminho_arquivo) {
+  # Extrair o nome do arquivo (excluindo caminho)
+  nome_arquivo <- basename(caminho_arquivo)
+  
+  # 1. Achar número no nome do arquivo - assumimos que haja um ou mais dígitos nele.
+  #    Por exemplo, "123.txt" -> "123"
+  #    Se o padrão for diferente, ajuste a expressão regular (\\d+ para capturar dígitos).
+  numero_arquivo <- str_extract(nome_arquivo, "\\d+")
+  
+  # 2. Ler texto completo do arquivo
+  #    Se seu arquivo for muito grande, pode ser necessário abordagem mais otimizada
+  texto_bruto <- readLines(caminho_arquivo, warn = FALSE, encoding = "UTF-8")
+  
+  # 3. Juntar em uma só string (caso sejam várias linhas)
+  texto_unico <- paste(texto_bruto, collapse = "\n")
+  
+  # 4. Limpar (lowercase, sem acentos, manter pontuações relevantes etc.)
+  texto_limpo <- limpar_texto(texto_unico)
+  
+  # 5. Identificar e extrair o que está entre os gatilhos de início e fim.
+  #    A ideia: 
+  #    - Procurar cada ocorrência de gatilho de início
+  #    - Copiar todo o texto até o próximo gatilho de fim (ou até acabar se não houver outro fim)
+  #
+  #    Uma das abordagens é "varrer" o texto procurando marcações de início e fim,
+  #    armazenando cada "bloco" encontrado. Faremos de forma manual para ilustrar.
+  
+  # Criar padrão regex que represente a OR de todos os gatilhos de início:
+  padrao_inicio <- paste0("(", paste0(inicio_triggers_1, collapse = "|"), ")")
+  # Criar padrão regex que represente a OR de todos os gatilhos de fim:
+  padrao_fim <- paste0("(", paste0(fim_triggers_1, collapse = "|"), ")")
+  
+  
+  if (is.na(texto_limpo)) {
+  message("Texto convertido virou NA em: ", caminho_arquivo)
+  # Você pode forçar substituição de caracteres inválidos com `sub=""`
+  texto_limpo <- iconv(texto_unico, to="ASCII//TRANSLIT", sub = "")
+}
+
+  # Vamos usar str_locate_all para encontrar todas as posições de cada gatilho
+  # Faremos isso separadamente para inícios e fins, depois organizamos para "emparelhar".
+  inicios <- str_locate_all(texto_limpo, regex(padrao_inicio, ignore_case = TRUE))[[1]]
+  fins    <- str_locate_all(texto_limpo, regex(padrao_fim,    ignore_case = TRUE))[[1]]
+  
+  # Se não houver inícios ou não houver fins, possivelmente não há nada a extrair
+  if (nrow(inicios) == 0 || nrow(fins) == 0) {
+    return(data.frame(
+      arquivo_id = character(0),
+      prompt_id  = integer(0),
+      prompt     = character(0),
+      stringsAsFactors = FALSE
+    ))
+  }
+  
+  # Para armazenar resultados
+  resultados <- data.frame(
+    arquivo_id = character(),
+    prompt_id  = integer(),
+    prompt     = character(),
+    stringsAsFactors = FALSE
+  )
+  
+  # Vamos percorrer as ocorrências: toda vez que achamos um "início",
+  # buscamos o próximo "fim" que venha depois do início. Quando achamos,
+  # extraímos esse trecho. Então seguimos para o próximo "início".
+  # Obs: Se houver mais de um "início" antes de um "fim", todos deverão extrair
+  # trechos. Mas aqui, para simplificar, faremos "início -> fim" na sequência de offsets.
+  
+  # Ordena por posição no texto
+  inicios <- inicios[order(inicios[,"start"]), ]
+  fins    <- fins[order(fins[,"start"]), ]
+  
+  # Vamos percorrer cada início e achar o próximo fim que esteja APÓS esse início.
+  prompt_id <- 1
+  pos_fim_usada <- 1 # Para sabermos qual fim já foi "consumido"
+  
+  for (i in seq_len(nrow(inicios))) {
+    pos_ini <- inicios[i, "end"] + 1  # posição logo após a expressão de início
+    # Procurar no vetor de fins o primeiro "start" que seja maior que pos_ini
+    while (pos_fim_usada <= nrow(fins) && fins[pos_fim_usada, "start"] <= pos_ini) {
+      pos_fim_usada <- pos_fim_usada + 1
+    }
+    if (pos_fim_usada > nrow(fins)) {
+      # Não há mais fim válido à frente => não há mais bloco a extrair
+      break
+    }
+    # Se houver um fim válido:
+    pos_fim <- fins[pos_fim_usada, "start"] - 1  # até antes do gatilho de fim
+    
+    # Extrair substring
+    trecho <- substr(texto_limpo, pos_ini, pos_fim)
+    
+    # Adicionar ao data frame
+    resultados <- rbind(
+      resultados,
+      data.frame(
+        arquivo_id = numero_arquivo,
+        prompt_id  = prompt_id,
+        prompt     = trecho,
+        stringsAsFactors = FALSE
+      )
+    )
+    
+    prompt_id <- prompt_id + 1
+  }
+  
+  return(resultados)
+}
+
+
+#resultado_funcao_processar_arquivo <- lapply(arquivos_txt, processar_arquivo) %>% 
+ # unlist() %>% tibble() %>% rbind                     
+  
+#resultado_funcao_processar_arquivo <- lapply(arquivos_txt, processar_arquivo) %>% 
+ # mutate(arquivo = as_factor(arquivo_id)) %>%group_by(c(arquivo_id, prompt_id)) 
+
+resultado_funcao_processar_arquivo <- do.call(rbind,
+  lapply(arquivos_txt, processar_arquivo)
+)
+
+view(resultado_final_docall)
+
+
+view(resultado_funcao_processar_arquivo)
+
+# Agora aplicamos a função a cada arquivo e juntamos tudo
+resultado_final_docall <- do.call(
+  rbind,
+  lapply(arquivos_txt, processar_arquivo)
+)
+
+view(resultado_final_docall)
+
+resultado_final_003561_1 <- processar_arquivo(arquivo_003561_1)
+
+resultado_final_003561_2 <- processar_arquivo(arquivo_003561_2)
+
+resultado_final_016807 <- processar_arquivo(arquivo_016807)
+
+resultado_final_019893 <- processar_arquivo(arquivo_019893)
+
+resultado_final_020190 <- processar_arquivo(arquivo_020190)
+
+resultado_final_020190_by_file_path <- processar_arquivo(arquivo_020190_by_file_path)
+
+resultado_final_019893_by_file_path <- processar_arquivo(arquivo_019893_by_file_path)
+
+
+
+resultado_linhas_empilhadas <- list(c(resultado_final_003561_1), 
+                                    c(resultado_final_003561_2),
+                                    c(resultado_final_016807),
+                                    c(resultado_final_019893),
+                                    c(resultado_final_020190), 
+                                    c(resultado_final_020190_by_file_path), 
+                                    c(resultado_final_019893_by_file_path)) 
+
+
+resultado_linhas_empilhadas <- rbind(resultado_final_003561_1, 
+                                     resultado_final_003561_2,
+                                     resultado_final_016807,
+                                     resultado_final_019893,
+                                     resultado_final_020190, 
+                                     resultado_final_020190_by_file_path, 
+                                     resultado_final_019893_by_file_path) 
+
+                        
+
+#resultado_final_list <- as.list(resultado_final_c)
+
+#arquivos_txt
+
+# Supondo que sua lista esteja no objeto chamado lista_de_prompts_aninhada
+
+# Carregar o tidyverse se ainda não estiver carregado
+library(tidyverse)
+
+library(tidyverse)
+
+library(tidyverse)
+
+lista_unificado <- map_dfr(
+  lista_de_prompts_aninhada,
+  ~ tibble(
+    arquivo_id = as.character(.x[["arquivo_id"]]),
+    prompt_id  = as.character(.x[["prompt_id"]]),
+    prompt     = as.character(.x[["prompt"]])
+  )
+)
+
+# Visualizar o resultado
+print(df_unificado)
+
+map_chr(lista_de_prompts_aninhada, typeof)
+
+rapply(lista_de_prompts_aninhada, class, how = "list")
+
+
+
+```
+
+
+
+```{r}
+
+library(stringr)
+
+extrair_varios_blocos <- function(txt) {
+  # Vetor de rótulos de campo na ordem “lógica” que queremos capturar
+  # Cada bloco começa em "titulo/ementa:", mas pode conter qualquer subset de campos
+  rotulos_campo <- c(
+    "(titulo):",
+    "(descricao):",
+    "(normas citadas):",
+    "(documentos citados):",
+    "(posicao):"
+  )
+  
+  # 1) Obter TODAS as ocorrências de cada rótulo
+  #    Iremos armazenar numa lista de data frames, depois empilhar.
+  #    Mas, para facilitar, podemos juntar tudo num só data frame
+  #    com colunas: campo, start, end.
+  
+  # Função auxiliar para localizar todas as ocorrências de um rótulo no texto
+  localizar_todas <- function(rotulo) {
+    # Vamos usar str_locate_all com fixed() para literal exata
+    loc <- str_locate_all(txt, fixed(rotulo))[[1]]
+    if (is.null(loc) || nrow(loc) == 0) {
+      return(data.frame(
+        campo = character(0),
+        start = integer(0),
+        end   = integer(0)
+      ))
+    }
+    data.frame(
+      campo = rotulo,
+      start = loc[, "start"],
+      end   = loc[, "end"]
+    )
+  }
+  
+  # Aplica localizar_todas a cada rótulo e concatena
+  df_ocorr <- do.call(rbind, lapply(rotulos_campo, localizar_todas))
+  
+  # Se não encontrou NADA, retornamos data frame vazio
+  if (nrow(df_ocorr) == 0) {
+    return(data.frame(
+      titulo_ementa = character(0),
+      descricao     = character(0),
+      normas        = character(0),
+      documentos    = character(0),
+      posicao       = character(0),
+      stringsAsFactors = FALSE
+    ))
+  }
+  
+  # 2) Ordenar pela posição de início no texto
+  df_ocorr <- df_ocorr[order(df_ocorr$start), ]
+  
+  # 3) Percorrer as ocorrências e agrupar em blocos.
+  #    Cada bloco se inicia em "titulo/ementa:" e vai até a próxima "titulo/ementa:" ou fim do texto.
+  #    Dentro de cada bloco, procuramos "descricao:", "normas citadas:", etc.
+  
+  # Resultado (várias linhas, cada uma representando 1 sub-bloco)
+  res <- data.frame(
+    titulo_ementa = character(),
+    descricao     = character(),
+    normas        = character(),
+    documentos    = character(),
+    posicao       = character(),
+    stringsAsFactors = FALSE
+  )
+  
+  # Vamos varrer df_ocorr e sempre que achamos "titulo/ementa:", iniciamos novo sub-bloco
+  idx <- 1
+  n   <- nrow(df_ocorr)
+  
+  while (idx <= n) {
+    # Se o campo atual não for "titulo/ementa:", só avançamos
+    if (df_ocorr$campo[idx] != "(titulo):") {
+      idx <- idx + 1
+      next
+    }
+    
+    # Caso seja "titulo/ementa:", abrimos um sub-bloco
+    sub_start_pos <- df_ocorr$end[idx] + 1  # logo após o "titulo/ementa:"
+    # Precisamos descobrir onde começa o próximo "titulo/ementa:" (ou fim do texto)
+    
+    # Para saber até onde esse bloco vai, vamos ver se existe outra "titulo/ementa:" à frente
+    # sem ultrapassar o final. Procuramos na df_ocorr, a próxima linha em que o campo == "titulo/ementa:".
+    j <- idx + 1
+    next_titulo_start <- NA
+    while (j <= n) {
+      if (df_ocorr$campo[j] == "(titulo):") {
+        # Achamos o início de um novo sub-bloco
+        next_titulo_start <- df_ocorr$start[j]
+        break
+      }
+      j <- j + 1
+    }
+    if (is.na(next_titulo_start)) {
+      # Não achamos outra "titulo/ementa:" => esse bloco vai até o final do texto
+      next_titulo_start <- nchar(txt) + 1
+    }
+    
+    # Agora extraímos o conteúdo DO campo "titulo/ementa:" (para preencher o sub-bloco),
+    # e também lemos se existem "descricao:", "normas citadas:", etc. dentro do range
+    # [sub_start_pos, next_titulo_start - 1].
+    
+    # Lemos o VALOR do "titulo/ementa:" (pode ser do df_ocorr$start/end atual).
+    #   A label "titulo/ementa:" em si está entre df_ocorr$start[idx] e df_ocorr$end[idx].
+    #   O conteúdo do campo é do final dessa label até (outra label ou fim).
+    #   Para extrair, vejamos se a próxima ocorrência (idx+1) não for outra "titulo/ementa:".
+    
+    bloco_texto <- substr(txt, sub_start_pos, next_titulo_start - 1)
+    # Esse "bloco_texto" contém TUDO do final de "titulo/ementa:" até antes do próximo "titulo/ementa:".
+    
+    # Precisamos extrair o valor do "titulo/ementa:" em si:
+    #   Ele começa em sub_start_pos e vai até a ocorrência do próximo rótulo dentro do sub-bloco
+    #   (pode ser "descricao:", "normas citadas:", etc.) ou até o fim do sub-bloco.
+    
+    # Faremos uma sub-função (semelhante à anterior) que extrai cada campo do "bloco_texto".
+    # MAS, lembre que nesse "bloco_texto" é possivel conter VÁRIOS rótulos repetidos
+    # (ex.: pode ter "descricao:" duas vezes? Se sim, é outro sub-bloco. Mas dissemos que
+    # a separação de sub-blocos é "titulo/ementa:". Então "descricao:" repetido fica no mesmo sub-bloco).
+    
+    sub_df <- extrair_campos_unico_bloco(bloco_texto)
+    
+    res <- rbind(res, sub_df)
+    
+    idx <- j # Saltamos para o próximo "titulo/ementa:" ou fim
+  }
+  
+  return(res)
+}
+
+# Agora definimos a função que extrai UM bloco (entre "titulo/ementa:" e o próximo "titulo/ementa:")
+# e lê seus campos "descricao:", "normas citadas:", etc. APENAS UMA VEZ CADA
+extrair_campos_unico_bloco <- function(bloco_txt) {
+  # Lembrar que "bloco_txt" não contém mais "titulo/ementa:", pois já 'cortamos' no outside
+  # Se você ainda tiver rótulos repetidos no mesmo bloco, precisará de mais lógica.
+  # Aqui vamos supor que, dentro de um bloco, cada campo aparece no máximo uma vez.
+  
+  out <- data.frame(
+    titulo_ementa = NA_character_,
+    descricao     = NA_character_,
+    normas        = NA_character_,
+    documentos    = NA_character_,
+    posicao       = NA_character_,
+    stringsAsFactors = FALSE
+  )
+  
+  # Pegamos a parte que é "titulo/ementa" no BLOCO anterior. Precisaremos passá-la como param
+  # ou fixar no outside. Como simplificação, podemos dizer que "titulo/ementa" do sub-bloco
+  # é o texto INTEIRO do "bloco_txt" até a próxima label "descricao:", "normas citadas:", ...
+  # – ou até o fim, se não achar nada. Isso seria:  
+  #   1) "titulo_ementa" = do começo de bloco_txt até min(início do rótulo "descricao:" ou etc.)
+  #   2) "descricao" = do final de "descricao:" até o próximo rótulo...
+  #   e assim por diante.
+  
+  # Vamos localizar todas as labels relevantes no "bloco_txt".
+  padrao_labels <- c("(descricao):", "(normas citadas):", "(documentos citados):", "(posicao):")
+  
+  localizar_1 <- function(lbl) {
+    x <- str_locate(bloco_txt, fixed(lbl))
+    if (any(is.na(x))) return(NULL) else return(x)
+  }
+  
+  df_labels <- do.call(
+    rbind,
+    lapply(padrao_labels, function(lbl) {
+      pos <- localizar_1(lbl)
+      if (is.null(pos)) {
+        return(data.frame(
+          campo = lbl,
+          start = NA,
+          end   = NA
+        ))
+      } else {
+        data.frame(
+          campo = lbl,
+          start = pos[1, "start"],
+          end   = pos[1, "end"]
+        )
+      }
+    })
+  )
+  
+  # Ordenar
+  df_labels <- df_labels[order(df_labels$start), ]
+  
+  # "titulo_ementa" = do INÍCIO do bloco_txt até (start do 1º campo encontrado - 1) ou fim
+  # Se não há nenhum outro campo, então "titulo_ementa" é bloco_txt inteiro
+  prim <- which(!is.na(df_labels$start))[1]  # índice do 1º label que existe
+  if (length(prim) == 0 || is.na(prim)) {
+    # Nenhum label => esse bloco contém apenas o texto de "titulo_ementa"
+    out$titulo_ementa <- str_trim(bloco_txt)
+    return(out)
+  }
+  start_1_campo <- df_labels$start[prim]
+  if (start_1_campo > 1) {
+    txt_ementa <- substr(bloco_txt, 1, start_1_campo - 1)
+    out$titulo_ementa <- str_trim(txt_ementa)
+  } else {
+    # o 1º label começa no char 1 => não sobrou espaço pro "titulo/ementa"
+    out$titulo_ementa <- ""
+  }
+  
+  # Agora, para cada label real encontrada, extrair o texto até a próxima label
+  for (i in seq_len(nrow(df_labels))) {
+    c0 <- df_labels[i, ]
+    if (is.na(c0$start)) next  # label não existe no texto
+    # Ponto inicial = c0$end + 1
+    ini_valor <- c0$end + 1
+    
+    # Descobrir a próxima label que de fato existe
+    j <- i + 1
+    prox_start <- nchar(bloco_txt) + 1
+    while (j <= nrow(df_labels)) {
+      if (!is.na(df_labels$start[j])) {
+        prox_start <- df_labels$start[j]
+        break
+      }
+      j <- j + 1
+    }
+    fim_valor <- prox_start - 1
+    if (fim_valor < ini_valor) next
+    
+    valor_campo <- substr(bloco_txt, ini_valor, fim_valor)
+    valor_campo <- str_trim(valor_campo)
+    
+    if (c0$campo == "(descricao):") {
+      out$descricao <- valor_campo
+    } else if (c0$campo == "(normas citadas):") {
+      out$normas <- valor_campo
+    } else if (c0$campo == "(documentos citados):") {
+      out$documentos <- valor_campo
+    } else if (c0$campo == "(posicao):") {
+      out$posicao <- valor_campo
+    }
+  }
+  
+  return(out)
+}
+
+
+processar_arquivo_parte2 <- function(caminho_arquivo) {
+  nome_arquivo <- basename(caminho_arquivo)
+  num_arquivo  <- str_extract(nome_arquivo, "\\d+")
+  
+  texto_bruto  <- readLines(caminho_arquivo, encoding = "UTF-8", warn = FALSE)
+  texto_unico  <- paste(texto_bruto, collapse = "\n")
+  texto_limpo  <- limpar_texto(texto_unico)
+
+  # Gatilhos invertidos (que eram "fim" antes):
+  padrao_inicio <- paste0("(", paste(inicio_triggers_2, collapse="|"), ")")
+  padrao_fim    <- paste0("(", paste(fim_triggers_2,    collapse="|"), ")")
+
+  inicios <- str_locate_all(texto_limpo, regex(padrao_inicio, ignore_case=TRUE))[[1]]
+  fins    <- str_locate_all(texto_limpo, regex(padrao_fim,    ignore_case=TRUE))[[1]]
+  
+  if (is.null(inicios) || is.null(fins) || nrow(inicios)==0 || nrow(fins)==0) {
+    return(data.frame())
+  }
+  
+  inicios <- inicios[order(inicios[,1]), ]
+  fins    <- fins[order(fins[,1]), ]
+  
+  resultados <- data.frame()
+  bloco_id   <- 1
+  pos_fim_usada <- 1
+  
+  for (i in seq_len(nrow(inicios))) {
+    pos_ini <- inicios[i, "end"] + 1
+
+    while (pos_fim_usada <= nrow(fins) && fins[pos_fim_usada, "start"] <= pos_ini) {
+      pos_fim_usada <- pos_fim_usada + 1
+    }
+    if (pos_fim_usada > nrow(fins)) break
+
+    pos_fim <- fins[pos_fim_usada, "start"] - 1
+    trecho  <- substr(texto_limpo, pos_ini, pos_fim)
+    
+    # Chama a função que vai extrair MÚLTIPLOS blocos desse trecho
+    df_blocos <- extrair_varios_blocos(trecho)
+    
+    if (nrow(df_blocos) > 0) {
+      # Adiciona colunas de identificação
+      df_blocos <- cbind(
+        data.frame(arquivo_id = num_arquivo,
+                   bloco_id   = bloco_id + seq_len(nrow(df_blocos)) - 1,
+                   stringsAsFactors=FALSE),
+        df_blocos
+      )
+      bloco_id <- bloco_id + nrow(df_blocos)
+      
+      resultados <- rbind(resultados, df_blocos)
+    }
+  }
+  
+  resultados
+}
+
+
+
+arquivos_txt <- list.files(pasta, pattern="\\.txt$", full.names=TRUE)
+
+arquivos_txt
+
+#arquivo_txt <- "D:/thiag_q/Downloads/PROCESSOS/Análise Estruturada - Argumentos 016807 - Resumo dos argumentos by GPTs.txt"
+
+resultado_parte2_todos <- lapply(arquivos_txt,
+                                  processar_arquivo_parte2)
+
+
+resultado_parte2_docall <- do.call(rbind,
+                              lapply(
+                              arquivos_txt,
+                              processar_arquivo_parte2)) 
+                           # processar_arquivo_parte2(arquivo_016807) 
+
+resultado_parte2_003561_1 <- processar_arquivo_parte2(arquivo_003561_1) 
+resultado_parte2_003561_2 <- processar_arquivo_parte2(arquivo_003561_2) 
+resultado_parte2_016807 <- processar_arquivo_parte2(arquivo_016807) 
+resultado_parte2_019893 <- processar_arquivo_parte2(arquivo_019893) 
+
+
+# Visualizar:data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAbElEQVR4Xs2RQQrAMAgEfZgf7W9LAguybljJpR3wEse5JOL3ZObDb4x1loDhHbBOFU6i2Ddnw2KNiXcdAXygJlwE8OFVBHDgKrLgSInN4WMe9iXiqIVsTMjH7z/GhNTEibOxQswcYIWYOR/zAjBJfiXh3jZ6AAAAAElFTkSuQmCC
+head(resultado_parte2_docall[1:5,3], 20)
+
+
+# Visualizar resultado
+print(resultado_final)
+summary(resultado_final)
+
+# Se quiser salvar em CSV, por exemplo:
+write_rds(resultado_final, file = paste0(pasta,"prompts_processo_para_gpt2.rds")) #, row.names = FALSE)
+
+write_rds(resultado_final_list, file = paste0(pasta,"prompts_processo_as_list.csv"))
+
+write_rds(resultado_parte2_docall, file = paste0(pasta, "prompts_processo_respostas_GPT_docall.rds"))
+
+write_rds(resultado_final_c, file = paste0(pasta,"prompts_processo_c_list_almost_all.rds"))
+
+write_rds(resultado_final_020190, file = paste0(pasta,"prompts_processo_020190.rds"))
+
+```
+# uniformizando a abordagem para aplicar a todos os objetos: 
+##(obs: nas formulas anteriores isso foi feito considerando a importação de dados externos).
+## Nos próximos chunks, será considerada a extração de informações a partir de objetos de texto já armazenados no ambiente.
+
+```{r}
+
+
+prompts_em_linhas_empilhadas <- rbind(
+  resultado_final_docall,
+  resultado_final_020190,
+  resultado_final_020190_by_file_path,
+  resultado_final_016807,
+  resultado_final_003561_1,
+  resultado_final_003561_2,
+  resultado_final_019893,
+  resultado_final_019893_by_file_path,
+  resultado_linhas_empilhadas,
+  resultado_funcao_processar_arquivo,
+  prompts_processo_020190
+)
+
+view(prompts_em_linhas_empilhadas)
+```
+
+# Adiante, a extração dos campos de dados para preencher as colunas:
+## Tentou-se aplicar a todos os objetos de uma vez, para evitar o retrabalho.
+
+
+# Tentativa_1
+```{r}
+
+library(dplyr)
+library(stringr)
+library(tibble)
+library(purrr)
+
+extrair_blocos <- function(texto, arquivo_id, prompt_id) {
+  if (!str_detect(texto, "\\(titulo\\):")) return(NULL)
+
+  padroes <- c("titulo", "descricao", "normas_citadas", "normas citadas", "documentos_citados", "documentos citados", "posicao")
+  regex_marcadores <- paste0("\\(", padroes, "\\):")
+  regex_geral <- paste(regex_marcadores, collapse = "|")
+
+  matches <- str_locate_all(texto, regex_geral)[[1]]
+  if (nrow(matches) == 0) return(NULL)
+
+  campos <- str_extract(str_sub(texto, matches[,1], matches[,2]), "(?<=\\().+?(?=\\))")
+  inicios <- matches[,2] + 1
+  finais <- c(matches[-1,1] - 1, nchar(texto))
+
+  blocos <- tibble(
+    campo = campos,
+    valor = str_trim(str_sub(texto, start = inicios, end = finais))
+  ) %>%
+    mutate(campo = recode(campo,
+                          "normas citadas" = "normas_citadas",
+                          "documentos citados" = "documentos_citados"),
+           grupo = cumsum(campo == "titulo")) %>%
+    filter(campo %in% c("titulo", "descricao", "normas_citadas", "documentos_citados", "posicao")) %>%
+    pivot_wider(names_from = campo,
+                values_from = valor,
+                values_fn = function(x) paste(x, collapse = "\n")) %>%  # Unir entradas duplicadas em string única
+    mutate(arquivo_id = arquivo_id, prompt_id = prompt_id) %>%
+    select(arquivo_id, prompt_id, titulo, descricao, normas_citadas, documentos_citados, posicao)
+
+  return(blocos)
+}
+
+
+# Aplica sobre o data frame original
+prompt_sistem_respostas <- prompts_em_linhas_empilhadas %>%
+  filter(str_detect(prompt, "\\(titulo\\):")) %>%
+  pmap_dfr(function(arquivo_id, prompt_id, prompt) {
+    extrair_blocos(prompt, arquivo_id, prompt_id)
+  })
+
+resultado_parte2_todos <- resultado_parte2_todos[1:3]
+
+
+
+# Remove atributos "names" de todas as colunas do tipo character
+renomes_geral <- renomes_geral %>%
+  mutate(across(where(is.character), ~{
+    attr(., "names") <- NULL
+    .
+  }))
+
+  
+names(mapa_argumentos)
+
+names(prompts_processo_respostas_GPT_docall) <- c("arquivo_id",
+                            "prompt_id",
+                            "titulo",
+                            "descricao",
+                            "normas_citadas",
+                            "documentos_citados",
+                            "posicao")
+
+names(prompts_processo_respostas_GPT_docall)
+
+names(resultado_parte2_todos[[1]])
+
+renomes_geral <- rbind(#prompt_sistem_respostas,
+  #prompts_processo_respostas_GPT_docall, 
+  #mapa_argumentos, 
+  resultado_parte2_todos[[1]], 
+  resultado_parte2_todos[[2]], 
+  resultado_parte2_todos[[3]], 
+  mapa_argumentos_003561_b, 
+  mapa_argumentos_003561)
+
+names(renomes_geral)
+
+names(renomes_geral) <- c("arquivo_id",
+                           "prompt_id",
+                           "titulo",
+                           "descricao",
+                           "normas_citadas",
+                           "documentos_citados",
+                           "posicao")
+
+names(renomes_geral)
+
+renomes_geral <- rbind(renomes_geral, 
+                       prompt_sistem_respostas,
+                       prompts_processo_respostas_GPT_docall, 
+                       mapa_argumentos,
+                       scprompt_sistem_respostas)
+
+summary(renomes_geral)
+
+summary(unique(renomes_geral))
+
+summary(unique(scprompt_sistem_respostas))
+
+rm(prompt_sistem_respostas,
+   prompts_processo_respostas_GPT,
+  prompts_processo_respostas_GPT_docall, 
+  mapa_argumentos, 
+  resultado_parte2_todos,
+  resultado_parte2_docall,
+  mapa_argumentos_003561_b, 
+  mapa_argumentos_003561,
+  prompts_processo_c_list_almost_all,
+  prompts_processo_020190,
+  lista_resultado,
+  arquivos_txt_all,
+  arquivos_txt_list)
+
+rm(
+  resultado_final_003561_1,
+  resultado_final_003561_2,
+  resultado_final_016807,
+  resultado_final_019893,
+  resultado_final_019893_by_file_path,
+  resultado_final_020190,
+  resultado_final_020190_by_file_path,
+  resultado_final_docall,
+  resultado_funcao_processar_arquivo,
+  resultado_linhas_empilhadas
+)
+
+base_argumentos <- unique(renomes_geral)
+
+base_argumentos <- base_argumentos
+view(base_argumentos)
+
+```
+
+
+
+```{r}
+
+class(base_argumentos$normas_citadas)
+
+gsub('\n', ", ", base_argumentos$normas_citadas, fixed = TRUE)
+
+
+
+```
+
+```{r}
+
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(purrr)
+
+# Função principal de extração de blocos por célula
+extrair_blocos <- function(texto, arquivo_id, prompt_id) {
+  # Verificar se há pelo menos um '(titulo):'
+  if (!str_detect(texto, "\\(titulo\\):")) return(NULL)
+  
+  # Definir todos os marcadores válidos
+  padroes <- c("titulo", "descricao", "normas_citadas", "normas citadas", "documentos_citados", "documentos citados", "posicao")
+  regex_marcadores <- paste0("\\(", padroes, "\\):")
+  regex_geral <- paste(regex_marcadores, collapse = "|")
+  
+  # Localizar todas as posições de marcadores
+  matches <- str_locate_all(texto, regex_geral)[[1]]
+  if (nrow(matches) == 0) return(NULL)
+  
+  # Extrair os nomes dos campos entre parênteses
+  campos <- str_extract(str_sub(texto, matches[,1], matches[,2]), "(?<=\\().+?(?=\\))")
+  inicios <- matches[,2] + 1
+  finais <- c(matches[-1,1] - 1, nchar(texto))
+  
+  # Criar tibble com pares campo/valor
+  blocos <- tibble(
+    campo = campos,
+    valor = str_trim(str_sub(texto, start = inicios, end = finais))
+  )
+  
+  # Normalizar nomes
+  blocos <- blocos %>%
+    mutate(campo = recode(campo,
+                          "normas citadas" = "normas_citadas",
+                          "documentos citados" = "documentos_citados"))
+
+  # Marcar início de nova linha a cada '(titulo):'
+  blocos <- blocos %>%
+    mutate(grupo = cumsum(campo == "titulo")) %>%
+    filter(campo %in% c("titulo", "descricao", "normas_citadas", "documentos_citados", "posicao")) %>%
+    pivot_wider(names_from = campo, values_from = valor) %>%
+    mutate(arquivo_id = arquivo_id, prompt_id = prompt_id) %>%
+    select(arquivo_id, prompt_id, titulo, descricao, normas_citadas, documentos_citados, posicao)
+  
+  return(blocos)
+}
+
+# Aplicar ao data frame inteiro, filtrando antes as linhas que contêm pelo menos um '(titulo):'
+prompt_sistem_respostas <- prompts_em_linhas_empilhadas %>%
+  filter(str_detect(prompt, "\\(titulo\\):")) %>%
+  pmap_dfr(function(arquivo_id, prompt_id, prompt) {
+    extrair_blocos(prompt, arquivo_id, prompt_id)
+  })
+
+
+```
+
+
+# Regex para verificar dados extraídos da IA, avaliar conformidade ao padrão
+
+# Ajustando o “padrão” de cada tipo de norma
+
+## CF_1988 (Constituição)
+Podem ter “inciso” ou “§” após o número do artigo (apenas no caso de CF_1988).
+
+Exemplo: Art_5_inciso_xxx_CF_1988 ou Art_5_§2_CF_1988.
+
+Regex (exemplo simplificado):
+
+regex
+Copiar
+Editar
+
+```{r}
+
+^Art_[0-9A-Za-z_-]+(?:_inciso_[0-9IVXLCDM]+|_§[0-9A-Za-z_-]+)*_CF_1988$
+
+```
+
+  
+  Explicação:
+
+Art_[0-9A-Za-z_-]+ → “Art_” seguido de um número ou algo como “96-a”.
+
+(?:_inciso_[0-9IVXLCDM]+|_§[0-9A-Za-z_-]+)* → zero ou mais ocorrências de _inciso_foo ou _§bar.
+
+_CF_1988 ao final.
+
+## RASF (ex.: Art_40_Anexo_IV_RASF)
+Você mencionou que não pode ter “inciso” ou “§” (incongruente se aparecer).
+
+Também pode aparecer isolado: Anexo_IV_RASF (sem artigo), mas é menos comum.
+
+Algumas pessoas usam “Art_40_RASF” (sem “Anexo_IV”)? Parece que no seu dado aparece também “Art_74_RASF”. Então talvez você precise aceitar Anexo_IV_RASF ou apenas _RASF.
+
+Regex (exemplo “flexível”, para abranger ambos):
+
+```{r}
+
+^(?:
+   Anexo_IV_RASF
+   |
+   Art_[0-9A-Za-z_-]+_Anexo_IV_RASF
+   |
+   Art_[0-9A-Za-z_-]+_RASF
+   |
+   RASF
+ )$
+
+```
+
+O uso de | (pipe) dentro de (?: ... ) significa: ou é “Anexo_IV_RASF” isolado, ou “Art_XX_Anexo_IV_RASF”, ou etc.
+
+Você pode simplificar ou restringir conforme sua preferência.
+
+## Leis (ex.: LEI_8112_1990, Art_96-A_LEI_8112_1990)
+
+Podem ou não ter Art_....
+
+Exemplo sem artigo: LEI_8112_1990.
+
+Exemplo com artigo: Art_96-A_LEI_8112_1990.
+
+Regex genérica:
+
+
+```{r}
+
+^(?:
+   LEI_[0-9]+_[0-9]{4}
+   |
+   Art_[0-9A-Za-z_-]+_LEI_[0-9]+_[0-9]{4}
+ )$
+
+```
+  
+##  Resoluções UnB (ex.: RES_CEPE_UnB_59_2020)
+Sem artigo.
+
+Regex:
+
+regex
+Copiar
+Editar
+
+```{r}
+^RES_CEPE_UnB_[0-9]+_[0-9]{4}$
+
+```  
+  
+## Normas internas: ADG, ATC, PILB, despacho, etc.
+Você disse que seguem o mesmo padrão de “Leis” no sentido de podem ou não vir precedidos por Art_. Porém, a parte final pode variar. Exemplos reais que você citou:
+
+ADG_26_2017
+
+Art_16_ADG_17_2021
+
+despacho_4310_2024_DGER (tem esse sufixo _DGER).
+
+PILB_1_2017 ou Art_11_PILB_1_2017.
+
+Podemos, então, usar uma família de siglas possíveis no lugar onde está “ADG|ATC|PILB|despacho|...”. E podemos aceitar também um sufixo “_DGER”? Depende da sua regra de nomenclatura.
+
+Exemplo de regex “genérica” para esses atos:
+
+
+```{r}
+# Variante sem Art_:
+\b(?:ADG|ATC|PILB|despacho)(?:[A-Za-z0-9]+)+$
+
+# Variante com Art_:
+\bArt.?\s[0-9A-Za-z_-]+_(?:ADG|ATC|PILB|despacho)(?:_[A-Za-z0-9_-]+)+$
+(?:_[A-Za-z0-9_-]+)+ qsignifica: sublinhado + “qualquer coisa alpha-num ou hífen” repetido uma ou mais vezes (para acomodar _17_2021, _4310_2024_DGER etc.).
+
+```
+
+
+
+Você pode, claro, deixar mais restrito, por exemplo, forçar a ter “_número_ano” e opcionalmente “_DGER”. Aí ficaria algo como:
+
+```{r}
+^(?:
+  (?:ADG|ATC|PILB|despacho)_[0-9]+_[0-9]{4}(?:_DGER)?  # sem Art_
+  |
+  Art_[0-9A-Za-z_-]+_(?:ADG|ATC|PILB|despacho)_[0-9]+_[0-9]{4}(?:_DGER)?
+)$
+
+```
+  
+
+## REG (ex.: REG_PPGCP_UnB, Art_28_REG_PPGCP_UnB)
+
+Parecido com RASF: pode ou não ter “Art_”.
+
+Sem ano de publicação.
+
+Regex:
+
+```{r}
+
+^(?:
+  REG_PPGCP_UnB
+  |
+  Art_[0-9A-Za-z_-]+_REG_PPGCP_UnB
+)$
+
+```
+
+# Criando a lista de regex válidas
+Podemos concatenar tudo num vetor de regex, cada uma representando um tipo. Se uma norma “bater” em pelo menos um desses padrões, a consideramos válida. Algo como:
+
+
+```{r}
+valid_patterns <- c(
+  # 1) CF_1988:
+  "\bArt_[0-9A-Za-z_-]+(?:_inciso_[0-9IVXLCDM]+|_§[0-9A-Za-z_-]+)*_CF_1988$",
+
+  # 2) RASF:
+  "^(?:Anexo_IV_RASF|Art_[0-9A-Za-z_-]+_Anexo_IV_RASF|Art_[0-9A-Za-z_-]+_RASF|RASF)$",
+
+  # 3) Leis (com ou sem artigo):
+  "^(?:LEI_[0-9]+_[0-9]{4}|Art_[0-9A-Za-z_-]+_LEI_[0-9]+_[0-9]{4})$",
+
+  # 4) Resoluções UnB:
+  "^RES_CEPE_UnB_[0-9]+_[0-9]{4}$",
+
+  # 5) Normas internas (ADG|ATC|PILB|despacho):
+  "^(?:(?:ADG|ATC|PILB|d|aps)_[0-9]+_[0-9]{4}(?:_DGER)?|Art_[0-9A-Za-z_-]+_(?:ADG|ATC|PILB|D|aps)_[0-9]+_[0-9]{4}(?:_DGER)?)$",
+
+  # 6) REG (com ou sem artigo):
+  "^(?:REG_PPGCP_UnB|Art_[0-9A-Za-z_-]+_REG_PPGCP_UnB)$"
+)
+
+```
+
+Atenção: Isso é apenas um exemplo. Você pode (e deve) ajustá-lo conforme a variação real que aparece nos seus dados. Talvez precise adicionar algo para “basf_...”, “dGER”, etc.
+
+# Checando se cada norma se encaixa
+Depois de definir esse vetor de regex, você faz a separação (split) das normas por “|” e verifica linha a linha se bate em alguma delas:
+
+```{r}
+
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+directory <- "D:/thiag_q/Downloads/PROCESSOS/script/"
+file <- "content_normas_citadas.csv"
+
+caminho_arquivo <- file.path(directory, file)
+
+df_normas <- read_csv2(caminho_arquivo)
+
+spec(df_normas)
+
+df_normas_long <- df_normas %>%
+  mutate(normas_list = str_split(normas_citadas_padronizacao, "\\|")) %>%
+  unnest(cols = normas_list) %>%
+  mutate(normas_list = trimws(normas_list))
+
+spec(df_normas_long)
+
+df_normas_checked <- df_normas_long %>%
+  rowwise() %>%
+  mutate(
+    # match_any = TRUE se a norma atual corresponde a pelo menos 1 das regex
+    match_any = any(sapply(valid_patterns, function(pat) {
+      str_detect(normas_list, pat)
+    }))
+  ) %>%
+  ungroup()
+
+df_inconsistentes <- df_normas_checked %>%
+  filter(!match_any)
+
+view(df_inconsistentes)
+
+view(df_normas_checked)
+
+```
+
+# df_inconsistentes é o subconjunto que não bateu em nenhum dos padrões. Você pode inspecionar essas linhas e ver se:
+
+É um erro de digitação (ex.: Art_4Art_58_Anexo_IV_RASF).
+
+É um tipo de norma legítima que ainda não está contemplada nas suas regex (ex.: “basf_7778_4_2021”).
+
+Depois de corrigir (ou ampliar as regex), você roda de novo até que (idealmente) df_inconsistentes fique vazio, ou apenas com o que você de fato quer excluir.
+
+# Conclusões
+Alargar o padrão:
+
+Antes, você descrevia algo mais enxuto (apenas CF, RASF, Lei, Resolução). Mas na prática, há muito mais: ADG_..., ATC_..., REG_PPGCP_UnB etc.
+
+Portanto, é preciso incluir essas normas internas no conjunto de regex para que sejam reconhecidas como válidas.
+
+Checar “despacho_..., basf_..., dGER, ...
+
+Veja se são “erros” ou se realmente são normas a serem aceitas. Se for para aceitar, inclua um item no seu regex.
+
+Por exemplo, se “basf_7778_4_2021” for uma variação de “ADG”, adicione algo do tipo “basf” nas alternativas.
+
+Regex pode ficar grande (como se vê). É normal. A ideia é que cada item do vetor valid_patterns represente um tipo de referência que você julga “correta”.
+
+Correção e padronização:
+
+Qualquer item que não passar em nenhuma regex, ou é um “erro ortográfico” (precisará ser corrigido manualmente ou via heurística) ou é um tipo novo que você quer contemplar.
+
+Esse processo iterativo é o caminho prático para normalizar dados textuais de citação legislativa/regulamentar.
+
+No final, esse workflow (split → checar regex → filtrar divergências → corrigir) é a forma mais efetiva de garantir que cada citação bate no seu padrão.
+
+# Juntando as informações das duas bases:
+
+## base_argumentos e df_normas_checked
+
+Para **integrar** as informações de `df_normas_checked` (que contém as normas já “splitadas” e checadas) com a tabela principal `base_argumentos` (que tem as colunas `arquivo_id`, `prompt_id`, `titulo`, etc.), você precisa de um **join** usando o campo comum `prompt_id`.
+
+A forma **exata** de fazer essa fusão depende de como você pretende usar o resultado:
+
+# **Se quiser uma linha para cada “norma splitada”:**  
+   Você terá “repetição” dos dados de `base_argumentos` (colunas `titulo`, `descricao`, etc.) para cada norma associada. Isso é útil se você precisa de uma **forma longa** (múltiplas linhas por `prompt_id`).  
+   
+```{r}
+
+# dando nome igual à coluna que contém o índice numérico que identifica cada prompt (na verdade, identifica cada resposta da IA, conforme foi armazenada no objeto R. Juntei todos os objetos que armazenavam respostas do GPT e similares aos prompts, daí filtrei apenas os resultados únicos e cheguei a 637 blocos de informação que resumem os argumentos encontrados pela IA nas páginas do processo. Esses blocos de informação esquadrinhava os argumentos com descrição, título, normas citadas e documentos citados. Em seguida, limpei os comentários sobre as normas, para ficar com uma variável contendo apenas as referências normativas utilizadas em cada argumento. É com essas referências que trabalharei: possibilita analisar os argumentos identificados, relacionando-os às normas correlatas; ou analisar cada citação às normas (que nesse caso se tornam unidade de observação), e com base nas normas, em quantas vezes são citadas, que argumentos se relacionam a elas, e como é essa correlação entre norma e argumento, para verificar a pertinência da norma ao caso, a aderência da norma ao objeto, a coerência do argumento em relação ao que realmente diz a norma, o quanto do argumento depende de cada norma, dentre outras questões.
+
+#para começar, copio a coluna índice (mapeia as citações às normas em cada bloco de informaçoes coletadas - descrições dos argumentos, que aqui chamei de 'prompt_id') 
+
+#backup previous versions:
+#df_arg_long_01_04_2025 <- df_arg_long
+#base_argumentos_01042024 <- base_argumentos
+#base_argumentos <- base_argumentos_01042024
+view(base_argumentos)  #_01042024)
+
+df_normas_checked <- df_normas_checked %>% mutate(prompt_id_01042025 = prompt_id)
+
+view(df_normas_checked)
+
+class(base_argumentos$prompt_id)
+#[1] "character"
+
+class(df_normas_checked$prompt_id)
+#[1] "numeric"
+#base_argumentos$prompt_id_backup <- base_argumentos$prompt_id
+
+#restore backup
+#base_argumentos$prompt <- base_argumentos$prompt_id_id_backup
+
+base_argumentos$prompt_id <- seq_along(base_argumentos$prompt_id_backup)
+   # Gera uma nova base, forma longa.
+   # Cada (prompt_id) pode aparecer várias vezes, uma por norma_list.
+df_arg_long <- base_argumentos %>%
+     left_join(df_normas_checked, by = "prompt_id")
+
+view(df_arg_long)
+
+```
+
+ATENÇÃO!!!!!!!!
+
+Caso em algum momento descubra que não estão casando o conteúdo dos prompts (tema, argumento, normas citadas, etc) com a coluna das normas, isto pode ser devido à base utilizada para classificação e categorização das normas (e dos argumentos em relação às normas). Foram compiladas diversas versões de bases antes de efetuar o destaque da coluna com as normas, e a ordem dos prompts nas bases difere de acordo como os casos foram inseridos nelas (por exemplo, a ordem em que a chamada do código elencou cada base para ser adicionada - lembrando que a extração dos dados foi segmentada por processo administrativo).
+
+
+
+   # Exemplo de como fica:
+   #  base_argumentos_long
+   #    -> arquivo_id, prompt_id, titulo, descricao, normas_citadas, ...
+   #    -> + normas_list (a norma individual), match_any, etc.
+   # Observe que a contagem de linhas tende a crescer se houver várias normas por prompt_id.
+   
+   Dessa forma, você “explodiu” as normas em várias linhas.  
+
+# Alternativa: versão 'wider' da base de dados, dedica uma linha para cada unidade de análise. Todas as informações de uma unidade ficam na linha. Na versão longer, cada linha é uma observação, podendo haver mais de uma observação por unidade analisada. São estruturas diferentes para propósitos diferentes. 
+
+**Se quiser **manter** apenas uma linha por `prompt_id`** (forma larga), mas **agregar** as normas “splitadas” em uma nova coluna:  
+   Você pode agrupar (`group_by`) `prompt_id` em `df_normas_checked` e, dentro de cada `prompt_id`, concatenar as normas separadas por “|” (ou qualquer outro separador). Assim, no final, cada `prompt_id` fica com **uma** linha em `base_argumentos`, porém com uma coluna (ou mais) que lista as normas consolidadas.  
+
+```{r}
+library(dplyr)
+library(stringr)
+
+# 1) Agrupa df_normas_checked por prompt_id e “colapsa” todas as normas
+#    em uma única string (ex.: unindo por " | ")
+df_normas_collapse <- df_normas_checked %>%
+ group_by(prompt_id) %>%
+ summarise(
+ normas_validadas = paste(normas_list[match_any], collapse = " | "),
+ normas_inconsistentes = paste(normas_list[!match_any], collapse = " | ")
+ )
+
+# 2) Faz o join com base_argumentos
+base_argumentos_larga <- base_argumentos %>%
+ left_join(df_normas_collapse, by = "prompt_id")
+ 
+# 3) Agora cada linha de base_argumentos_larga corresponde a 1 prompt_id,
+#    mas tem as colunas:
+#      - normas_validadas (todas normas OK, separadas por "|")
+#      - normas_inconsistentes (caso haja algumas fora do padrão).
+#
+# 4) Se preferir apenas 1 coluna unificada, basta trocar o summarise acima.
+```
+
+# **Se quiser armazenar as normas “splitadas” em uma lista (sem repetir linhas) e só “explodir” quando precisar:**  
+   Você pode **agrupar** `df_normas_checked` e transformar `normas_list` em uma lista (sem colapsar em string). Assim cada linha de `base_argumentos` terá uma lista de normas. Você só dá um `tidyr::unnest(cols = ...)` se/quando precisar do formato longo.  
+   
+```{r}
+   library(dplyr)
+   library(tidyr)
+   
+
+   df_normas_list <- df_normas_checked %>%
+     group_by(prompt_id) %>%
+     summarise(normas_splitadas = list(normas_list),
+               .groups = "drop")  # remove info de grouping
+   
+   base_argumentos_com_list <- base_argumentos %>%
+     left_join(df_normas_list, by = "prompt_id")
+   
+   # A nova coluna 'normas_splitadas' será do tipo list-column,
+   # cada prompt_id tem um vetor com as normas. Se quiser explodir depois:
+   # base_argumentos_explodido <- base_argumentos_com_list %>%
+   #   unnest(cols = normas_splitadas)
+```
+
+---
+
+## Qual forma escolher?
+
+- **Forma longa** (1) é a mais simples para análises em que cada norma seja realmente uma “unidade de observação”.  
+- **Forma larga** (2) ou (3) é conveniente se você precisa manter “uma linha por prompt_id” mas também ter as normas disponíveis.  
+
+A escolha depende de como você analisará esses dados — se vai cruzar “norma a norma” com outras variáveis ou se bastará saber quais normas estão presentes por prompt. Em geral, para estatísticas/tabelas sobre as normas, a **forma longa** costuma ser a mais amigável.  
+
+**Exemplo prático**: se você quer contar quantas vezes cada norma foi citada, na forma longa (1) você faz direto:
+
+  
+```{r}
+
+df_arg_long %>%
+  group_by(normas_list) %>%
+  summarise(.gro = "position", n = n()) %>%
+  arrange(desc(n))
+
+```
+Na forma larga, teria que re-splitar ou manipular as colunas unificadas.  
+
+Em resumo, basta usar `left_join(..., by = "prompt_id")` para unir as duas tabelas. Só **decida** se quer duplicar linhas (forma longa) ou agrupar as normas novamente (forma larga).
+
+```{r}
+
+#df_arg_long$prompt_id <- df_arg_long$indice_linha_copia 
+
+
+
+```
+
+
+
+Para **remover o texto extra** que aparece entre parênteses (ou logo após a palavra “contrario” / “favoravel”) e manter apenas a string `"contrario"` ou `"favoravel"`, você pode usar uma **operação de string** que:
+
+1. **Identifique** se o valor começa com `"contrario"` ou `"favoravel"`.  
+2. **Extraia** apenas essa parte, ignorando o que vem depois.  
+
+Por exemplo, com **`stringr::str_extract()`** usando uma expressão regular que captura apenas as palavras `"contrario"` ou `"favoravel"` no início da string:
+
+```{r}
+library(dplyr)
+library(stringr)
+
+df_arg_long <- df_arg_long %>%
+  mutate(
+    posicao_simplificada = str_extract(
+      posicao,
+      # ^ => início da string
+      # (contrario|favoravel) => captura "contrario" OU "favoravel"
+      # Se houver variações como "contrário" ou "favorável" com acentos,
+      # ajuste a regex ou normalize.
+      "^(contrario|favoravel)"
+    )
+  )
+
+view(df_arg_long)
+
+```
+
+- Isso **ignora** todo o restante do texto após `"contrario"` ou `"favoravel"`.  
+- Se você não tiver certeza de que essas strings sempre aparecem no início, pode ajustar a regex ou usar outro método, como `sub("\\(.*", "", posicao)` para remover tudo a partir do primeiro `(`, mas desde que tenha a garantia de que nada mais aparece antes.  
+
+Ao final, você terá na nova coluna **`posicao_simplificada`** apenas a **palavra** `"contrario"` ou `"favoravel"`.
+
+como eu faço uma tabela que indique a quantidade de vezes em que cada norma é mencionada, e divida os quantitativos de menções em argumentos favoráveis x contrários?
+
+Se você **já possui** um objeto `df_arg_long` com:
+
+- Uma linha para **cada norma** (ou seja, cada “normas_list”)  
+- O respectivo `prompt_id`  
+- E a coluna `posicao` (que contém “favorável”, “contrário” ou variações)  
+
+...então não precisa fazer aquele `left_join` novamente, pois `df_arg_long` **já** une as informações de normas e posição.  
+
+### Ajustando para `df_arg_long`
+
+Supondo que sua coluna `posicao` contenha textos como `"contrario (embasa ...)"` ou `"favoravel (é um argumento...)"`, podemos primeiro **extrair** apenas `"contrario"` ou `"favoravel"` para uma coluna nova (por exemplo, `posicao_simplificada`) e depois fazer a contagem e o pivot:
+
+```{r}
+library(dplyr)
+library(stringr)
+library(tidyr)
+
+
+df_arg_long$posicao2 <- gsub("favoravel|favorável", "favoravel ", df_arg_long$posicao)
+
+df_arg_long$posicao2 <- gsub("contrario|contrário|contraria|contrária", "contrario ", df_arg_long$posicao2)
+
+df_arg_long$posicao2 <- gsub("neutra|neutro|nêutra|nêutro", "neutro ", df_arg_long$posicao2)
+
+
+df_arg_long$posicao2[1:50]
+
+
+# 1) Criar uma coluna posicao_simplificada
+df_arg_long <- df_arg_long %>%
+  mutate(
+    posicao_simplificada = str_extract(posicao2, "^(contrario|favoravel|neutro)")
+  )
+  # Se houver acentos (contrário/favorável), ajuste a regex ou padronize antes.
+
+# 2) Contar quantas vezes cada norma foi mencionada em cada posicao
+tabela_contagem <- df_arg_long %>%
+  group_by(normas_list, posicao_simplificada) %>%
+  summarise(n = n(), .groups = "drop")
+
+# 3) Pivotar para ter uma coluna por posicao (contrario, favoravel)
+tabela_final <- tabela_contagem %>%
+  pivot_wider(
+    names_from = posicao_simplificada,
+    values_from = n,
+    values_fill = 0  # caso não haja menções em determinada categoria
+  ) %>%
+  mutate(total = rowSums(across(where(is.numeric))))
+
+view(tabela_final)
+
+# Resultado: tabela_final tem colunas:
+#   normas_list | contrario | favoravel | total
+```
+
+- **`normas_list`**: a identificação da norma (por exemplo, `"Art_4_ATC_17_2011"` etc.).  
+- **`contrario`**, **`favoravel`**: número de menções, respectivamente.  
+- **`total`**: soma das menções em ambas as posições (se houver só essas duas categorias).  
+
+#### Observações
+
+- Se existirem **outras categorias** em `posicao_simplificada` (por exemplo, se alguma linha estiver com `NA` ou outro valor), o `pivot_wider()` criará colunas adicionais.  
+- Se você **já** tiver “contrario” / “favoravel” sem texto extra, nem precisa de `posicao_simplificada`. Pode agrupar diretamente por `posicao`.  
+- Se quiser **ordenar** pelas normas mais citadas, inclua:
+
+```{r}
+  tabela_final <- tabela_final %>%
+    arrange(desc(total))
+
+view(tabela_final)
+  
+```
+
+```{r}
+# Carregar pacotes se ainda não fez
+library(dplyr)
+library(stringr)
+
+# Passo 1: definir uma nova coluna "norma_agrupada"
+#   -> Use case_when() ou if_else() para criar regras de agrupamento
+tabela_com_grupos <- tabela_final %>%
+  mutate(
+    # Detecta a presença de "RASF" no nome da norma
+    norma_agrupada = case_when(
+      str_detect(normas_list, "Anexo_IV_RASF|ATC_14_2022") ~ "RASF",
+      str_detect(normas_list, "ATC")  ~ "ATC",
+      str_detect(normas_list, "ADG")  ~ "ADG",
+      # Você pode acrescentar quantas regras quiser, por ex. "REG" ou "PILB" etc.
+      TRUE ~ "OUTROS" 
+    )
+  )
+
+# Passo 2: agrupar pelo campo "norma_agrupada" e somar as colunas de contagem
+tabela_agrupada <- tabela_com_grupos %>%
+  group_by(norma_agrupada) %>%
+  summarise(
+    # "across()" permite aplicar a mesma função a várias colunas
+    across(c(contrario, favoravel, neutro, NA, total), sum)
+  ) %>%
+  ungroup()
+
+# Resultado:
+#   norma_agrupada | contrario | favoravel | neutro | NA | total
+#
+# Observação: "NA" aqui é o nome da coluna, mas se quiser renomeá-la,
+# antes do summarise você pode fazer: rename(sem_info = `NA`) etc.
+
+```
+Para consolidar as normas em categorias-síntese como essas que você listou (por exemplo, transformar vários tipos de referência em "ATC_14_2022_Anexo_IV_RASF", "ADG_17_2021", "PILB_1_2017", etc.), uma forma prática no R é usar a combinação de:
+
+Uma coluna original (por exemplo, normas_list) que contém as normas específicas.
+
+Uma instrução case_when() (ou alguma lógica de “dicionário”) que mapeie qualquer citação a uma das categorias-síntese desejadas.
+
+A seguir vai um exemplo com código comentado, mostrando como você pode detectar cada norma (ou “família” de normas) e classificá-las em apenas uma das 18 categorias que você definiu.
+
+Exemplo com case_when()
+Suponha que você tenha um data frame chamado df_normas_long com uma coluna normas_list, e você quer criar uma nova coluna norma_sintetica que assuma valores como "ATC_14_2022_Anexo_IV_RASF", "ADG_17_2021", "REG_PPGCP_UnB", etc. Eis como poderia ficar:
+
+```{r}
+
+
+library(dplyr)
+library(stringr)
+ # Cria a coluna nova que mapeia para as 18 categorias que você citou
+ 
+df_arg_long
+
+df_arg_long_teste <- df_arg_long %>%
+  mutate(
+    normas_agregadas = case_when(
+      # Se atender a cond1 OU cond2, atribui "Categoria X"
+      is.na(normas_list) ~ "nao_cita_norma",
+      (str_detect(normas_list, "Anexo_IV") |
+         str_detect(normas_list, "RASF") |
+         str_detect(normas_list, "ATC_14_2022")) ~ "RASF e Anexo IV",
+      (str_detect(normas_list, "ADG_17_2021") |
+        str_detect(normas_list, "ADG_30_2023") |
+        str_detect(normas_list, "ADG_26_2017") | 
+        str_detect(normas_list, "ADG_16_2021")
+       ) ~ "ADGs 26_2017, 16_2021, 17_2021, 30_2023",
+      (str_detect(normas_list, "REG_PPGCP_UnB")) ~ "REG. PPGCP-UnB",
+      (str_detect(normas_list, "PILB_1_2017")) ~ "PIL 1 2017",
+      (str_detect(normas_list, "DGER") |
+        str_detect(normas_list, "ADG_682_2021") |
+        str_detect(normas_list, "684_2021_DGER") |
+        str_detect(normas_list, "ADG_148_2019")) ~ "DGER",
+      str_detect(normas_list, "8112") ~ "LEI 8112 90",
+      str_detect(normas_list, "CF_1988") ~ "Const.Federal 1988",
+      str_detect(normas_list, "RES_CEPE_UnB") ~ "RES CEPE-UnB",
+      str_detect(normas_list, "LEI_9784_1999") ~ "LEI 9784 99", 
+      str_detect(normas_list, "ATC_17_2011") ~ "ATC 17 2011",
+      # Caso contrário, atribui outra categoria
+      TRUE ~ "Outra categoria"
+      )
+    )
+
+view(df_arg_long_teste)
+
+summary(df_arg_long_teste)
+# Passo 2: agrupar pelo campo "norma_agrupada" e somar as colunas de contagem
+tabela_agrupada <- df_arg_long_teste %>%
+  group_by(normas_agregadas, posicao_simplificada) %>%
+  summarise(
+    # "across()" permite aplicar a mesma função a várias colunas
+    across(summarise())
+  ) %>%
+  ungroup()
+
+```
+
+
+
+```{r}
+
+df_tabela <- df_arg_long_teste %>%
+  group_by(normas_agregadas, posicao_simplificada) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  tidyr::pivot_wider(
+    names_from = posicao_simplificada,
+    values_from = n,
+    values_fill = 0
+  )
+
+
+df_tabela <- df_tabela %>%
+  mutate(
+    total = rowSums(across(c(favoravel, 
+                             contrario, 
+                             neutro, 
+                             nao_cita_norma)), na.rm = TRUE)
+  ) %>%
+  arrange(desc(total))
+
+df_tabela
+
+
+
+tabela_contagem <- df_arg_long_teste %>%
+  group_by(normas_list, posicao_simplificada) %>%
+  summarise(n = n(), .groups = "drop")
+
+tabela_contagem
+
+# 3) Pivotar para ter uma coluna por posicao (contrario, favoravel)
+tabela_final <- df_arg_long_teste  %>%
+  pivot_wider(
+    names_from = posicao_simplificada,
+    values_from = n,
+    values_fill = 0  # caso não haja menções em determinada categoria
+  ) %>%
+  mutate(total = rowSums(across(where(is.numeric))))
+
+view(tabela_final)
+
+
+```
+Pelo erro que você está recebendo, há dois problemas principais:
+
+Você está tentando somar colunas que não existem (por exemplo, contrario, favoravel, etc.).
+
+Há uma coluna/valor literalmente chamada "NA" na sua categorização (ou seja, a string "NA") que o R tenta interpretar de forma confusa na hora de selecionar colunas.
+
+Em outras palavras, seu df_arg_long_teste não está no formato wide (com colunas separadas para contrario, favoravel, neutro, etc.). Provavelmente ele tem uma única coluna que indica a posição (ex.: posicao_simplificada = "contrario", "favoravel", "neutro", "NA", etc.) – ou seja, está no formato longo (long format). Logo:
+
+Não existem colunas literalmente chamadas contrario, favoravel, neutro etc. para across(...) somar.
+
+Se você quiser uma tabela com colunas "contrario", "favoravel", "neutro" e “NA”, é preciso pivotar do formato longo para o largo (wide), ou criar primeiro essas colunas via pivot_wider().
+
+A seguir, vou mostrar o passo a passo de como resolver isso e criar a tabela final ordenada por total.
+
+Passo 1: Verifique se há alguma categoria chamada literalmente "NA"
+Se a sua coluna posicao_simplificada possui a string "NA" como categoria (e não um valor NA real), isso pode gerar conflitos quando formos pivotar as colunas. O ideal é renomear para algo como "sem_info". Por exemplo:
+
+```{r}
+library(dplyr)
+
+df_arg_long_teste <- df_arg_long_teste %>%
+  mutate(
+    posicao_simplificada = ifelse(
+      posicao_simplificada == "NA", 
+      "nao_cita_norma", 
+      posicao_simplificada
+    )
+  )
+
+df_arg_long_teste
+
+```
+Observação: se, ao contrário, você realmente tem valores R NA (ausentes) e quer transformá-los em uma string "sem_info", faça algo como:
+
+r
+Copiar
+Editar
+df_arg_long_teste <- df_arg_long_teste %>%
+  mutate(
+    posicao_simplificada = ifelse(
+      is.na(posicao_simplificada), 
+      "sem_info", 
+      posicao_simplificada
+    )
+  )
+Passo 2: Agrupar e pivotar para ter colunas separadas
+Atualmente, parece que sua coluna de contagem não existe (você não falou de uma coluna n), então o mais simples é contar cada (normas_agregadas, posicao_simplificada) via n = n():
+
+```{r}
+Copiar
+Editar
+library(dplyr)
+library(tidyr)
+
+tabela_wide <- df_arg_long_teste %>%
+  # 1) Agrupamos pelas colunas de interesse. 
+  group_by(normas_agregadas, posicao_simplificada) %>%
+  # 2) Contamos quantas vezes ocorre cada combinação
+  summarise(n = n(), .groups = "drop") %>%
+  # 3) Agora pivotamos: cada valor de 'posicao_simplificada' vira uma coluna
+  pivot_wider(
+    names_from = posicao_simplificada,
+    values_from = n,
+    values_fill = 0    # onde não existir, vira 0
+  )
+
+tabela_wide
+```
+Nesse ponto, o objeto tabela_wide terá colunas nomeadas pelos valores que existirem em posicao_simplificada, por exemplo: contrario, favoravel, neutro, sem_info, etc.
+
+Se você só tiver “contrario”, “favoravel”, “sem_info” no seu conjunto, então terá essas 3 colunas.
+
+Passo 3: Criar a coluna total e ordenar do maior para o menor
+Agora que temos colunas separadas, podemos somá-las numa coluna total (caso você queira a soma de tudo), e em seguida ordenar decrescentemente:
+
+```{r}
+
+tabela_final <- tabela_wide %>%
+  # Cria a coluna total somando as colunas numéricas
+  mutate(
+    total = rowSums(across(where(is.numeric)))
+  ) %>%
+  # Ordena decrescentemente pela coluna total
+  arrange(desc(total))
+
+view(tabela_final)
+
+print(tabela_final)
+
+```
+
+# Tabela mais completa, com ordenamento das categorias para adequação às normas de apresentação tabular
+
+```{r}
+
+library(dplyr)
+
+tabela_final <- tabela_wide %>%
+  # Cria a coluna total somando as colunas numéricas
+  mutate(total = rowSums(across(where(is.numeric)))) %>%
+  
+  # Renomeia 'normas_agregadas' para 'categoria'
+  mutate(categoria = as.character(normas_agregadas)) %>%
+  
+  # Ordena pela coluna total (descendente)
+  arrange(desc(total)) %>%
+  
+  # Move 'Outra categoria' ou 'nao_cita_normas' para o final
+  arrange(case_when(
+    categoria == "outra categoria" ~ 3,
+    categoria == "nao_cita_norma" ~ 2,
+    TRUE ~ 1
+  )) %>%
+  
+  # Adiciona linha de totais (preenchendo também categoria e normas_agregadas)
+  bind_rows(
+    summarise(
+      .,
+      across(where(is.numeric), sum),
+      categoria = "Total",
+      normas_agregadas = "Total",
+      .groups = "drop"
+    )
+  ) %>%
+  
+  # Reordena novamente para garantir posição: "outra categoria" antes de total
+  arrange(case_when(
+    categoria == "Total" ~ 3,
+    categoria == "nao_cita_norma" ~ 2,
+    categoria == "outra categoria"~ 2,
+    TRUE ~ 1
+  ))
+
+# Visualiza
+View(tabela_final)
+print(tabela_final)
+
+```
+Pronto: agora você tem uma tabela com colunas de contagem (ex.: contrario, favoravel, sem_info etc.), mais a coluna total, ordenada da maior para a menor ocorrência.
+
+Por que as soluções anteriores falharam?
+across(c(contrario, favoravel, neutro, NA, total), sum) gerou erro de “Column contrario doesn’t exist” porque, no formato long, essas colunas não existem como colunas separadas – elas estavam dentro de posicao_simplificada.
+
+Além disso, tentar usar NA como nome de coluna também traz problemas; se você realmente tinha uma coluna textual com nome "NA", é recomendável renomeá-la.
+
+Resumo
+Renomeie a categoria "NA" para algo como "sem_info" (ou trate valores ausentes com is.na()).
+
+Agrupe e conte usando summarise(n = n()).
+
+pivot_wider() para ter colunas com nomes de cada categoria (contrario, favoravel etc.).
+
+Crie a coluna total somando as colunas numéricas com rowSums().
+
+arrange(desc(total)) para ordenar do maior para o menor.
+
+Essa sequência deve resolver completamente o problema de gerar uma tabela legível, separada por categorias, com contagens e um total, na ordem decrescente.
+
+

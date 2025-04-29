@@ -1,0 +1,366 @@
+---
+title: "CONTINUAÇÃO DE SCRIPT - OBTÉM INFORMAÇÕES E AS PROCESSA"
+format: html
+---
+#CONTINUAÇÃO DE SCRIPT - OBTÉM INFORMAÇÕES E AS PROCESSA....QMD
+FALHOU NENHUM FUNCIONA
+
+Exemplos de padrões regex para citações jurídicas
+Abaixo estão alguns exemplos de expressões regulares que podem ser adaptadas para identificar diferentes tipos de citações jurídicas:​
+
+# Referência a leis com número e ano:
+
+```{r}
+
+
+
+df_resultado <- resultado_filtrado3
+
+
+captura_normas1 <- regex(paste0("(?:", siglas_onestring,")\\s+n[ºo]?\\s*\\d{1,5}(?:/\\d{2,4})?\\b"), ignore_case = TRUE)
+
+```
+
+Exemplos que seriam capturados:
+
+Lei nº 9.504/1997​
+
+Decreto n° 10.046/2019​
+
+Portaria 1234/2020​
+
+# Referências internas a artigos, incisos, parágrafos e alíneas:
+
+
+
+```{r}
+
+captura_normas2 <- regex(paste0("\\b(?:",siglas_onestring,")\\s*\\d+[ºo]?(\\s*,\\s*(?:inciso|§|parágrafo|alínea)\\s+[IVXLCDMivxlcdm\\d]+)*\\b"), ignore_case = TRUE)
+
+```
+
+
+Exemplos que seriam capturados:
+
+art. 5º​
+Ministério Público de São Paulo
+
+Art. 7º, inciso I​
+
+art. 10, § 2º, alínea b​
+
+
+# Combinação de tipo de norma, número, ano e partes específicas:
+
+
+
+```{r}
+(?:Lei|Decreto|Portaria|Resolução|Súmula)\s+n[ºo]?\s*\d{1,5}(?:/\d{2,4})?,?\s*(?:art\.?\s*\d+[ºo]?(?:,\s*(?:inciso|§|parágrafo|alínea)\s+[IVXLCDMivxlcdm\d]+)*)?\b
+
+
+
+captura_normas3 <- regex(paste0("(?:", siglas_onestring, ")\\s+n[ºo]?\\s*\\d{1,5}(?:/\\d{2,4})?,?\\s*(?:art\\.?\\s*\\d+[ºo]?(?:,\\s*(?:inciso|§|parágrafo|alínea)\\s+[IVXLCDMivxlcdm\\d]+)*)?\\b"), ignore_case = TRUE)
+
+
+```
+
+
+
+Exemplos que seriam capturados:
+
+Lei nº 9.504/1997, art. 5º, inciso II​
+
+Decreto n° 10.046/2019, art. 3º, § 1º​
+
+Esses padrões podem ser ajustados conforme as variações de formatação encontradas nos textos jurídicos.​
+
+🛠️ Aplicações práticas
+Essas expressões regulares são utilizadas em diversas ferramentas e projetos, como:​
+
+Sistemas de busca jurídica: Para indexar e recuperar documentos com base em referências normativas.​
+
+Análise de jurisprudência: Para extrair e analisar padrões de citação em decisões judiciais.​
+
+Automação de documentos legais: Para validar e formatar referências normativas em textos jurídicos.​
+
+🔗 Recursos adicionais
+Para aprofundar o conhecimento e encontrar implementações práticas, você pode consultar os seguintes recursos:​
+
+Projeto LexML Brasil: Iniciativa que visa a padronização e interoperabilidade de documentos legislativos e jurídicos.​
+
+Site: lexml.gov.br
+
+Ferramentas de NLP jurídico: Projetos como o JurisVis e o OpenLegal oferecem ferramentas e bibliotecas para processamento de linguagem natural aplicada ao direito.​
+
+Se desejar, posso auxiliar na criação de expressões regulares específicas para o seu caso de uso ou indicar bibliotecas em linguagens como Python ou R que facilitam essa tarefa. Gostaria de prosseguir com isso?
+
+
+Forma:
+Tipo_norma nº TALTALTAL, de ANOANO
+
+✅ Regex:
+
+```{r}
+
+\b(?:lei|decreto|portaria|resolução|súmula|instrução normativa|ato|regulamento)\s+n[ºo]?\s*\d{1,6},?\s*de\s*\d{4}\b
+
+
+captura_normas4 <- regex(paste0("(?:",siglas_onestring,")\\s+n[ºo]?\\s*\\d{1,6},?\\s*de\\s*(?:\\d{4}|\\d{2})\\b"), ignore_case = TRUE)
+
+
+
+```
+🧾 Exemplo que será capturado:
+Lei nº 9.504, de 1997
+
+Portaria n° 1234, de 2020
+
+Resolução nº 45678, de 2019
+
+Ato n° 89, de 2008
+
+🧠 2. Forma:
+Tipo_norma do AUTORIDADETAL de nº TALTALTAL, de ANOANO
+
+Essa é mais complexa, pois exige capturar o agente emissor da norma e depois o número. Vamos montar algo robusto.
+
+✅ Regex:
+
+```{r}
+  
+\b(?:lei|decreto|portaria|resolução|súmula|instrução normativa|ato|regulamento)\s+do[a]?\s+[\p{L}\s\-]+?\s+de\s+n[ºo]?\s*\d{1,6},?\s*de\s*\d({4}|{2})\b
+
+
+captura_normas5 <- regex(paste0("(?:",siglas_onestring,")\\s+do[a]?\\s+[\\p{L}\\s\\-]+?\\s+de\\s+n[ºo]?\\s*\\d{1,6},?\\s*de\\s*(?:\\d{4}|\\d{2})\\b"
+), ignore_case = TRUE)
+
+
+```
+
+
+🧾 Exemplos que serão capturados:
+Portaria do Ministério da Justiça de nº 456, de 2018
+
+Resolução do Conselho Federal de nº 12345, de 2015
+
+Ato da Presidência do Senado de nº 27, de 2007
+
+📌 Observações sobre os padrões:
+
+[\p{L}\s\-]+? → Captura qualquer nome de autoridade (letras, espaços e hífens), como “Ministério da Justiça” ou “Presidência do Senado”.
+
+O uso de n[ºo]? cobre as formas nº, n°, no, ou até omitido (ajustável conforme necessidade).
+
+\d{4}\b captura o ano com 4 dígitos. 
+(\d{2}|\d{4})\b captura o ano com 2 ou 4 dígitos. 
+O \b garante que não pegará NUPs
+
+
+# EXTRAINDO O NOME DAS NORMAS CITADAS EM CADA PÁGINA
+
+A ideia é aplicar cada uma das suas expressões (que já foram criadas com regex()) à coluna de contexto e coletar os matches encontrados. Você pode fazer isso, por exemplo, com funções como str_extract_all() ou str_match_all() combinadas com mutate() e funções do purrr para processar cada valor da coluna.
+
+Suponha que seu data frame com os contextos se chame, por exemplo, df_resultado e que contenha uma coluna chamada contexto. Em seguida, você tem as suas expressões:
+
+captura_normas1
+
+captura_normas2
+
+captura_normas3
+
+captura_normas4
+
+captura_normas5
+
+Você pode criar novas colunas que armazenem, para cada padrão, os matches encontrados. Veja um exemplo:
+
+r
+Copiar
+
+```{r}
+library(dplyr)
+library(stringr)
+library(purrr)
+
+
+
+indicador_de_normas <- df_resultado %>%
+  mutate(
+    normas1 = map(contexto, ~ str_extract_all(.x, captura_normas1)[[1]]),
+    normas2 = map(contexto, ~ str_extract_all(.x, captura_normas2)[[1]]),
+    normas3 = map(contexto, ~ str_extract_all(.x, captura_normas3)[[1]]),
+    normas4 = map(contexto, ~ str_extract_all(.x, captura_normas4)[[1]]),
+    normas5 = map(contexto, ~ str_extract_all(.x, captura_normas5)[[1]])
+  )
+
+
+safe_extract <- possibly(
+  function(text, pattern) str_extract_all(text, pattern)[[1]],
+  otherwise = character(0)
+)
+
+indicador_de_normas <- df_resultado %>%
+  mutate(
+    normas1 = map(contexto, ~ safe_extract(.x, captura_normas1)),
+    normas2 = map(contexto, ~ safe_extract(.x, captura_normas2)),
+    normas3 = map(contexto, ~ safe_extract(.x, captura_normas3)),
+    normas4 = map(contexto, ~ safe_extract(.x, captura_normas4)),
+    normas5 = map(contexto, ~ safe_extract(.x, captura_normas5))
+  )
+
+
+
+# Suponha que df_resultado tenha a coluna contexto e você tenha definido captura_normas1
+df_resultado <- df_resultado %>%
+  mutate(
+    normas1 = map(contexto, ~ str_extract_all(.x, captura_normas1)[[1]])
+  )
+
+```
+
+
+O que esse código faz:
+mutate() + map():
+Para cada linha, em que a coluna contexto contém o trecho de texto com o match (com os delimitadores ou a janela de contexto extraída), usamos map() para aplicar str_extract_all() – que retorna uma lista de matches para cada expressão.
+
+[[1]]:
+Como str_extract_all() retorna uma lista (com um elemento para cada input), usamos [[1]] para extrair o vetor de strings encontrado para aquele contexto.
+
+Novas colunas:
+São criadas colunas chamadas normas1, normas2, etc., cada uma armazenando o vetor de strings (os termos citados) encontrados pela expressão correspondente.
+
+## O DE CIMA NÃO TAVA FUNCIONANDO. OUTRA ABORDAGEM:
+
+Vamos montar um pipeline robusto em R para:
+
+✅ Extrair referências normativas
+✅ Estruturar em colunas: artigo, inciso, parágrafo, alínea, tipo_norma, numero_norma, ano_norma, autor_orgao
+✅ Aplicar sobre um data.frame com uma coluna contexto
+
+🧱 Estrutura geral do pipeline
+📌 1. Regex base para capturar menções normativas
+```{r}
+
+regex_norma_simples <- paste0(
+  "(?i)\\b(?:",
+  paste(c(
+    "regulamento", "ata", "al[ií]nea[s]?", "instru[çc][aã]o", "anexo\\s+IV",
+    "portaria", "resolu[çc][aã]o", "lei", "despacho", "decis[aã]o",
+    "parecer", "estatuto", "decreto", "rasf", "cepe", "pilb", "ppgcp"
+  ), collapse = "|"),
+  ")\\b"
+)
+
+
+
+```
+🧬 2. Função para extrair os campos
+
+
+```{R}
+
+library(dplyr)
+library(stringr)
+library(tibble)
+library(purrr)
+library(tidyr)
+
+
+# Função para identificar campos dentro de um bloco de norma
+extrair_campos_norma <- function(texto) {
+  tibble(
+    artigo        = str_match(texto, "(?i)\\bart\\.?s?\\s*(\\d+[a-zºº/-]*)")[, 2],
+    inciso        = str_match(texto, "(?i)\\binciso\\s+([IVXLCDM]+)")[, 2],
+    paragrafo     = str_match(texto, "(?i)\\b§{1,2}\\s*(\\d+[ºº]?)")[, 2],
+    alinea        = str_match(texto, "(?i)\\bal[ií]nea\\s+([a-zA-Z])")[, 2],
+    numero_norma  = str_match(texto, "(?i)\\bn[ºo]?\\s*(\\d+)")[, 2],
+    ano_norma     = str_match(texto, "(?i)/(\\d{4})\\b")[, 2],
+    autor_orgao   = str_match(
+      texto,
+      paste0("(?i)\\b(?:",
+             "ilb|senado|dger|segp|sis|dexilb|",
+             "diretoria executiva do ilb|comiss[aã]o diretora|",
+             "primeira secretaria|diretor(?:[\\s\\w]+)?|primeiro secret[aá]rio",
+             ")\\b")
+    )[, 1]
+  )
+}
+  # Captura o trecho completo
+    
+    texto_original = texto
+  )
+}
+
+
+tentativa_extracao_normas <- resultado_filtrado2 %>%
+  mutate(id_linha = row_number()) %>%
+  bind_cols(pmap_dfr(list(resultado_filtrado2$contexto), extrair_campos_norma)) %>%
+  rename(tipo_norma = trecho)  # se "trecho" contiver esse tipo mesmo
+
+
+```
+
+
+```{r}
+
+library(stringr)
+library(dplyr)
+library(tibble)
+library(purrr)
+
+# Função principal de extração com foco no <<TRECHO>>
+
+extrair_campos_norma_contextualizado <- function(contexto, trecho) {
+  # Regex de ancoragem — busca exato por <<TRECHO>>, em qualquer case
+  trecho_regex <- regex(paste0("<<", trecho, ">>"), ignore_case = TRUE)
+  
+  pos <- str_locate(contexto, trecho_regex)
+
+  if (is.na(pos[1])) return(tibble(
+    artigo = NA_character_,
+    inciso = NA_character_,
+    paragrafo = NA_character_,
+    alinea = NA_character_,
+    numero_norma = NA_character_,
+    ano_norma = NA_character_,
+    autor_orgao = NA_character_
+  ))
+
+  janela <- str_sub(contexto, max(1, pos[1] - 200), min(nchar(contexto), pos[2] + 200))
+
+  tibble(
+    artigo = str_match(janela, "(?i)\\bart\\.?s?\\s*(\\d+[a-zºº/-]*)")[, 2],
+    inciso = str_match(janela, "(?i)\\binciso\\s+([IVXLCDM]+)")[, 2],
+    paragrafo = str_match(janela, "(?i)\\b§{1,2}\\s*(\\d+[ºº]?)")[, 2],
+    alinea = str_match(janela, "(?i)\\bal[ií]nea\\s+([a-zA-Z])")[, 2],
+    numero_norma = str_match(janela, "(?i)\\bn[ºo]?\\s*(\\d+)")[, 2],
+    ano_norma = str_match(janela, "(?i)/(\\d{4})\\b")[, 2],
+    autor_orgao = str_match(
+      janela,
+      paste0("(?i)\\b(?:",
+             "ilb|senado|dger|segp|sis|dexilb|",
+             "diretoria executiva do ilb|comiss[aã]o diretora|",
+             "primeira secretaria|diretor(?:[\\s\\w]+)?|primeiro secret[aá]rio",
+             ")\\b")
+    )[, 1]
+  )
+}
+
+resultado_final <- resultado_filtrado2 %>%
+  mutate(id_linha = row_number()) %>%
+  bind_cols(pmap_dfr(list(resultado_filtrado2$contexto, resultado_filtrado2$trecho), extrair_campos_norma_contextualizado)) %>%
+  select(id_linha, contexto, tipo_norma = trecho,
+         artigo, inciso, paragrafo, alinea,
+         numero_norma, ano_norma, autor_orgao)
+
+resultado_final <- df_resultado %>%
+  mutate(id_linha = row_number()) %>%
+  bind_cols(pmap_dfr(list(contexto, trecho), extrair_campos_norma_contextualizado)) %>%
+  select(id_linha, contexto, tipo_norma = trecho,
+         artigo, inciso, paragrafo, alinea,
+         numero_norma, ano_norma, autor_orgao)
+
+
+```
+
+

@@ -1,0 +1,52 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+
+# Instale os pacotes necessários (se ainda não estiverem instalados)
+if (!require(devtools)) install.packages("devtools")
+if (!require(MSG)) devtools::install_github("DavisVaughan/msg") # Pacote MSG para lidar com arquivos .msg
+if (!require(stringr)) install.packages("stringr")
+
+# Diretório onde os arquivos .msg estão armazenados
+directory <- "caminho/para/sua/pasta" # Substitua pelo caminho da sua pasta
+
+# Lista de arquivos .msg na pasta
+msg_files <- list.files(directory, pattern = "\\.msg$", full.names = TRUE)
+
+# Função para processar cada arquivo .msg
+process_msg <- function(msg_path) {
+  # Lê o conteúdo do arquivo .msg
+  msg_content <- MSG::read_msg(msg_path)
+
+  # Extrai o corpo do e-mail (texto principal)
+  email_body <- msg_content$body
+
+  # Nome do arquivo sem a extensão
+  file_name <- tools::file_path_sans_ext(basename(msg_path))
+
+  # Processa o texto do corpo do e-mail
+  email_body <- str_replace_all(email_body, "\\n{2,}", "\n<PARÁGRAFO>\n") # Delimitar parágrafos por quebras de linha
+  paragraphs <- str_split(email_body, "<PARÁGRAFO>")[[1]]
+  paragraphs <- str_trim(paragraphs) # Remove espaços extras
+  paragraphs <- paragraphs[paragraphs != ""] # Remove parágrafos vazios
+
+  # Reduz espaçamentos excessivos dentro de cada parágrafo
+  paragraphs <- str_replace_all(paragraphs, "\\s{2,}", " ")
+
+  # Numera os parágrafos
+  paragraphs <- paste0("Parágrafo ", seq_along(paragraphs), "| ", paragraphs)
+
+  # Salva o texto processado como arquivo .txt
+  output_path <- file.path(directory, paste0(file_name, ".txt"))
+  writeLines(paragraphs, output_path)
+}
+
+# Itera sobre todos os arquivos .msg na pasta
+lapply(msg_files, process_msg)
+
+cat("Processamento concluído! Arquivos .txt salvos na mesma pasta dos .msg.")
+
+```

@@ -1,0 +1,682 @@
+---
+title: "Untitled"
+format: html
+---
+
+
+Mapping out matrices
+
+I’m laying out different matrices to address the total differences, pair extractions, and discounted differences for NAs in various combinations. Using "pagina," "extracao," and "hash_texto" as key columns.
+
+Assessing differences
+
+Evaluating cells [i,j] to identify total differences with NAs treated as differences, considering pages in one extraction but not both for comparisons.
+
+Tracking added pages
+
+I'm identifying pages in extraction j that surpass the highest page number in extraction i, tallying them to pinpoint total pages added.
+
+Counting differences
+
+I’m tallying pages in extractions j and i, excluding NAs in various combinations to highlight total and specific differences. This approach helps in fine-tuning data analysis.
+
+Crafting matrices
+
+I’m detailing steps to build five matrices by looping through unique extractions, ignoring NAs, and comparing pages to track differences. This will streamline the analysis process.
+
+Enhancing matrix 1
+
+I'm detailing matrix 1's full join by page, where common pages are compared. If one extraction has NA and the other does not, it's treated as a difference.
+
+Addressing page discrepancies
+
+I'm clarifying the need to focus on comparing pages present in both extractions, while treating NAs as differences. This ensures accuracy in identifying total differences.
+
+Finalizing matrix rows
+
+I'm piecing together rows for extraction pairs by treating missing values as NAs. This helps pinpoint discrepancies accurately and ensures alignment with treatment instructions.
+
+Figuring out differences
+
+OK, let me see. Treating any NAs as a difference ensures no loss of info, even if both extractions are missing data.
+
+Sorting through matrices
+
+I’m organizing matrices to pinpoint total differences, extra pages, and differences by exclusion based on NAs or specific pages, ensuring a structured and methodical approach.
+
+Addressing nuances
+
+I'm digging into how "discounted NA of i" means excluding pages with missing data in extraction i from the count, focusing on differences based on specific criteria.
+
+Clarifying matrix 4
+
+I'm piecing together that "discounted NA of j" means only focusing on rows where j isn't missing data, tallying differences based on hash mismatches or NA in i.
+
+Sifting through data
+
+I’m thinking through a strategy to handle only rows with non-NA values, counting differences between pairs where available. This approach should improve accuracy in identifying discrepancies.
+
+Crafting matrix operations
+
+I’m outlining steps: filtering data, performing joins, assessing differences, and counting pages for matrices. This ensures a detailed examination of each extraction pair's specific metrics.
+
+A seguir, apresento um exemplo de como construir as cinco matrizes desejadas. Suponha que você tenha o seu dataframe completo no formato “long”, chamado df_long, que contém pelo menos as colunas:
+
+pagina: número da página
+extracao: identificador da extração (por exemplo, "d20240829")
+hash_texto: o hash do conteúdo da página nessa extração
+A ideia é comparar, para cada par de extrações (i e j), as páginas – utilizando um full join por “pagina” para levar em conta páginas ausentes (ou seja, onde o registro não existe em uma das extrações) e assim tratar os NAs de forma adequada. Em cada par (i, j) iremos computar:
+
+Matriz 1 – Total de diferenças (NAs como diferenças):
+Para cada página, se qualquer dos dois hashes for NA ou se os dois não forem iguais, conta-se como diferença.
+
+Matriz 2 – Páginas a mais:
+Para cada par (i, j), conta-se quantas páginas foram adicionadas em j em relação à última página de i. Em outras palavras, para a extração i, usamos o maior número de página e contamos quantas páginas em j têm número maior que esse valor.
+
+Matriz 3 – Diferenças descontando NAs de i:
+Apenas para as páginas em que i tem valor não-NA (ou seja, ignoramos as páginas em que a extração i não tem conteúdo) e, dentre essas, conta-se 1 se em j o hash for NA ou diferente de hash_i.
+
+Matriz 4 – Diferenças descontando NAs de j:
+De forma análoga, considere somente as páginas em que j tem valor não-NA; entre elas, conte 1 se em i o hash for NA ou diferente de hash_j.
+
+Matriz 5 – Diferenças descontando NAs de i e j:
+Considere apenas as páginas onde ambos os hashes não são NA e conte 1 quando os dois forem diferentes.
+
+O código abaixo implementa essas matrizes. Ajuste-o conforme necessário para o seu ambiente (por exemplo, se as colunas tiverem nomes diferentes).
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+# Obtenha o vetor de extrações (supondo 4 extrações)
+extracoes <- sort(unique(df_long$extracao))
+
+# Inicializa as matrizes (com dimensões n_extracoes x n_extracoes)
+n_ext <- length(extracoes)
+mat_total_diff    <- matrix(NA, nrow = n_ext, ncol = n_ext, dimnames = list(extracoes, extracoes))
+mat_pages_added   <- matrix(NA, nrow = n_ext, ncol = n_ext, dimnames = list(extracoes, extracoes))
+mat_diff_disc_i   <- matrix(NA, nrow = n_ext, ncol = n_ext, dimnames = list(extracoes, extracoes))
+mat_diff_disc_j   <- matrix(NA, nrow = n_ext, ncol = n_ext, dimnames = list(extracoes, extracoes))
+mat_diff_disc_both<- matrix(NA, nrow = n_ext, ncol = n_ext, dimnames = list(extracoes, extracoes))
+
+# Para facilitar, separe os dados por extração em uma lista:
+list_ext <- lapply(extracoes, function(ext) {
+  df_long %>% 
+    filter(extracao == ext) %>%
+    select(pagina, hash_texto)
+})
+names(list_ext) <- extracoes
+
+# Função para calcular a matriz para cada par (i, j)
+for(i in extracoes){
+  # Dados da extração i
+  df_i <- list_ext[[i]]
+  # Determine o maior número de página presente em i (se existir)
+  max_page_i <- if(nrow(df_i) > 0) max(df_i$pagina, na.rm = TRUE) else NA
+  
+  for(j in extracoes){
+    # Se i e j forem iguais, coloque zeros ou NA conforme o caso.
+    if(i == j){
+      mat_total_diff[i, j]     <- 0
+      mat_pages_added[i, j]    <- 0
+      mat_diff_disc_i[i, j]    <- 0
+      mat_diff_disc_j[i, j]    <- 0
+      mat_diff_disc_both[i, j] <- 0
+      next
+    }
+    
+    # Dados da extração j
+    df_j <- list_ext[[j]]
+    
+    ## Realize um full join por 'pagina'
+    df_join <- full_join(df_i %>% rename(hash_i = hash_texto),
+                         df_j %>% rename(hash_j = hash_texto),
+                         by = "pagina")
+    
+    # MATRIZ 1: Total diferenças (considerando NAs como diferença)
+    # Se (hash_i ou hash_j) é NA OR (ambos não são NA e são diferentes)
+    total_diff <- df_join %>%
+      mutate(diff = if_else(is.na(hash_i) | is.na(hash_j) | ( (!is.na(hash_i)) & (!is.na(hash_j)) & (hash_i != hash_j) ), 1, 0)) %>%
+      summarise(total = sum(diff)) %>%
+      pull(total)
+    
+    mat_total_diff[i, j] <- total_diff
+    
+    # MATRIZ 2: Páginas a mais (em j) – contar páginas de j cuja 'pagina' é maior que o max de i
+    pages_added <- if(!is.na(max_page_i)) {
+      df_j %>% filter(pagina > max_page_i) %>% nrow()
+    } else {
+      NA  # ou 0 se não houver dados em i
+    }
+    mat_pages_added[i, j] <- pages_added
+    
+    # MATRIZ 3: Diferenças descontando NAs de i
+    # Considere apenas as linhas em que hash_i não é NA
+    diff_disc_i <- df_join %>%
+      filter(!is.na(hash_i)) %>%
+      mutate(diff = if_else(is.na(hash_j) | (hash_j != hash_i), 1, 0)) %>%
+      summarise(total = sum(diff)) %>%
+      pull(total)
+    mat_diff_disc_i[i, j] <- diff_disc_i
+    
+    # MATRIZ 4: Diferenças descontando NAs de j
+    # Considere apenas as linhas em que hash_j não é NA
+    diff_disc_j <- df_join %>%
+      filter(!is.na(hash_j)) %>%
+      mutate(diff = if_else(is.na(hash_i) | (hash_i != hash_j), 1, 0)) %>%
+      summarise(total = sum(diff)) %>%
+      pull(total)
+    mat_diff_disc_j[i, j] <- diff_disc_j
+    
+    # MATRIZ 5: Diferenças descontando NAs de ambos i e j
+    # Considere somente as páginas onde ambos não são NA
+    diff_disc_both <- df_join %>%
+      filter(!is.na(hash_i) & !is.na(hash_j)) %>%
+      mutate(diff = if_else(hash_i != hash_j, 1, 0)) %>%
+      summarise(total = sum(diff)) %>%
+      pull(total)
+    mat_diff_disc_both[i, j] <- diff_disc_both
+  }
+}
+
+# Exiba as matrizes:
+cat("Matriz 1: Total de diferenças (incluindo NAs como diferenças):\n")
+print(mat_total_diff)
+
+cat("\nMatriz 2: Páginas adicionadas em j em relação à última página de i:\n")
+print(mat_pages_added)
+
+cat("\nMatriz 3: Diferenças descontando NAs de i:\n")
+print(mat_diff_disc_i)
+
+cat("\nMatriz 4: Diferenças descontando NAs de j:\n")
+print(mat_diff_disc_j)
+
+cat("\nMatriz 5: Diferenças descontando NAs de i e j:\n")
+print(mat_diff_disc_both)
+
+#não gerou resultados diferentes por matriz. Está calculando errado, provavelmente.A abordagem deve mudar. Comparar cada extração em relação às demais separadamente, descontados os NAs daquela extração.
+
+```
+Explicação dos Cálculos
+Matriz 1 – Total de diferenças:
+Para cada par (i, j) é feito um full join por “pagina”. Em cada linha, a função if_else() define a página como diferente se:
+
+hash_i ou hash_j for NA, OU
+Ambos estiverem disponíveis e forem diferentes.
+A soma de diff para todas as páginas gera o total de diferenças.
+Matriz 2 – Páginas a mais:
+Para a extração i, obtém-se o maior número de página (max_page_i). Em j, conta-se quantas páginas possuem pagina maior que esse valor. Isso indica as páginas “a mais” na extração j.
+
+Matriz 3 – Diferenças descontando NAs de i:
+São consideradas apenas as páginas onde i tem valor (não-NA). Para essas, conta-se a diferença se j estiver ausente (NA) ou se o hash for diferente.
+
+Matriz 4 – Diferenças descontando NAs de j:
+De forma análoga, são consideradas somente as páginas em que j tem valor (não-NA).
+
+Matriz 5 – Diferenças descontando NAs de ambos:
+São comparadas apenas as páginas em que ambos os hashes estão presentes; aí, conta-se 1 se os valores forem diferentes.
+
+Essa abordagem gera cinco matrizes 4 × 4 (se você tiver 4 extrações), em que cada célula [i, j] apresenta a métrica correspondente na comparação entre as extrações i e j.
+
+Ajuste os nomes das colunas ou o tratamento de NAs conforme a sua interpretação (por exemplo, se páginas com ambos os valores NA devem ou não ser consideradas como “diferença” na Matriz 1).
+
+
+########################
+
+Organizing data
+
+I’m working through the steps to gather information: chronological ordering of extractions, grouping by extraction, and comparing differences using hash values. Progress is steady towards pinpointing differences.
+
+Clarifying instructions
+
+I’m consolidating our understanding by addressing specific instructions: sequentially comparing extractions, removing NA pages from the older one, and identifying differences based on hash-text comparison.
+
+Evaluating data structures
+
+I’m working through the choice between using pivot_wider or spread for reshaping the data. The goal is to compare sequential extractions, excluding NA pages, based on hash comparison.
+
+Assessing reshaping options
+
+I'm examining the effectiveness of pivot_wider versus pivot_longer for reshaping the data. Sequential extraction comparison is needed, especially for non-NA pages, followed by counting differences.
+
+Listing pairs and counting
+
+I’m mapping out a list of ordered pairs to count differences, using either a loop or tidyverse code. This approach ensures clarity and efficient data comparison.
+
+Refining the analysis
+
+I’m detailing the steps: converting extraction names to dates, reshaping data with pivot_wider, pairing and counting differences, and ultimately setting up a comparison matrix.
+
+A seguir, apresento um exemplo de como você pode gerar uma tabela resumida que, para cada par consecutivo de extrações (ordenadas da mais antiga para a mais recente), conta o número de páginas cuja comparação (pelo hash) indica diferença. A ideia é transformar o seu data frame de formato “long” em um formato “wide” (onde cada linha é uma página e cada coluna representa o hash de uma extração) e depois, para cada par de colunas consecutivas, contar as páginas em que os valores são não-NA e diferentes.
+
+Vamos supor que você já tem o data frame df_diferencas com as colunas:
+
+```{R}
+names(df_long)
+# [1] "pagina"        "extracao"     
+# [3] "texto_raw"     "texto_norm"   
+# [5] "hash_texto"    "data_extracao"
+# [7] "hash_ref"
+
+```
+#Converter de “long” para “wide”
+Utilize a função pivot_wider() do pacote tidyr para reorganizar os dados, fazendo com que cada extração (identificada na coluna extracao) se torne uma coluna contendo o respectivo hash_texto.
+
+```{r}
+library(tidyr)
+library(dplyr)
+
+# Pivot para formato wide: cada página terá, em colunas, os hashes das extrações
+df_wide <- df_long %>%
+  select(pagina, extracao, texto_raw, hash_texto) %>%
+  pivot_wider(
+    names_from = extracao,
+    values_from = c(texto_raw, hash_texto)
+  )
+```
+Após esse passo, seu data frame df_wide terá uma estrutura semelhante a:
+
+pagina	d20240829	d20241125	d20241201	d20250125
+1	...	...	...	...
+2	...	NA	...	...
+...	...	...	...	...
+(Note que os nomes das colunas serão os mesmos da coluna extracao.)
+
+#Gerar a Tabela de Comparação
+Agora, queremos contar para cada par de extrações consecutivas quantas páginas apresentam diferença no hash. Isso envolve:
+
+Ordenar as extrações de forma crescente: Geralmente, os nomes (ex.: "d20240829", "d20241125", etc.) já indicam a ordem cronológica. Se necessário, você pode ordená-las.
+
+Excluir as linhas (páginas) onde o valor é NA para a extração em análise, pois não podemos comparar quando faltam dados.
+Contar as páginas em que os valores dos hashes diferem entre a extração i e a extração i+1.
+Segue um código que realiza essa operação:
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+# Suponha que você já possua o data frame 'df_diferencas' com as colunas:
+# "pagina", "extracao", "texto_raw", "texto_norm", "hash_texto", "data_extracao", "hash_ref"
+# Cria dois data frames wide: um para o texto normalizado e outro para os hashes.
+
+# 1. Data frame wide para o texto (usaremos o texto normalizado para verificar os NAs)
+df_text_wide <- df_long %>%
+  select(pagina, extracao, texto_norm) %>%
+  pivot_wider(names_from = extracao, values_from = texto_norm)
+
+# 2. Data frame wide para os hashes
+df_hash_wide <- df_long %>%
+  select(pagina, extracao, hash_texto) %>%
+  pivot_wider(names_from = extracao, values_from = hash_texto)
+
+# Verifique os nomes das colunas (além de 'pagina') – eles devem ser algo como "d20240829", "d20241125", etc.
+# Se não estiverem ordenados cronologicamente, vamos ordená-los:
+extractions <- sort(names(df_text_wide)[-1])  # usamos o df_text_wide para a ordem; deve ser igual em df_hash_wide
+
+# Função auxiliar para converter "dYYYYMMDD" em "DD-MM-AAAA"
+convert_extracao <- function(ext) {
+  d <- as.Date(sub("^d", "", ext), format = "%Y%m%d")
+  format(d, "%d-%m-%Y")
+}
+
+# Inicializa um tibble para armazenar os resultados
+result_formatado <- tibble(
+  par_comparacao = character(),
+  total_valid    = integer(),
+  diff_count     = integer(),
+  n_excluded     = integer()
+)
+
+# Loop para cada par de extrações consecutivas
+for(i in 1:(length(extractions) - 1)) {
+  
+  ext1 <- extractions[i]     # extração mais antiga
+  ext2 <- extractions[i + 1] # extração mais nova
+  
+  # Usar o data frame de textos para identificar as páginas com dados na extração mais antiga.
+  # Aqui, valid_rows são aquelas onde a extração mais antiga não é NA.
+  valid_mask <- !is.na(df_text_wide[[ext1]])
+  total_valid <- sum(valid_mask)          # total de páginas comparadas
+  n_excluded <- nrow(df_text_wide) - total_valid  # páginas excluídas por falta de texto na extração mais antiga
+  
+  # Para as linhas válidas, pegar os hashes correspondentes das duas extrações:
+  valid_hash1 <- df_hash_wide[[ext1]][valid_mask]
+  valid_hash2 <- df_hash_wide[[ext2]][valid_mask]
+  
+  # Comparar os hashes:
+  # Se o hash da extração mais nova for NA (mesmo que o texto antigo exista), vamos pontuar como 1 (diferente);
+  # Caso contrário, se os dois hashes forem iguais, pontua 0; se forem diferentes, pontua 1.
+  diff_indicator <- if_else(is.na(valid_hash2),
+                            1L,
+                            if_else(valid_hash1 == valid_hash2, 0L, 1L))
+  diff_count <- sum(diff_indicator)
+  
+  # Nome do par com as datas formatadas
+  par_nome <- paste(convert_extracao(ext1), "vs", convert_extracao(ext2))
+  
+  # Adiciona a linha com os resultados na tabela
+  result_formatado <- result_formatado %>%
+    add_row(
+      par_comparacao = par_nome,
+      total_valid    = total_valid,
+      diff_count     = diff_count,
+      n_excluded     = n_excluded
+    )
+}
+
+# Exibe a tabela de resultados
+print(result_formatado)
+
+```
+
+
+# (Opcional) Melhorar a Visualização das Datas
+Se você preferir que os nomes das extrações apareçam com a data no formato "DD-MM-AAAA", você pode criar uma função auxiliar para converter os nomes. Por exemplo:
+
+```{r}
+# Função para converter "dYYYYMMDD" em "DD-MM-AAAA"
+convert_extracao <- function(ext) {
+  # Remove o 'd' e converte para Date
+  d <- as.Date(sub("^d", "", ext), format = "%Y%m%d")
+  # Formata como "DD-MM-AAAA"
+  format(d, "%d-%m-%Y")
+}
+
+# Aplicar a conversão aos nomes das extrações
+extractions_formatadas <- sapply(extractions, convert_extracao)
+
+# E na montagem da tabela, use os nomes formatados:
+result_formatado <- tibble(par_comparacao = character(), n_paginas_diferentes = integer())
+
+for(i in 1:(length(extractions) - 1)) {
+  
+  ext1 <- extractions[i]
+  ext2 <- extractions[i + 1]
+  
+  n_diff <- df_wide %>%
+    filter(!is.na(.data[[ext1]]), !is.na(.data[[ext2]])) %>%
+    summarise(n = sum(.data[[ext1]] != .data[[ext2]])) %>%
+    pull(n)
+  
+  par_str <- paste(convert_extracao(ext1), "vs", convert_extracao(ext2))
+  
+  result_formatado <- result_formatado %>% add_row(par_comparacao = par_str, n_paginas_diferentes = n_diff)
+}
+
+print(result_formatado)
+```
+
+# Conclusão
+Com esses passos você:
+
+Converteu o data frame de formato “long” para “wide” (cada página em uma linha e as extrações em colunas).
+Para cada par de extrações consecutivas, excluiu as páginas com NA e contou quantas apresentam diferença (comparando os hashes).
+Gerou uma tabela que resume, por par de extração, quantas páginas tiveram alteração.
+Essa abordagem permite visualizar de forma tabular o número de páginas modificadas de uma extração para a seguinte, ajudando a identificar em quais momentos houve maior ou menor alteração.
+
+Breaking down the task
+
+I’m gathering info on the need to modify code to include columns for total pages compared (non-NA) and pages eliminated due to NA for each extraction pair. This involves tracking valid pages and specific NA counts.
+
+Counting and categorizing
+
+I’m figuring out ways to count total pages, valid pages, and pages with NA in each extraction. This involves adding columns and ensuring no double counting.
+
+A seguir, apresento um exemplo de código que, para cada par de extrações consecutivas, calcula e registra:
+
+O nome do par (com as datas formatadas);
+O número total de páginas na base;
+O número de páginas eliminadas por conter NA na extração 1 do par;
+O número de páginas eliminadas por conter NA na extração 2 do par;
+O número de páginas efetivamente comparadas (ou seja, sem NA em nenhuma das duas extrações);
+O número de páginas diferentes (com hash distintos) entre as duas extrações, dentre as comparadas.
+O código parte do data frame df_wide que foi gerado anteriormente e usa uma função auxiliar para converter os nomes de extração para o formato "DD-MM-AAAA".
+
+Código Completo
+
+```{r}
+
+library(tidyr)
+library(dplyr)
+
+# Função para converter "dYYYYMMDD" em "DD-MM-AAAA"
+convert_extracao <- function(ext) {
+  d <- as.Date(sub("^d", "", ext), format = "%Y%m%d")
+  format(d, "%d-%m-%Y")
+}
+
+# Supondo que df_wide já esteja criado a partir do df_diferencas:
+# df_wide tem a estrutura:
+# | pagina | d20240829 | d20241125 | d20241201 | d20250125 |
+# Se não tiver, crie-o conforme orientado anteriormente:
+# df_wide <- df_diferencas %>%
+#   select(pagina, extracao, hash_texto) %>%
+#   pivot_wider(
+#     names_from = extracao,
+#     values_from = hash_texto
+#   )
+
+# Obter a lista de extrações (colunas) em ordem crescente, exceto a coluna 'pagina'
+extractions <- sort(names(df_wide)[-1])
+
+# Inicializa um tibble para armazenar os resultados
+result_formatado <- tibble(
+  par_comparacao      = character(),
+  total_paginas       = integer(),
+  n_elim_ext1         = integer(),
+  n_elim_ext2         = integer(),
+  n_compared          = integer(),
+  n_paginas_diferentes = integer()
+)
+
+# Loop para comparar cada par de extrações consecutivas
+for(i in 1:(length(extractions) - 1)) {
+  
+  ext1 <- extractions[i]
+  ext2 <- extractions[i + 1]
+  
+  # Número total de páginas na base
+  total_pages <- nrow(df_wide)
+  
+  # Contar páginas eliminadas (NA) para cada extração
+  n_elim_ext1 <- sum(is.na(df_wide[[ext1]]))
+  n_elim_ext2 <- sum(is.na(df_wide[[ext2]]))
+  
+  # Contar páginas que possuem dados em ambas as extrações
+  n_compared <- df_wide %>%
+    filter(!is.na(.data[[ext1]]), !is.na(.data[[ext2]])) %>%
+    nrow()
+  
+  # Entre as páginas comparadas, contar quantas têm hash diferente
+  n_diff <- df_wide %>%
+    filter(!is.na(.data[[ext1]]), !is.na(.data[[ext2]])) %>%
+    summarise(n = sum(.data[[ext1]] != .data[[ext2]])) %>%
+    pull(n)
+  
+  # Criar uma string identificando o par, formatando as datas
+  par_str <- paste(convert_extracao(ext1), "vs", convert_extracao(ext2))
+  
+  # Adicionar os resultados na tabela
+  result_formatado <- result_formatado %>% add_row(
+    par_comparacao       = par_str,
+    total_paginas        = total_pages,
+    n_elim_ext1          = n_elim_ext1,
+    n_elim_ext2          = n_elim_ext2,
+    n_compared           = n_compared,
+    n_paginas_diferentes = n_diff
+  )
+}
+
+# Exibir o resultado
+print(result_formatado)
+
+```
+
+Explicação dos Cálculos
+total_paginas:
+Esse valor é simplesmente o número total de linhas em df_wide, ou seja, todas as páginas da base.
+
+n_elim_ext1 e n_elim_ext2:
+São as contagens de páginas com NA na extração 1 e na extração 2 do par, respectivamente. Essas páginas são "eliminadas" da comparação porque não possuem dados em uma das extrações.
+
+n_compared:
+É o número de páginas em que ambas as extrações possuem valores (ou seja, não há NA). Somente essas páginas são comparadas quanto à diferença de hash.
+
+n_paginas_diferentes:
+Dentre as páginas comparadas, este número indica quantas possuem hash diferentes entre as duas extrações.
+
+Resultado
+A tabela final (result_formatado) exibirá, para cada par de extrações consecutivas, os valores calculados, permitindo identificar quantas páginas foram efetivamente comparadas, quantas foram eliminadas por falta de dados e quantas efetivamente apresentaram diferença entre os hashes.
+
+Essa abordagem fornece um panorama detalhado de cada comparação e ajuda a identificar eventuais problemas (por exemplo, muitas páginas com NA) ou a magnitude das mudanças entre extrações.
+
+
+
+trocar esse código por um que exclua apenas as linhas contendo 'NA' NA EXTRAÇÃO MAIS ANTIGA DO PAR EM COMPARAÇÃO, ou seja apague somente as células da mais antiga E as células correspondentes da extração mais nova. MANTENHA AS CÉLULAS 'NA' QUE A MAIS NOVA POR VENTURA TENHA E NA MAIS ANTIGA CONTENHAM VALOR.
+
+Utilize summarise_if (OU EQUIVALENTE) para firmar condição para pontuar 1 se os hashs comparados forem diferentes e 0 se forem iguais, e depois somar o resultado em todos os pares comparados.
+
+Demonstre a quantidade de pares com hash diferente na comparação entre extrações, a quantidade total de pares comparados (isto é, o nº total de observações numa coluna menos o nº de NAs da extração mais antiga) e a quantidade de linhas excluídas daquela comparação (porque continham NA na extração mais antiga).
+
+Excluding and comparing
+
+I’m setting up R code to handle a dataframe, removing rows with NA in older extractions, comparing pairs of extractions, and summing conditional values to show progress.
+
+Clarifying the logic
+
+I’m refining the NA handling: exclude pairs where the older extraction is NA, regardless of the newer extraction, and compare pairs when the older extraction is non-NA and the newer is NA.
+
+Mapping out custom comparison
+
+I’m establishing a rule: if the newer extraction is NA, it’s considered different from the older extraction, even though NA typically isn’t equal to any value.
+
+Evaluating hash comparisons
+
+I’m digging into summing comparisons: a scored 1 shows discrepancies, while a 0 means the hash is the same. This helps in pinpointing distinct patterns or trends.
+
+Crafting output metrics
+
+I'm piecing together three crucial metrics: pairs with different hashes, total valid pairs, and excluded rows with older extraction as NA. Using tidyverse to structure the results.
+
+Summarizing comparison insights
+
+I'm aggregating three key metrics: unique hash pairs, total valid pairs, and excluded rows with older extraction as NA. This brings together a comprehensive overview of the data.
+
+Refining comparisons
+
+I'm refining the script to:
+
+Exclude rows where the older extraction is NA.
+Compare hash values of valid pairs using if_else to account for newly NA hashes.
+Ensuring hash accuracy
+
+Implementing if_else to identify discrepancies, with missing=1 for NA, ensures precise count of differences when newer values are NA. Progress is steady and clear.
+
+A seguir, apresento um exemplo de código em R que, para cada par de extrações consecutivas, faz o seguinte:
+
+Exclusão Condicional:
+Exclui apenas as linhas (páginas) em que a extração mais antiga (do par) é NA. Se a extração mais nova tiver NA, ela é mantida para a comparação.
+
+Comparação com Condição:
+Para cada par válido (linha em que a extração antiga tem valor), compara os hashes e pontua 1 se forem diferentes e 0 se forem iguais. (Caso o hash da extração mais nova seja NA, o resultado será considerado como 1 – isto é, “diferente”.)
+
+Resumo dos Resultados:
+Para cada par, o código calcula:
+
+n_total: O total de linhas (páginas) que poderiam ser comparadas, isto é, o número de páginas em que a extração mais antiga não é NA.
+diff_count: A soma dos “pontos” (1 para diferente, 0 para igual) – isto é, o número de páginas com hash diferente.
+n_excluded: O número de páginas excluídas daquela comparação (páginas em que a extração mais antiga era NA).
+Exibição dos Resultados em Tabela:
+Os resultados serão apresentados em uma tabela, com uma linha para cada par de extrações (exibindo as datas formatadas no padrão "DD-MM-AAAA").
+
+Considere que você já tenha o data frame df_wide com a estrutura semelhante a:
+
+pagina	d20240829	d20241125	d20241201	d20250125
+E que a coluna pagina seja o identificador da página.
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+# Função para converter "dYYYYMMDD" em "DD-MM-AAAA"
+convert_extracao <- function(ext) {
+  d <- as.Date(sub("^d", "", ext), format = "%Y%m%d")
+  format(d, "%d-%m-%Y")
+}
+
+# Supondo que 'df_wide' já esteja criado a partir de 'df_diferencas'
+# e que suas colunas de extração (além da coluna 'pagina') estão nomeadas como "dYYYYMMDD"
+
+# Obter a lista de extrações (colunas) em ordem crescente, excetuando a coluna 'pagina'
+extractions <- sort(names(df_wide)[-1])
+
+# Inicializa um tibble para armazenar os resultados
+result_formatado <- tibble(
+  par_comparacao = character(),
+  total_valid    = integer(),
+  diff_count     = integer(),
+  n_excluded     = integer()
+)
+
+# Loop para cada par de extrações consecutivas
+for(i in 1:(length(extractions) - 1)) {
+  
+  ext1 <- extractions[i]     # extração mais antiga
+  ext2 <- extractions[i + 1] # extração mais nova
+  
+  # Contar as linhas excluídas: páginas onde a extração mais antiga é NA
+  n_excluded <- sum(is.na(df_wide[[ext1]]))
+  
+  # Filtrar apenas as linhas onde a extração mais antiga não é NA
+  valid_rows <- df_wide %>% 
+    filter(!is.na(.data[[ext1]]))
+  
+  total_valid <- nrow(valid_rows)
+  
+  # Comparar os hashes:
+  # Usamos if_else para pontuar 0 se os valores são iguais e 1 se são diferentes.
+  # Se o hash da extração mais nova for NA, definimos missing = 1 (ou seja, consideramos como diferente)
+  diff_count <- valid_rows %>% 
+    mutate(diff = if_else(.data[[ext1]] == .data[[ext2]], 0, 1, missing = 1)) %>% 
+    summarise(total_diff = sum(diff)) %>% 
+    pull(total_diff)
+  
+  # Nome do par com datas formatadas
+  par_nome <- paste(convert_extracao(ext1), "vs", convert_extracao(ext2))
+  
+  result_formatado <- result_formatado %>% 
+    add_row(
+      par_comparacao = par_nome,
+      total_valid    = total_valid,
+      diff_count     = diff_count,
+      n_excluded     = n_excluded
+    )
+}
+
+# Exibe a tabela final com os resultados
+print(result_formatado)
+
+```
+
+Explicação dos Cálculos
+n_excluded:
+Conta quantas linhas foram eliminadas (ou seja, quantas páginas tinham NA na extração mais antiga do par).
+
+total_valid:
+É o número total de linhas que foram mantidas para comparação (todas as linhas em que a extração mais antiga tinha valor).
+
+diff_count:
+Para cada linha válida, usamos if_else para comparar os valores dos hashes:
+
+Se hash_ext1 == hash_ext2, pontua 0.
+Caso contrário (inclusive se hash_ext2 for NA), pontua 1. Em seguida, somamos esses valores para obter o total de páginas com hash diferente.
+par_comparacao:
+Apresenta o par de extrações comparadas, com as datas convertidas para o formato "DD-MM-AAAA".
+
+Essa abordagem permite que você saiba, para cada comparação de extração:
+
+Quantas páginas foram efetivamente comparadas (total_valid);
+Quantas diferenças foram encontradas (diff_count);
+E quantas páginas foram eliminadas por falta de valor na extração mais antiga (n_excluded).
+Dessa forma, a tabela resultante fornecerá uma visão clara de como as extrações se comparam em termos de alterações identificadas via hash.

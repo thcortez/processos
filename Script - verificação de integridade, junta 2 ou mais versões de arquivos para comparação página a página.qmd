@@ -1,0 +1,110 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+
+path <- "pdf_processo/pdf_destino"
+
+files <- list.files(path)
+
+i <- 0
+
+for (i in seq_along(files)) {
+  num <- str_extract(
+    files[i],
+    "(?<=00200)\\d{6}")
+  
+  data_coleta <- str_extract(
+    files[i],
+    "(?<=\\bem )\\d{8}")
+
+  # Verificar se num foi extraído corretamente
+  if (is.na(num)) {
+    message("Nenhum número encontrado em ", files[i])
+    next  # Pula para o próximo loop se não houver número válido
+  }
+  
+  # Caminho do arquivo .RData correspondente
+  caminho_arquivo <- file.path(path, files[i])
+  
+  # Verificar se o arquivo existe antes de carregar
+  if (!file.exists(caminho_arquivo)) {
+    message("Arquivo não encontrado: ", caminho_arquivo)
+    next
+  }
+  
+  # Carregar o arquivo .RData para o ambiente
+  processo <- load(caminho_arquivo)
+  
+  # Criar um nome dinâmico para armazenar os dados
+  nome <- paste0("p", num, "_", data_coleta)
+  
+  # Criar um objeto no ambiente com o nome gerado
+  assign(nome, get(processo))  # Pega o primeiro objeto carregado
+  
+  # Mensagem de sucesso
+  message("Dados carregados e armazenados como: ", nome)
+}
+  
+```
+
+
+```{r}
+library(tibble)
+library(dplyr)
+library(stringr)
+
+# 📌 Identificar os grupos (baseados nos 7 primeiros caracteres)
+nomes_listas <- ls(pattern = "^p\\d{6}_\\d{8}$")
+grupos <- unique(substr(nomes_listas, 1, 7))
+
+# 🔄 Iterar sobre cada grupo de processos "homônimos"
+for (grupo in grupos) {
+  
+  # 🔍 Filtrar as listas que pertencem a este grupo específico
+  listas_do_grupo <- nomes_listas[str_detect(nomes_listas, paste0("^", grupo))]
+  
+  # 📌 Criar uma lista para armazenar os dados das colunas (cada lista = 1 coluna)
+  dados_colunas <- list()
+  
+  # 📌 Variável para armazenar o maior número de páginas no grupo
+  max_paginas <- 0
+  
+  # 📌 Identificar o maior processo do grupo (com mais páginas)
+  for (nome_lista in listas_do_grupo) {
+    lista <- get(nome_lista)
+    max_paginas <- max(max_paginas, length(lista))
+  }
+  
+  # 🔄 Iterar sobre os processos do grupo para padronizar o tamanho
+  for (nome_lista in listas_do_grupo) {
+    
+    # 📌 Obter a lista do Environment
+    lista <- get(nome_lista)
+    
+    # 📌 Extrair a data de coleta do nome do objeto (AAAAMMDD, a partir do 9º caractere)
+    data_coleta <- substr(nome_lista, 9, 16)
+    
+    # 📌 Calcular diferença de páginas e preencher com NA se necessário
+    diferenca <- max_paginas - length(lista)
+    if (diferenca > 0) {
+      lista <- c(lista, rep(NA, diferenca))
+      message("📌 Foram adicionadas ", diferenca, " páginas no processo ", grupo, " - ", data_coleta)
+    }
+    
+    # 📌 Armazenar os dados na lista com nome da coluna = data_coleta
+    dados_colunas[[data_coleta]] <- lista
+  }
+  
+  # 📌 Criar a tibble separada e salvá-la no Environment com o nome do grupo
+  tibble_nome <- paste0("tibble_", grupo)
+  assign(tibble_nome, as_tibble(dados_colunas))
+  
+  # ✅ Mensagem de sucesso
+  message("✅ Tibble criada no Environment: ", tibble_nome, " com ", max_paginas, " páginas.")
+}
+
+
+```

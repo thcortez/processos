@@ -1,0 +1,37 @@
+---
+title: "Untitled"
+format: html
+---
+
+pip install extract_msg
+
+```{r}
+
+# OU 
+stop_words <- read.csv(file = "D:/thiag_q/Downloads/PROCESSOS/script/Stop_Words_em_Portugu_s.csv",         sep = "\n")
+
+stop_words
+
+stop_words <- iconv(stop_words, from = "UTF-8", to = "ASCII//TRANSLIT")
+stop_words
+
+stop_words <- tolower(stop_words)
+
+stop_words <- unlist(str_split(stop_words, "\\s+"))
+
+stop_words <- unique(stop_words)
+
+#selecionando sequência de palavras
+stop_words[401:406]
+
+#filtrando um conjunto de palavras pelo seu índice | ou pelo seu conteúdo
+stop_words <- stop_words[!(seq_along(stop_words) %in% c(84,135,399,401:406)| stop_words %in% c("direita", "esquerda", "grupo", "maioria", "maiorias", "minoria", "minorias", "queremas", "trabalho", "trabalhar", "verdade", "verdadeiro", "prioridades"))] 
+
+#adicionando palavras ao objeto stop_words  
+stop_words <- c(stop_words, "queremos", "havermos", "termos", "terei", "teremos", "terao", "teria", "teriamos", "teriam", "haverei", "haveremos", "haverao", "haveria", "haveriamos", "haveriam", "exatamente") 
+
+#obtendo 
+stop_words <- unique(stop_words)
+
+
+```

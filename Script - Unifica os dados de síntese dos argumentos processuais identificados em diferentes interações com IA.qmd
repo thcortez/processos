@@ -1,0 +1,88 @@
+---
+title: "Untitled"
+format: html
+---
+
+# Aqui eu organizo as respostas da IA que resumem os argumentos do processo 003561, resultando ao final em um objeto do R que contém titulo, descricao, normas e documentos citados, e posicao do argumento em relacao à conduta do servidor. 
+
+## É preciso pegar o resultado deste arquivo e uni-lo com rbind() aos objetos com os mesmos campos compilados dos outros processos
+
+```{r}
+# Caminho do arquivo com os vetores
+arquivo <- "D:/thiag_q/Downloads/PROCESSOS/script/resultado_003561_parte_A.txt"
+
+# Ler o conteúdo do arquivo como texto (tudo de uma vez)
+conteudo <- readLines(arquivo)
+
+# Juntar as linhas em um único bloco de texto
+texto_completo <- paste(conteudo, collapse = "\n")
+
+# Avaliar o código de forma controlada num ambiente separado
+ambiente_temp <- new.env()
+eval(parse(text = texto_completo), envir = ambiente_temp)
+
+# Obter todos os objetos criados (ex: r1, r2, r3, etc.)
+nomes_vetores <- ls(envir = ambiente_temp)
+
+# Criar uma lista com esses vetores
+lista_resultado <- mget(nomes_vetores, envir = ambiente_temp)
+
+# Exemplo: visualizar os títulos de todos
+sapply(lista_resultado, function(x) x["titulo"])
+
+
+titulos_a <- sapply(lista_resultado, function(x) x["titulo"])
+descricao_a <- sapply(lista_resultado, function(x) x["descricao"])
+normas_citadas_a <- sapply(lista_resultado, function(x) x["normas_citadas"])
+documentos_citados_a <- sapply(lista_resultado, function(x) x["documentos_citados"])
+posicao_a <- sapply(lista_resultado, function(x) x["posicao"])
+
+mapa_argumentos_003561 <- view(tibble(arquivo_id = "003561", bloco_id = nomes_vetores,  titulo_ementa = titulos_a, descricao = descricao_a, normas = normas_citadas_a, documentos = documentos_citados_a, posicao = posicao_a ))
+
+```
+
+
+#junção dos dados de resumo, com campos título, descrição, normas e documentos citados, e posição . Os bancos foram unidos sob os mesmos campos. Mas não estou encontrando os dados dos processos 020190 e 019893 e vou ter de importá-los e parsea-los novamente.
+
+
+```{r}
+
+# Caminho do arquivo com os vetores
+arquivo <- "D:/thiag_q/Downloads/PROCESSOS/script/resultado_003561_parte_B.txt"
+
+# Ler o conteúdo do arquivo como texto (tudo de uma vez)
+conteudo <- readLines(arquivo)
+
+# Juntar as linhas em um único bloco de texto
+texto_completo <- paste(conteudo, collapse = "\n")
+
+# Avaliar o código de forma controlada num ambiente separado
+ambiente_temp <- new.env()
+eval(parse(text = texto_completo), envir = ambiente_temp)
+
+# Obter todos os objetos criados (ex: r1, r2, r3, etc.)
+nomes_vetores <- ls(envir = ambiente_temp)
+
+# Criar uma lista com esses vetores
+lista_resultado <- mget(nomes_vetores, envir = ambiente_temp)
+
+# Exemplo: visualizar os títulos de todos
+sapply(lista_resultado, function(x) x["titulo"])
+
+
+titulos_b <- sapply(lista_resultado, function(x) x["titulo"])
+descricao_b <- sapply(lista_resultado, function(x) x["descricao"])
+normas_citadas_b <- sapply(lista_resultado, function(x) x["normas_citadas"])
+documentos_citados_b <- sapply(lista_resultado, function(x) x["documentos_citados"])
+posicao_b <- sapply(lista_resultado, function(x) x["posicao"])
+
+mapa_argumentos_003561_b <- view(tibble(arquivo_id = "003561", bloco_id = nomes_vetores,  titulo_ementa = titulos_b, descricao = descricao_b, normas = normas_citadas_b, documentos = documentos_citados_b, posicao = posicao_b ))
+
+mapa_argumentos <- rbind(mapa_argumentos_003561, mapa_argumentos_003561_b, prompts_processo_respostas_GPT_docall)
+
+mapa_argumentos
+
+```
+
+
+

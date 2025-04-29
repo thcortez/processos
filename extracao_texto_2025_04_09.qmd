@@ -1,0 +1,1261 @@
+---
+title: "Untitled"
+format: html
+---
+
+!!!!!!ARQUIVO OBSOLETO!!!!!!!! DESCONSIDERAR
+
+A seguir apresento duas implementações distintas para lidar com sua lógica de 4 regras (4→1→3→2) e a condição de “descartar a linha após a primeira captura, salvo se ainda houver outra sigla ou ‘primeira_palavra’ que justifique continuar analisando a mesma linha”.
+
+Para facilitar o exemplo, chamo:
+
+siglas: vetor de siglas (ex: c("ADG","APS","APR",...))
+
+primeiras_palavras: vetor de palavras (ex: c("ato","ata","portaria",...))
+
+conjunto_termos: vetor com o resto dos termos (ex: c("diretoria","geral","comissão",...))
+
+termos_especiais (Regra 4): c("rasf","anexo iv","8112","8.112")
+
+Suponho também que você tenha um tibble chamado meu_documento com colunas:
+
+paginas (número da página),
+
+texto_limpo (todo minúsculo, sem quebras de linha, sem espaços duplicados, etc.),
+
+(opcional) texto_original caso queria extrair o contexto do texto original.
+
+Por fim, assumo que você queira filtrar as páginas a serem analisadas via um vetor paginas_selecionadas. Assim, cada função inicia aplicando filter(...) para só pegar as páginas desejadas.
+
+Parte 1: Funções Auxiliares Gerais
+Ambas as abordagens vão precisar de:
+
+Buscar termo (case-insensitive) e retornar todas as posições (start/end);
+
+Buscar número (regex de dígitos) e retornar posições;
+
+Extrair contexto;
+
+Verificar se linha ainda possui nova sigla ou “primeira_palavra” para decidir se descartar a linha ou não.
+
+Criaremos essas funções de forma genérica.
+```{r}
+
+library(dplyr)
+library(purrr)
+library(stringr)
+library(tidyr)
+
+
+########################
+# Funções Auxiliares
+########################
+
+# A) Buscar todas as ocorrências de "termo" (case-insensitive) no texto,
+#    retornando [start, end]. PARA TERMOS ESPECIAIS
+buscar_termo <- function(texto, termo) {
+  locs <- str_locate_all(texto, fixed(termo, ignore_case = TRUE))[[1]]
+  if (!is.matrix(locs) || nrow(locs) == 0) {
+    return(tibble(start=integer(), end= integer(), termo = character()))
+  }
+  tibble(start = locs[,1], end = locs[,2], termo = termo)
+}
+
+# B) Buscar todos os dígitos (regex "[0-9]+") no texto
+#buscar_numeros <- function(texto) {
+ # locs <- str_locate_all(texto, regex("[0-9]+", ignore_case=TRUE))[[1]]
+#  if (!is.matrix(locs) || nrow(locs) == 0) {
+#    return(tibble(start= (0), end= (0), termo = ""))
+#  }
+#  tibble(start = locs[,1], end = locs[,2], termo = locs)
+#}
+
+buscar_numeros <- function(texto, pos_inicial = 1) {
+  padrao <- regex("[0-9]+", ignore_case = TRUE)
+  locs <- str_locate_all(texto, padrao)[[1]]
+  
+  # Se não houver ocorrências, retorna um tibble vazio com os tipos corretos
+  if (!is.matrix(locs) || nrow(locs) == 0) {
+    return(tibble(
+      start = integer(),
+      end   = integer(),
+      termo = character(),
+      match = character()
+    ))
+  }
+  
+  # Filtra as ocorrências que começam após 'pos_inicial'
+  locs <- locs[locs[,1] >= pos_inicial, , drop = FALSE]
+  if(!is.matrix(locs) || nrow(locs) == 0) {
+    return(tibble(
+      start = integer(),
+      end   = integer(),
+      termo = character(),
+      match = character()
+    ))
+  }
+  
+  tibble(
+    start = locs[,1],
+    end   = locs[,2],
+    termo = rep("numero", nrow(locs)),  # Força a coluna a ser character
+    match = str_sub(texto, locs[,1], locs[,2])
+  )
+}
+
+
+# C) Extrair contexto (N chars antes e depois)
+extrair_contexto <- function(texto, ini, fim, janela = 50) {
+  start_ct <- max(1, ini - janela)
+  end_ct   <- min(nchar(texto), fim + janela)
+  str_sub(texto, start_ct, end_ct)
+}
+
+# D) Verifica se, *após* ter encontrado um match, ainda sobra
+#    alguma sigla ou primeira_palavra (fora do trecho encontrado)
+#    A ideia: Se não há mais nada, podemos descartar essa linha.
+possui_outra_sigla_ou_primeira <- function(texto, siglas, primeiras_palavras, trechos_utilizados) {
+  all_siglas <- map_dfr(siglas, ~ buscar_termo(texto, .x)) %>% mutate(tipo = "sigla")
+  all_primei <- map_dfr(primeiras_palavras, ~ buscar_termo(texto, .x)) %>% mutate(tipo = "primeira")
+  tudo <- bind_rows(all_siglas, all_primei)
+  if (is.null(tudo) || nrow(tudo) == 0) {
+    return(FALSE)  # não há ocorrências, portanto não há outra ocorrência
+  }
+  
+  if (is.null(trechos_utilizados) || nrow(trechos_utilizados) == 0) {
+    return(TRUE)  # se não há região utilizada, então certamente há ocorrências
+  }
+  
+  coberto <- rep(FALSE, nrow(tudo))
+  for(i in seq_len(nrow(tudo))) {
+    st <- tudo$start[i]
+    en <- tudo$end[i]
+    inters <- FALSE
+    for(j in seq_len(nrow(trechos_utilizados))) {
+      use_st <- trechos_utilizados$start[j]
+      use_en <- trechos_utilizados$end[j]
+      if(st >= use_st && en <= use_en) {
+        inters <- TRUE
+        break
+      }
+    }
+    coberto[i] <- inters
+  }
+  any(!coberto)
+}
+
+
+```
+
+
+No código acima, a função possui_outra_sigla_ou_primeira() faz uma checagem simples: Se existe alguma sigla/primeira_palavra que não esteja totalmente coberta pelos matches já usados, então temos um “motivo” para continuar analisando a linha.
+
+Parte 2: Abordagem 1 – “Rodada” para cada regra
+Nesta abordagem, faremos:
+
+Seleção das páginas que queremos (ex.: filter(meu_documento, paginas %in% paginas_selecionadas)).
+
+Aplicamos Regra 4 em todas as linhas.
+
+Se a linha tiver match, guardamos esse match no resultados.
+
+Em seguida, checamos se ainda resta alguma sigla/primeira_palavra fora do match encontrado.
+
+Se não restar nada, descartamos essa linha das próximas rodadas.
+
+Se sim, mantemos a linha para a próxima regra.
+
+Obs. Se a linha tiver mais de 1 match para a mesma regra, guardamos todos mas unimos as posições de match para ver se ainda sobra algo.
+
+Aplicamos Regra 1 às linhas não descartadas, com a mesma lógica.
+
+Aplicamos Regra 3 …
+
+Aplicamos Regra 2 …
+
+Ao final, unimos todos os matches num tibble final.
+
+Obs. Para implementar “raio de 30 chars” para sigla+numero, ou “numero+sigla” etc., faremos mini-funções.
+
+Segue uma implementação demonstrativa (simplificada – não trata casos de sobreposição complexa entre matches múltiplos, mas deve dar a ideia):
+
+
+```{r}
+
+meu_documento <- processo_3561_011224 %>% mutate(texto_limpo = texto_pagina)
+
+########## Abordagem 1 ##########
+extrair_mencoes_approach1.1 <- function(meu_documento,
+                                      paginas_selecionadas,
+                                      siglas,
+                                      primeiras_palavras,
+                                      conjunto_termos,
+                                      linha_id,
+                                      termos_especiais) {
+  # Filtra pelas páginas desejadas
+  doc <- meu_documento %>%
+    filter(paginas %in% paginas_selecionadas) %>%
+    mutate(linha_id = row_number())  # id interno
+  
+  # Objeto para armazenar resultados
+  resultados <- tibble()
+  
+  # Vetor que identifica quais linhas ainda estão "ativas" (não descartadas)
+  linhas_ativas <- doc$linha_id
+  
+  # Data structure para guardar "trechos_utilizados" por linha
+  # Assim quando match for encontrado, marcamos esse trecho
+  used_regions <- vector("list", length = nrow(doc))  # cada item é data frame (start,end)
+  names(used_regions) <- doc$linha_id
+  
+  # Funções para cada regra (mini)
+  # REGRAS:
+  # 4) termos_especiais
+  apply_regra4 <- function(texto, pagina, linha_id) {
+    # localiza todos
+    locs <- map_dfr(termos_especiais, ~ buscar_termo(texto, .x))
+    if(is.null(locs) || nrow(locs) == 0) {
+      return(tibble(regra = character(),
+                    pagina = integer(),
+                    linha_id = integer(),
+                    texto = character(),
+                    start = integer(),
+                    end = integer(),
+                    contexto = character()
+                    )
+                    
+             )
+      }
+    # Montar tibble de matches
+    locs <- locs %>%
+      mutate(regra = "Regra 4",
+             pagina = pagina,
+             linha_id = linha_id)
+    # extrair contexto
+    locs <- locs %>%
+      rowwise() %>%
+      mutate(contexto = extrair_contexto(texto, start, end, 50))
+    locs
+  }
+  
+  # 1) siglas + numero em 30 chars
+  apply_regra1 <- function(texto, pagina, linha_id, siglas) {
+    # Localiza siglas
+    locs_sig <- map_dfr(siglas, ~ buscar_termo(texto, .x))
+    if(!is.null(locs_sig) || nrow(locs_sig)==0) {
+      return(tibble(regra = character(),
+                    pagina = integer(),
+                    linha_id = integer(),
+                    termo = character(),
+                    start = integer(),
+                    end = integer(),
+                    contexto = character()
+                    )
+             ) 
+      
+    }
+    out <- list()
+    ccount <- 0
+    for(i in seq_len(nrow(locs_sig))) {
+      st <- locs_sig$start[i]
+      en <- locs_sig$end[i]
+      rec_ini <- en + 1
+      rec_end <- min(nchar(texto), rec_ini + 30)
+      if(rec_ini <= rec_end) {
+        trecho <- str_sub(texto, rec_ini, rec_end)
+        # buscar numero
+        nums <- str_locate_all(trecho, regex("[0-9]+", ignore_case=TRUE))[[1]]
+        if(is.matrix(nums) && nrow(nums)>0) {
+          # achou
+          # pega só a primeira ou pega todas? Pegamos todas
+          for(k in seq_len(nrow(nums))) {
+            st_num <- rec_ini + nums[k,1] - 1
+            en_num <- rec_ini + nums[k,2] - 1
+            ccount <- ccount + 1
+            out[[ccount]] <- tibble(
+              regra    = "Regra 1",
+              pagina   = pagina,
+              linha_id = linha_id,
+              start    = st,
+              end      = en_num,
+              termo    = paste(locs_sig$termo[i], "+numero"),
+              contexto = extrair_contexto(texto, st, en_num, 50)
+          }
+        }
+      }
+    }
+    if(!is.null(ccount) || ccount==0) { 
+      return(regra = character(),
+             pagina = integer(),
+             linha_id = integer(),
+             termo = character(),
+             start = integer(),
+             end = integer(),
+             contexto = character()
+             )
+      )
+    bind_rows(out)
+  }
+  
+  # 3) primeira_palavra + (conjunto_termos em 30 chars) + numero em 30 chars
+  apply_regra3 <- function(texto, pagina, linha_id, 
+                           primeiras_palavras, conjunto_termos) {
+    locs_pw <- map_dfr(primeiras_palavras, ~ buscar_termo(texto, .x))
+    if(!is.null(locs_pw) || nrow(locs_pw)==0) return(tibble(regra = character(),
+                                                    pagina = integer(),
+                                                    linha_id = integer(),
+                                                    termo = character(),
+                                                    start = integer(),
+                                                    end = integer(),
+                                                    contexto = character()))
+    out <- list()
+    ccount <- 0
+    for(i in seq_len(nrow(locs_pw))) {
+      st_pw <- locs_pw$start[i]
+      en_pw <- locs_pw$end[i]
+      rec_ini <- en_pw + 1
+      rec_end <- min(nchar(texto), rec_ini + 30)
+      if(rec_ini <= rec_end) {
+        trecho <- str_sub(texto, rec_ini, rec_end)
+        # ver se tem conj_termos
+        achou_termo <- any(map_lgl(conjunto_termos, 
+                                   ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+        if(achou_termo) {
+          # ver se tem numero no MESMO recorte
+          # se sim, guardamos match
+          has_num <- str_detect(trecho, regex("[0-9]+", ignore_case=TRUE))
+          if(has_num) {
+            ccount <- ccount + 1
+            out[[ccount]] <- tibble(
+              regra    = "Regra 3",
+              pagina   = pagina,
+              linha_id = linha_id,
+              start    = st_pw,
+              end      = rec_end,
+              termo    = paste(locs_pw$termo[i], "+conjTermos+numero"),
+              contexto = extrair_contexto(texto, st_pw, rec_end, 50)
+            )
+          }
+        }
+      }
+    }
+    if(!is.null(ccount) || ccount==0) { 
+      return(regra = character(),
+             pagina = integer(),             
+             linha_id = integer(),
+             termo = character(),
+             start = integer(),
+             end = integer(),
+             contexto = character())
+      bind_rows(out)
+  }
+  
+  # 2) numero + (sigla ou primeira_palavra) em 30 chars
+  apply_regra2 <- function(texto, pagina, linha_id, siglas, primeiras_palavras) {
+    locs_num <- buscar_numeros(texto)
+    if(!is.null(locs_num) || nrow(locs_num)==0) return(return(regra = character(),
+             pagina = integer(),             
+             linha_id = integer(),
+             termo = character(),
+             start = integer(),
+             end = integer(),
+             contexto = character()))
+    out <- list()
+    ccount <- 0
+    for(i in seq_len(nrow(locs_num))) {
+      st_num <- locs_num$start[i]
+      en_num <- locs_num$end[i]
+      rec_ini <- en_num + 1
+      rec_end <- min(nchar(texto), rec_ini + 30)
+      if(rec_ini <= rec_end) {
+        trecho <- str_sub(texto, rec_ini, rec_end)
+        # ver se tem sigla ou primeira_palavra
+        tem_sigla <- any(map_lgl(siglas, ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+        tem_pw    <- any(map_lgl(primeiras_palavras, ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+        if(tem_sigla || tem_pw) {
+          ccount <- ccount + 1
+          out[[ccount]] <- tibble(
+            regra    = "Regra 2",
+            pagina   = pagina,
+            linha_id = linha_id,
+            start    = st_num,
+            end      = rec_end,
+            termo    = paste("numero + (sigla|primeira)"),
+            contexto = extrair_contexto(texto, st_num, rec_end, 50)
+          )
+        }
+      }
+    }
+    if (!is.null(ccount) || ccount==0) { 
+      return(regra = character(),
+             pagina = integer(),             
+             linha_id = integer(),
+             termo = character(),
+             start = integer(),
+             end = integer(),
+             contexto = character())
+    bind_rows(out)
+    } 
+  }
+  
+  # Lista de regras na ordem: 4->1->3->2
+  funs_regras <- list(
+    R4 = function(texto, pg, ln) apply_regra4(texto, pg, ln),
+    R1 = function(texto, pg, ln) apply_regra1(texto, pg, ln, siglas),
+    R3 = function(texto, pg, ln) apply_regra3(texto, pg, ln, primeiras_palavras, conjunto_termos),
+    R2 = function(texto, pg, ln) apply_regra2(texto, pg, ln, siglas, primeiras_palavras)
+  )
+  
+  ordem <- c("R4","R1","R3","R2")
+  
+  # Execução em rodadas
+  for(regra_id in ordem) {
+    # Filtra as linhas ainda ativas
+    lines_df <- doc %>% filter(linha_id %in% linhas_ativas)
+    if(!is.null(lines_df) || nrow(lines_df)==0) break
+    
+    # Aplica a regra em cada linha
+    resultado_regra <- lines_df %>%
+      rowwise() %>%
+      do({
+        texto <- .$texto_limpo
+        ln_id <- .$linha_id
+        pg    <- .$paginas
+    
+        matches <- funs_regras[[regra_id]](texto, pg, ln_id)
+        if (!is.null(matches) || nrow(matches) == 0) {
+          tibble(matches = character())  # Retorna um tibble vazio se não houver matches
+        } else {
+          matches %>% ungroup()
+        }
+      }) %>%
+      ungroup()
+    
+    # Adiciona no pool de resultados
+    if(nrow(resultado_regra)>0) {
+      resultados <- bind_rows(resultados, resultado_regra)
+    }
+    
+    # Agora, para cada linha em que encontramos ALGO, checar se sobra alguma sigla/primeira
+    linhas_com_match <- unique(resultado_regra$linha_id)
+    for(ln_id in linhas_com_match) {
+      idx <- which(linhas_ativas==ln_id)
+      if(length(idx)==0) next
+      txt <- doc$texto_limpo[doc$linha_id==ln_id]
+      used_df <- used_regions[[as.character(ln_id)]]
+      if(!possui_outra_sigla_ou_primeira(txt, siglas, primeiras_palavras, used_df)) {
+        # descarta
+        linhas_ativas <- setdiff(linhas_ativas, ln_id)
+      }
+    }
+  }
+  
+  # Retorna
+  # Merge com doc se precisar
+  resultados %>%
+    arrange(linha_id, start)
+}
+
+extrato_mencoes_approach1.1 <- extrair_mencoes_approach1.1(meu_documento,
+                                      paginas_selecionadas = c(1000:1010),
+                                      siglas = paste0("\\b",siglas,"\\b"),
+                                      primeiras_palavras = paste0("\\b",primeiras_palavras,"\\b"),
+                                      conjunto_termos = paste0("\\b",conjunto_termos,"\\b"),
+                                      termos_especiais = paste0("\\b",termos_especiais,"\\b"))
+
+```
+
+Observações dessa abordagem (“Rodada por regra”)
+Cada regra faz uma passada pelas linhas restantes. Isso pode ser custoso para textos muito grandes, mas é simples de entender.
+
+A checagem “possui_outra_sigla_ou_primeira” remove a linha se não sobrar nada para procurar.
+
+Caso a linha nunca tenha match em nenhuma regra, ela permanece até o fim e não aparece nos resultados.
+
+Essa é a Alternativa 1 que você descreveu.
+
+Parte 3: Abordagem 2 – Mapear primeiro, depois aplicar a lógica e descartar linhas
+Nesta abordagem, a ideia é:
+
+Para cada página selecionada, localizamos e guardamos todas as posições de:
+
+termos_especiais (Regra 4),
+
+siglas,
+
+primeiras_palavras,
+
+conjunto_termos,
+
+números.
+
+Em seguida, ordenamos essas ocorrências pela posição start.
+
+Fazemos uma varredura somente sobre essas “listas de posições” para ver se alguma das 4 regras pode ser disparada. Ao disparar, registramos o match e decidimos se a linha continua ou não (conforme “descartar se não houver mais siglas/palavras”).
+
+O pseudo-código:
+
+
+```{r}
+
+########## Abordagem 2 ##########
+extrair_mencoes_approach2.1 <- function(meu_documento,
+                                      paginas_selecionadas,
+                                      siglas,
+                                      primeiras_palavras,
+                                      conjunto_termos,
+                                      termos_especiais) {
+  # Filtra
+  doc <- meu_documento %>%
+    filter(paginas %in% paginas_selecionadas) %>%
+    mutate(linha_id = row_number())
+  
+  resultados <- list()
+  
+  for(i in seq_len(nrow(doc))) {
+    linha_id <- doc$linha_id[i]
+    pg       <- doc$paginas[i]
+    texto    <- doc$texto_limpo[i]
+    
+    # Mapeia todas as posições
+    loc_espec <- map_dfr(termos_especiais, ~ buscar_termo(texto, .x)) %>%
+      mutate(tipo="R4")
+    loc_siglas <- map_dfr(siglas, ~ buscar_termo(texto, .x)) %>%
+      mutate(tipo="sigla")
+    loc_prims  <- map_dfr(primeiras_palavras, ~ buscar_termo(texto, .x)) %>%
+      mutate(tipo="primeira")
+    loc_conjt  <- map_dfr(conjunto_termos, ~ buscar_termo(texto, .x)) %>%
+      mutate(tipo="conjTermo")
+    loc_nums   <- buscar_numeros(texto)
+    if(!is.null(loc_nums) && nrow(loc_nums)>0) {
+      loc_nums <- loc_nums %>% mutate(tipo="numero") 
+    } else {
+      loc_nums <- tibble()
+    }
+    
+    # Junta tudo e ordena por start
+    all_positions <- bind_rows(loc_espec, loc_siglas, loc_prims, loc_conjt, loc_nums)
+    if(nrow(all_positions)==0) {
+      # sem nada -> sem match
+      next
+    }
+    all_positions <- all_positions %>%
+      arrange(start)
+    
+    # Precisamos varrer all_positions e tentar disparar as regras 4,1,3,2 em cada “ponto”.
+    # Se alguma regra bater, registramos, e então checamos se descartamos a linha.
+    used_regions <- tibble::tibble(start=integer(), end=integer())
+    found_something <- FALSE
+    
+    # Funções "checar_regra" que usam 'all_positions' e o texto
+    # Regra 4: se item for R4, pronto.
+    check_regra4 <- function(pos_i) {
+      if(all_positions$tipo[pos_i]=="R4") {
+        # match instantâneo
+        st <- all_positions$start[pos_i]
+        en <- all_positions$end[pos_i]
+        contexto <- extrair_contexto(texto, st, en, 50)
+        tibble(
+          regra = "Regra 4",
+          start = st,
+          end   = en,
+          termo = all_positions$termo[pos_i],
+          contexto = contexto
+        )
+      } else {
+        NULL
+      }
+    }
+    # Regra 1: "sigla + numero em 30 chars"
+    check_regra1 <- function(pos_i) {
+      if(all_positions$tipo[pos_i] != "sigla") return(NULL)
+      st_sig <- all_positions$start[pos_i]
+      en_sig <- all_positions$end[pos_i]
+      # ver se há numero em [en_sig+1, en_sig+30]
+      rec_ini <- en_sig+1
+      rec_fim <- min(nchar(texto), en_sig+30)
+      # filtrar all_positions com tipo=numero e start nesse range
+      cand <- all_positions %>% 
+        filter(tipo=="numero", start >= rec_ini, start <= rec_fim)
+      if(nrow(cand)>0) {
+        # match
+        # pega a 1a
+        st_num <- cand$start[1]
+        en_num <- cand$end[1]
+        tibble(
+          regra="Regra 1",
+          start=st_sig,
+          end=en_num,
+          termo=paste0(all_positions$termo[pos_i],"+numero"),
+          contexto=extrair_contexto(texto, st_sig, en_num, 50)
+        )
+      } else NULL
+    }
+    # Regra 3: "primeira_palavra + conjTermo em 30 chars + numero em 30 chars"
+    check_regra3 <- function(pos_i) {
+      if(all_positions$tipo[pos_i] != "primeira") return(NULL)
+      st_pw <- all_positions$start[pos_i]
+      en_pw <- all_positions$end[pos_i]
+      rec_ini <- en_pw+1
+      rec_fim <- min(nchar(texto), en_pw+30)
+      # ver se existe conjTermo e numero nesse intervalo
+      conj <- all_positions %>%
+        filter(tipo=="conjTermo", start>=rec_ini, start<=rec_fim)
+      has_conj <- (nrow(conj)>0)
+      num <- all_positions %>%
+        filter(tipo=="numero", start>=rec_ini, start<=rec_fim)
+      has_num <- (nrow(num)>0)
+      if(has_conj && has_num) {
+        # match
+        tibble(
+          regra="Regra 3",
+          start=st_pw,
+          end=rec_fim,
+          termo=paste0(all_positions$termo[pos_i],"+conjTermo+numero"),
+          contexto=extrair_contexto(texto, st_pw, rec_fim, 50)
+        )
+      } else NULL
+    }
+    # Regra 2: "numero + (sigla ou primeira_palavra) em 30 chars"
+    check_regra2 <- function(pos_i) {
+      if(all_positions$tipo[pos_i] != "numero") return(NULL)
+      st_num <- all_positions$start[pos_i]
+      en_num <- all_positions$end[pos_i]
+      rec_ini <- en_num+1
+      rec_fim <- min(nchar(texto), en_num+30)
+      cand_sig <- all_positions %>%
+        filter(tipo=="sigla" | tipo=="primeira",
+               start>=rec_ini, start<=rec_fim)
+      if(nrow(cand_sig)>0) {
+        tibble(
+          regra="Regra 2",
+          start=st_num,
+          end=rec_fim,
+          termo="numero+(sigla|primeira)",
+          contexto=extrair_contexto(texto, st_num, rec_fim, 50)
+        )
+      } else NULL
+    }
+    
+    # Vamos agora “varrer all_positions” na ordem, aplicando 4->1->3->2
+    # Se alguma disparar, paramos e checamos se a linha descarta ou não.
+    # Se descartar, encerramos. Se não descartar, continuamos. (Ou paramos? Depende do enunciado.)
+    # O enunciado diz: “A ocorrência de 1 match E a inocorrência de outra sigla/palavra => descartar”
+    
+    pos_i <- 1
+    discard_line <- FALSE
+    
+    while(pos_i <= nrow(all_positions)) {
+      # Tenta 4,1,3,2
+      match4 <- check_regra4(pos_i)
+      if(!is.null(match4)) {
+        found_something <- TRUE
+        # Armazena
+        resultados[[length(resultados)+1]] <- match4 %>%
+          mutate(pagina=pg, linha_id=linha_id)
+        # Checa se sobrou algo
+        used_regions <- bind_rows(used_regions, tibble(start=match4$start, end=match4$end))
+        if(!possui_outra_sigla_ou_primeira(texto, siglas, primeiras_palavras, used_regions)) {
+          discard_line <- TRUE
+        }
+        break
+      }
+      
+      match1 <- check_regra1(pos_i)
+      if(!is.null(match1)) {
+        found_something <- TRUE
+        resultados[[length(resultados)+1]] <- match1 %>%
+          mutate(pagina=pg, linha_id=linha_id)
+        used_regions <- bind_rows(used_regions, tibble(start=match1$start, end=match1$end))
+        if(!possui_outra_sigla_ou_primeira(texto, siglas, primeiras_palavras, used_regions)) {
+          discard_line <- TRUE
+        }
+        break
+      }
+      
+      match3 <- check_regra3(pos_i)
+      if(!is.null(match3)) {
+        found_something <- TRUE
+        resultados[[length(resultados)+1]] <- match3 %>%
+          mutate(pagina=pg, linha_id=linha_id)
+        used_regions <- bind_rows(used_regions, tibble(start=match3$start, end=match3$end))
+        if(!possui_outra_sigla_ou_primeira(texto, siglas, primeiras_palavras, used_regions)) {
+          discard_line <- TRUE
+        }
+        break
+      }
+      
+      match2 <- check_regra2(pos_i)
+      if(!is.null(match2)) {
+        found_something <- TRUE
+        resultados[[length(resultados)+1]] <- match2 %>%
+          mutate(pagina=pg, linha_id=linha_id)
+        used_regions <- bind_rows(used_regions, tibble(start=match2$start, end=match2$end))
+        if(!possui_outra_sigla_ou_primeira(texto, siglas, primeiras_palavras, used_regions)) {
+          discard_line <- TRUE
+        }
+        break
+      }
+      
+      pos_i <- pos_i + 1
+    } # fim while
+    
+    if(discard_line) {
+      # descarta e segue pra proxima linha/pagina
+      next
+    }
+    
+    # Se chegamos aqui sem descartar, significa que (ou) não houve match ou
+    # sobrou outra sigla/palavra e iremos para a próxima "posição" do all_positions
+    # repetindo a checagem?  -> No pseudo atual, paramos. 
+    # Se quiser checar repetidamente, teria que aninhar outro loop ou recursão.
+  }
+  
+  # Junta tudo
+  if(length(resultados)==0) return(tibble())
+  dfres <- bind_rows(resultados) %>%
+    select(pagina, linha_id, regra, start, end, termo, contexto) %>%
+    arrange(linha_id, start)
+  dfres
+}
+
+extrato_mencoes_approach2.1 <- extrair_mencoes_approach2.1(meu_documento,
+                                      paginas_selecionadas = c(1000:1010),
+                                      siglas = paste0("\\b",siglas,"\\b"),
+                                      primeiras_palavras = paste0("\\b",primeiras_palavras,"\\b"),
+                                      conjunto_termos = paste0("\\b",conjunto_termos,"\\b"),
+                                      termos_especiais = paste0("\\b",termos_especiais,"\\b"))
+  
+  
+
+
+```
+________________________________
+Observações dessa “Abordagem 2”
+Faz uma única coleta de todas as posições de cada “tipo” (sigla, primeira_palavra, conjTermo, numero, e R4) e, em seguida, “roda” a lógica de ordem das regras.
+
+A checagem “descartar se não houver sigla/palavra extra” é implementada do mesmo jeito: se achou um match, chamamos possui_outra_sigla_ou_primeira().
+
+O pseudo-código acima para no primeiro match de uma dada linha. Se a ideia fosse “pode haver mais de um match se ainda sobra outra sigla/palavra”, precisaríamos continuar no while. Mas isso pode exigir mais loops.
+
+Em termos de eficiência, é em geral melhor do que varrer todo o texto 4 vezes – mas a lógica de “continuar” vs. “descartar” pode ficar complexa, pois você precisa “simular” a priorização.
+
+Conclusão
+Foram apresentadas duas implementações:
+
+Abordagem 1 (“Rodada por Regra”):
+
+Em cada “rodada”, aplicamos uma regra no subconjunto de linhas ainda ativas.
+
+Para cada match, se não sobra sigla/palavra, descartamos a linha.
+
+Então passamos à próxima regra.
+
+Mais simples de entender, mas pode ser menos eficiente se o texto for muito grande e houver muitas regras.
+
+Abordagem 2 (“Mapeamento de posições e aplicação de prioridade”):
+
+Indexamos todas as ocorrências de “siglas”, “primeiras_palavras”, “números”, etc.
+
+Depois, num loop sobre essa “lista de posições”, tentamos disparar as regras (na ordem 4→1→3→2).
+
+Se alguma bater, checamos se descartamos a linha ou não.
+
+Mais eficiente quando o texto é grande ou se você tiver muitas regras, pois evita passadas repetitivas.
+
+Lógica pode ficar mais elaborada se quiser permitir múltiplos matches na mesma linha, etc.
+
+Em ambas as abordagens:
+
+O match é case-insensitive,
+
+Extraímos contexto,
+
+Indicamos a página,
+
+Salvamos tudo num tibble de resultados,
+
+E podemos filtrar as páginas com paginas_selecionadas.
+
+Naturalmente, esses exemplos podem ser ajustados (por exemplo, para permitir que uma linha tenha vários matches se ainda sobra outra sigla/palavra), ou para unificar matches sobrepostos, ou para registrar a posição exata do número em Regra 3, e assim por diante. Mas a estrutura geral atende ao que você pediu de:
+
+Aplicar as regras na ordem 4→1→3→2,
+
+Descartar a linha se não sobrar outra sigla/primeira-palavra,
+
+Capturar contexto, indicar página, e poder analisar apenas páginas selecionadas.
+termo <- 
+
+########################
+# 1.2 Funções auxiliares
+########################
+
+# 1.2 Buscar todas ocorrências de 'termo' (case-insensitive) no texto, 
+#     porém retornando apenas as que começam depois de 'pos_inicial'
+```{r}
+
+buscar_termo1.2 <- function(texto, termo, pos_inicial = 1) {
+  # localiza todas
+  termo <- termos_especiais
+  locs <- str_locate_all(texto, fixed(termo, ignore_case = TRUE))[[1]]
+  if (!is.matrix(locs) || nrow(locs) == 0) {
+    return(tibble::tibble(start = integer(), end = integer()))
+  }
+  # filtra as que começam após pos_inicial
+  locs <- locs[locs[,1] >= pos_inicial, , drop = FALSE]
+  if(nrow(locs) == 0) {
+    return(tibble::tibble(start = integer(), end = integer()))
+  }
+  tibble::tibble(
+    start = locs[,1],
+    end   = locs[,2]
+  )
+}
+
+# 1.2. Extrair contexto (N chars antes e depois)
+extrair_contexto1.2 <- function(texto, ini, fim, janela = 50) {
+  start_ct <- max(1, ini - janela)
+  end_ct   <- min(nchar(texto), fim + janela)
+  str_sub(texto, start_ct, end_ct)
+}
+
+# 1.3. Ver se existe alguma sigla ou primeira_palavra em [ini, fim]
+existe_termo_entre1.2 <- function(texto, siglas, primeiras_palavras, ini, fim) {
+  if(ini > fim) return(FALSE)
+  trecho <- str_sub(texto, ini, fim)
+  # Se qualquer sigla ou primeira_palavra estiver presente, retorna TRUE
+  has_sigla <- any(map_lgl(siglas, ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+  has_primeira <- any(map_lgl(primeiras_palavras, ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+  has_sigla || has_primeira
+}
+
+# 1.4. Buscar primeiro número a partir de pos_inicial
+buscar_numero1.2 <- function(texto, pos_inicial = 1) {
+  # localiza todos
+  locs <- str_locate_all(texto, regex("\\b[0-9]+", ignore_case = TRUE))[[1]]
+  if(!is.matrix(locs) || nrow(locs) == 0) {
+    return(tibble::tibble(start = integer(), end = integer()))
+  }
+  locs <- locs[locs[,1] >= pos_inicial, , drop=FALSE]
+  if(!is.matrix(locs) || nrow(locs) == 0) {
+    return(tibble::tibble(start = integer(), end = integer()))
+  }
+  tibble(start = locs[,1], end = locs[,2])
+}
+
+
+########################
+# 2. Regras (4->1->3->2)
+########################
+
+# Vamos criar subfunções que buscam "o primeiro match" de cada regra a partir de 'pos'
+# e retornam a tibble com zero ou uma linha, ou NULL se não achou.
+
+# REGRAS:
+# 4) "termos_especiais" -> se encontrado, gravamos
+# 1) siglas + numero em 30 chars
+# 3) primeira_palavra e em 50 chars um conjunto_termos e um número
+# 2) numero + (sigla ou primeira_palavra) em 50 chars
+
+# A ideia é: cada uma dessas subfunções retorna:
+#   - 'found' (TRUE/FALSE)
+#   - 'start', 'end'
+#   - 'regra', 'match_txt', etc.
+
+# 2.1. Regra 4
+rule4_especiais1.2 <- function(texto, pagina, pos, termos_especiais) {
+  # Procurar a primeira ocorrência de qualquer 'termo_especial' a partir de 'pos'
+  # O "primeiro" match no texto é aquele com menor "start".
+  loc_all <- map(termos_especiais, ~ buscar_termo1.2(texto, .x, pos_inicial = pos) %>%
+                              mutate(termo = .x))
+  locs <- bind_rows(loc_all)
+  if(!is.null(locs) || nrow(locs) == 0) {
+    return(tibble(found = logic(),
+                  pagina = integer(),
+                  regra = character(),
+                  match_txt = integer(),
+                  start = integer(),
+                  end = integer(),
+                  contexto = character())
+  }
+  # Pega a que tiver menor start
+  i_min <- which.min(locs$start)
+  st <- locs$start[i_min]
+  ed <- locs$end[i_min]
+  t  <- locs$termo[i_min]
+  
+  contexto <- extrair_contexto1.2(texto, st, ed, 50)
+  tibble(
+    found     = TRUE,
+    pagina    = pagina,
+    regra     = "Regra 4",
+    match_txt = t,
+    start     = st,
+    end       = ed,
+    contexto  = contexto
+  )
+}
+
+# 2.2. Regra 1: "siglas + numero em até 30 chars"
+rule1_sigla_numero1.2 <- function(texto, pagina, pos, siglas) {
+  # achar todas as siglas a partir de pos
+  loc_all <- map(siglas, ~ buscar_termo1.2(texto, .x, pos_inicial = pos) %>%
+                              mutate(sigla = .x))
+  locs <- bind_rows(loc_all)
+  if(!is.matrix(locs) || nrow(locs) == 0) {
+    return(tibble(found = logic(),
+                  pagina = integer(),
+                  regra = character(),
+                  match_txt = character(),
+                  start = integer(),
+                  end = integer(),
+                  contexto = character()
+                  )
+           )
+  }
+  
+  # para cada sigla, checar se em 30 chars depois existe um número
+  # iremos pegar o primeiro que satisfizer
+  locs <- locs[order(locs$start), ]  # ordena por start
+  
+  for(i in seq_len(nrow(locs))) {
+    sigla_ini <- locs$start[i]
+    sigla_end <- locs$end[i]
+    recorte_ini <- sigla_end + 1
+    recorte_end <- min(nchar(texto), recorte_ini + 30)
+    if(recorte_ini <= recorte_end) {
+      # procurar número no trecho
+      trecho <- str_sub(texto, recorte_ini, recorte_end)
+      num_locs <- str_locate_all(trecho, regex("[0-9]+", ignore_case=TRUE))[[1]]
+      if(is.matrix(num_locs) && nrow(num_locs) > 0) {
+        # Achou
+        # Pega a 1a ocorrência
+        st_num <- recorte_ini + num_locs[1,1] - 1
+        ed_num <- recorte_ini + num_locs[1,2] - 1
+        # definimos a "end" do match como ed_num
+        contexto <- extrair_contexto1.2(texto, sigla_ini, ed_num, 50)
+        return(tibble(
+          found     = TRUE,
+          pagina    = pagina,
+          regra     = "Regra 1",
+          match_txt = paste0(locs$sigla[i], " + numero"),
+          start     = sigla_ini,
+          end       = ed_num,
+          contexto  = contexto
+        ))
+      }
+    }
+  }
+  
+  NULL
+}
+
+# 2.3. Regra 3: "primeira_palavra" + (conjunto_termos em 50 chars) + numero em 50 chars
+rule3_palavra_termos_num1.2 <- function(texto, pagina, pos, primeiras_palavras, conjunto_termos) {
+  # Achar todas as primeiras_palavras a partir de pos
+  loc_all <- map(primeiras_palavras, ~ buscar_termo1.2(texto, .x, pos_inicial = pos) %>%
+                                   mutate(palavra = .x))
+  locs <- bind_rows(loc_all)
+  if(!is.null(locs) || nrow(locs) == 0) {
+    return(tibble(found = logic(),
+                  pagina = integer(),
+                  regra = character(),
+                  match_txt = character(),
+                  start = integer(),
+                  end = integer(),
+                  contexto = character()
+                  )
+           )
+    
+  } 
+  
+  locs <- locs[order(locs$start), ]
+  for(i in seq_len(nrow(locs))) {
+    pw_ini <- locs$start[i]
+    pw_end <- locs$end[i]
+    rec_ini <- pw_end + 1
+    rec_end <- min(nchar(texto), rec_ini + 50)
+    if(rec_ini <= rec_end) {
+      trecho <- str_sub(texto, rec_ini, rec_end)
+      # Ver se existe pelo menos 1 termo de conjunto_termos
+      achou_termo <- any(map_lgl(conjunto_termos, ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+      # E ver se existe algum número
+      achou_num <- str_detect(trecho, regex("[0-9]+", ignore_case=TRUE))
+      
+      if(achou_termo && achou_num) {
+        # define a "end" do match = rec_end? ou local exato do número?
+        # aqui simplificamos e consideramos rec_end
+        # se quiser exatidão, pode localizar a 1a ocorrência do número
+        contexto <- extrair_contexto1.2(texto, pw_ini, rec_end, 50)
+        return(tibble(
+          found     = TRUE,
+          pagina    = pagina,
+          regra     = "Regra 3",
+          match_txt = paste0(locs$palavra[i], " + conj_termos + numero"),
+          start     = pw_ini,
+          end       = rec_end,
+          contexto  = contexto
+        ))
+      }
+    }
+  }
+  
+  NULL
+}
+
+# 2.4. Regra 2: "numero + (sigla ou primeira_palavra) em 50 chars"
+rule2_num_sigla_palavra1.2 <- function(texto, pagina, pos, siglas, primeiras_palavras) {
+  # Buscar todos os numeros a partir de pos
+  loc_nums <- buscar_numero1.2(texto, pos_inicial = pos)
+  if(!is.matrix(loc_nums) || nrow(loc_nums) == 0) { 
+    return(tibble(found = logic(),
+                  pagina = integer(),
+                  regra = character(),
+                  match_txt = character(),
+                  start = integer(),
+                  end = integer(),
+                  contexto = character())
+  loc_nums <- loc_nums[order(loc_nums$start), ]
+  
+  for(i in seq_len(nrow(loc_nums))) {
+    n_ini <- loc_nums$start[i]
+    n_end <- loc_nums$end[i]
+    rec_ini <- n_end + 1
+    rec_end <- min(nchar(texto), rec_ini + 50)
+    if(rec_ini <= rec_end) {
+      trecho <- str_sub(texto, rec_ini, rec_end)
+      has_sigla <- any(map_lgl(siglas, ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+      has_pw    <- any(map_lgl(primeiras_palavras, ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+      if(has_sigla || has_pw) {
+        contexto <- extrair_contexto1.2(texto, n_ini, rec_end, 50)
+        return(tibble(
+          found     = TRUE,
+          pagina    = pagina,
+          regra     = "Regra 2",
+          match_txt = "numero + (sigla ou primeira_palavra)",
+          start     = n_ini,
+          end       = rec_end,
+          contexto  = contexto
+        ))
+      }
+    }
+  }
+  
+  NULL
+}
+
+
+########################
+# 3. Função principal: processar uma linha/página
+########################
+
+processar_linha1.2 <- function(texto, pagina, 
+                            siglas, primeiras_palavras, conjunto_termos, termos_especiais) {
+  
+  resultados <- list()
+  pos <- 1
+  N <- nchar(texto)
+  
+  while(pos <= N) {
+    # TENTAMOS APLICAR AS REGRAS EM ORDEM: 4,1,3,2
+    match_reg4 <- rule4_especiais1.2(texto, pagina, pos, termos_especiais)
+    if(!is.null(match_reg4)) {
+      # encontrou
+      resultados[[length(resultados)+1]] <- match_reg4
+      # Definimos skip
+      end_here <- match_reg4$end
+      skip_limit <- end_here + 25
+      # Se entre end_here+1 e skip_limit não existe nova sigla ou primeira_palavra, 
+      # saltamos para skip_limit+1.
+      if(skip_limit > N) {
+        # sem mais a analisar
+        break
+      }
+      # se entre end_here+1 e skip_limit NÃO tiver sigla ou prime_word, pulamos
+      tem_forca_para_reanalise <- existe_termo_entre1.2(texto, siglas, primeiras_palavras,
+                                                     end_here+1, skip_limit)
+      if(!tem_forca_para_reanalise) {
+        pos <- skip_limit + 1
+      } else {
+        pos <- end_here + 1
+      }
+      next
+    }
+    
+    # Regra 1
+    match_reg1 <- rule1_sigla_numero1.2(texto, pagina, pos, siglas)
+    if(!is.null(match_reg1)) {
+      resultados[[length(resultados)+1]] <- match_reg1
+      end_here <- match_reg1$end
+      skip_limit <- end_here + 25
+      if(skip_limit > N) {
+        break
+      }
+      tem_forca <- existe_termo_entre1.2(texto, siglas, primeiras_palavras,
+                                      end_here+1, skip_limit)
+      if(!tem_forca) {
+        pos <- skip_limit + 1
+      } else {
+        pos <- end_here + 1
+      }
+      next
+    }
+    
+    # Regra 3
+    match_reg3 <- rule3_palavra_termos_num1.2(texto, pagina, pos, primeiras_palavras, conjunto_termos)
+    if(!is.null(match_reg3)) {
+      resultados[[length(resultados)+1]] <- match_reg3
+      end_here <- match_reg3$end
+      skip_limit <- end_here + 25
+      if(skip_limit > N) {
+        break
+      }
+      tem_forca <- existe_termo_entre1.2(texto, siglas, primeiras_palavras,
+                                      end_here+1, skip_limit)
+      if(!tem_forca) {
+        pos <- skip_limit + 1
+      } else {
+        pos <- end_here + 1
+      }
+      next
+    }
+    
+    # Regra 2
+    match_reg2 <- rule2_num_sigla_palavra1.2(texto, pagina, pos, siglas, primeiras_palavras)
+    if(!is.null(match_reg2)) {
+      resultados[[length(resultados)+1]] <- match_reg2
+      end_here <- match_reg2$end
+      skip_limit <- end_here + 25
+      if(skip_limit > N) {
+        break
+      }
+      tem_forca <- existe_termo_entre1.2(texto, siglas, primeiras_palavras,
+                                      end_here+1, skip_limit)
+      if(!tem_forca) {
+        pos <- skip_limit + 1
+      } else {
+        pos <- end_here + 1
+      }
+      next
+    }
+    
+    # Se nenhuma regra bateu, avançamos 1 caractere
+    pos <- pos + 1
+  }
+  
+  if(length(resultados) == 0) {
+    return(tibble())
+  }
+  
+  bind_rows(resultados)
+}
+
+
+########################
+# 4. Função final que processa cada página do tibble
+########################
+
+extrair_mencoes_avancado1.2 <- function(meu_documento,
+                                     siglas,
+                                     primeiras_palavras,
+                                     conjunto_termos,
+                                     termos_especiais) {
+  # espero que meu_documento tenha colunas: paginas, texto_limpo
+  meu_documento %>%
+    mutate(
+      ocorrs = map2(
+        .x = texto_limpo, 
+        .y = paginas, 
+        ~ processar_linha1.2(
+            texto = .x,
+            pagina = .y,
+            siglas = siglas,
+            primeiras_palavras = primeiras_palavras,
+            conjunto_termos = conjunto_termos,
+            termos_especiais = termos_especiais
+          )
+      )
+    ) %>%
+    unnest(ocorrs)
+}
+
+meu_documento1.2 <- meu_documento %>% filter(paginas < 2)
+
+extrato_mencoes_avancado1.2 <- extrair_mencoes_avancado1.2(meu_documento = meu_documento1.2,
+                                     siglas = paste0("\\b",siglas,"\\b"),
+                                     primeiras_palavras = paste0("\\b",primeiras_palavras,"\\b"),
+                                     conjunto_termos = paste0("\\b",conjunto_termos,"\\b"),
+                                     termos_especiais = paste0("\\b",termos_especiais,"\\b"))
+
+```
+Como Funciona
+Ordem das Regras: Dentro de while(pos <= N), tentamos Regra 4, depois Regra 1, depois Regra 3, depois Regra 2. Se alguma der “match”, registramos e fazemos a lógica de skip.
+
+Lógica de Skip (itens b e c do enunciado):
+
+Se encontramos um match com end = end_here, então definimos skip_limit = end_here + 25.
+
+Se, entre (end_here+1) e skip_limit, não houver “nova sigla” ou “nova primeira_palavra”, pulamos para pos = skip_limit + 1 (ou seja, saltamos 25 caracteres).
+
+Se houver uma nova sigla/palavra nesse intervalo, posicionamos pos = end_here + 1, ou seja, quase não pulamos – permitindo rechecagem a partir daí.
+
+Só Reanalisamos se surgir, no intervalo de 25 chars após, uma sigla ou primeira_palavra, que força uma nova verificação naquele trecho.
+
+Armazenamos cada match em um tibble com:
+
+pagina, regra, match_txt, start, end, contexto, etc.
+
+Case-insensitive: Usamos ignore_case=TRUE nos fixed(...) e no regex de número.
+
+Observações e Possíveis Ajustes
+Múltiplos Matches Sobrepostos: Se duas regras poderiam disparar quase na mesma posição, pegamos a primeira do if que checou. Você pode preferir outro critério.
+
+Localização Precisamente do “Número”: Em algumas regras (p.ex. Regra 3) definimos o end do match como rec_end, mas você pode querer localizar a posição exata do número ou do “conjunto_termos”.
+
+Performance: Esse loop “caractere a caractere” pode ser mais pesado para textos gigantes, mas é a forma mais direta de honrar a regra do “pular 25 chars salvo se...”.
+
+Refinamentos: Se precisar de uma checagem mais sofisticada (p.ex. caso haja 2 matches sobrepostos no mesmo local), terá que lidar em outro if.
+
+Exemplo de Uso
+Supondo:
+
+r
+Copiar
+meu_documento <- tibble(
+  paginas     = 1:2,
+  texto_limpo = c(
+    "nesta pagina 1 vejo a sigla adg e logo 123 no raio de 20 chars. tambem rasf no texto. e surgem 456 e APS",
+    "pagina 2 com a primeira_palavra ATO e a palavra diretoria e numero 789 no raio de 10 chars"
+  )
+)
+
+siglas <- c("ADG","APS","APR")
+primeiras_palavras <- c("ato","ata","portaria")
+conjunto_termos <- c("diretoria","geral","senado")
+termos_especiais <- c("rasf","anexo iv","8112","8.112")
+
+resultado <- extrair_mencoes_avancado(
+  meu_documento,
+  siglas,
+  primeiras_palavras,
+  conjunto_termos,
+  termos_especiais
+)
+
+resultado
+Você terá um tibble com as capturas de cada regra, na ordem e com skip conforme descrito.
+
+Conclusão
+O código acima demonstra:
+
+A ordem de aplicação 4 → 1 → 3 → 2.
+
+Skip de 25 chars após um match, exceto se nesse intervalo surgir uma sigla ou primeira_palavra, em cujo caso voltamos a analisar.
+
+Uso de subfunções para simplificar cada regra.
+
+Extração de contexto e registro de (start, end) de cada ocorrência.
+
+Este é um exemplo base. Ajuste conforme a sua necessidade real (tamanho da janela, se alguma regra tiver outra forma de localizar a “end” do match, etc.).
+
+Espero que isso ajude a ilustrar como implementar a lógica pedida. Fique à vontade para refinar!

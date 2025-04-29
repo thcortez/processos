@@ -1,0 +1,16 @@
+---
+title: "Listings Page Example"
+listing: 
+  contents: posts
+  feed: true #habilita RSS a partir dos posts
+  type: default
+  field-display-names: 
+    title: "Report"
+    max-description-length: 175
+  sort: 
+   - "date"
+   - "title desc"
+  date-format: medium
+  categories: true
+  sort-ui: true      
+---

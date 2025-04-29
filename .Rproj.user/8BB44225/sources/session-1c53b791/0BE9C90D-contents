@@ -1,0 +1,48 @@
+---
+title: "Page with listing Example"
+listing:
+  - id: sample-listings
+    type: default
+    contents: "posts/*.qmd"
+    feed: true #habilita RSS a partir dos posts
+  #fields: [image, author, title, date] # comando fields permite listar informações de metadados que serão visíveis na pagina
+    field-display-names: 
+      title: "News from the RC23"
+    max-description-length: 175
+    sort: 
+      - "date"
+      - "title desc"
+    date-format: medium
+    categories: true
+    sort-ui: [title, date, author]
+    filter-ui: [title, date, author]
+    page-size: 25 #este comando controla o numero de itens a serem exibidos por página
+    include: 
+      author: "{Thiago Cortez-Costa, Daniel Stockhemer}*" # os comandos include e exclude funcionam como filtro, determinando os campos e os valores que devem estar presentes ou ausentes para que o item seja incluído ou excluído. Uso dos colchetes é para listar mais de um autor.
+  - id: meeting-notes
+    contents: "posts/*.qmd"
+    type: grid
+    date-format: medium
+---
+
+# This is an attempt to generate a website
+
+## Let's see how this is done
+
+Will it work? Can you foresee?
+
+Well, Science is not about in-divination, but it does include predictions. Data-based empirical predictions.
+
+## News and updates!
+
+::: {#sample-listings}
+{#sample-listings}
+:::
+
+Learn more about Quarto [here](https://www.quarto.com).
+
+## Meet Board Members
+
+::: {#meeting-notes}
+{#sample-listings}
+:::

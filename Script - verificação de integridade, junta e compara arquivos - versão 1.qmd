@@ -1,0 +1,294 @@
+---
+title: "comparejoin.qmd"
+format: html
+---
+
+```{r}
+# Carregar as bibliotecas necessárias
+library(dplyr)
+library(readr)
+library(tidyr)
+
+# Defina o diretório onde os arquivos .txt estão localizados
+diretorio <- "D:/thiag_q/Downloads/Processos em 24 a 26-01-2025/pdf_processo"
+
+# Obtenha a lista de arquivos .txt no diretório
+arquivos <- list.files(diretorio, pattern = "_(tesseract|pdf2text|poppler)\\.txt$", full.names = TRUE)
+
+# Crie uma lista para armazenar os data frames consolidados
+dados_consolidados <- list()
+
+# Para cada grupo de arquivos com o mesmo nome base (diferenciados pelos sufixos)
+for (nome_base in unique(sub("_.*\\.txt$", "", basename(arquivos)))) {
+  
+  # Encontre os arquivos que correspondem ao nome base
+  arquivos_base <- arquivos[grepl(nome_base, arquivos)]
+  
+  # Se existirem 3 arquivos com esse nome base (um para cada sufixo), faça a operação
+  if(length(arquivos_base) > 1) {
+    # Leia o conteúdo de cada arquivo e armazene em uma lista
+    conteudos <- lapply(arquivos_base, function(arquivo) {
+      # Ler o conteúdo do arquivo e organizar linha por linha
+      read_lines(arquivo)
+    })
+    
+    # Encontrar o número máximo de linhas entre os arquivos
+    max_linhas <- max(sapply(conteudos, length))
+    
+    # Preencher os arquivos com NA para igualar o número de linhas
+    conteudos_preenchidos <- lapply(conteudos, function(conteudo) {
+      length(conteudo) <- max_linhas
+      return(conteudo)
+    })
+    
+    # Combine os conteúdos em um data frame, cada arquivo será uma coluna
+    df_base <- as.data.frame(conteudos_preenchidos)
+    
+    # Nomeie as colunas com base nos sufixos (tesseract, pdf2text, poppler)
+    colnames(df_base) <- c("tesseract", "pdf2text", "poppler")
+    
+    # Adiciona o data frame à lista de dados consolidados
+    dados_consolidados[[nome_base]] <- df_base
+  }
+}
+
+# Para cada grupo de dados consolidados, salve um arquivo CSV
+for (nome_base in names(dados_consolidados)) {
+  # Salve o arquivo CSV no diretório especificado
+  write_csv(dados_consolidados[[nome_base]], paste0(diretorio, nome_base, "_consolidado.csv"))
+}
+
+# Exiba a tabela resultante (opcional)
+#dados_consolidados
+
+
+```
+
+
+```{r}
+
+# Este código deverá encontrar erros de extração e de organização dos objetos que carregam o conteúdo textual dos arquivos compilados.
+
+# Criar o backup da lista dados_consolidados
+dados_consolidados_bckp <- dados_consolidados
+
+# Loop para percorrer a lista 'dados_consolidados_bckp' da sublista 1 até a 93
+# Carregar os pacotes necessários
+library(dplyr)
+library(stringr)
+
+# Loop para percorrer a lista 'dados_consolidados_bckp' da sublista 1 até a 93
+for (i in 1:93) {
+  
+  # Acessa cada subitem (tesseract, pdf2text, poppler)
+  for (subitem in c("tesseract", "pdf2text", "poppler")) {
+    
+    # Verifica se o subitem existe para o índice atual
+    if (!is.null(dados_consolidados_bckp[[i]][[subitem]])) {
+      
+      # Obtém o conteúdo do subitem (como vetor de linhas)
+      linhas <- dados_consolidados_bckp[[i]][[subitem]]
+      
+      # Usando stringr para remover o ponto e vírgula ";" antes de "p.x"
+      linhas <- str_replace(linhas, "^;\\s*(p\\.\\d+)", "\\1")  # Remove ";" antes de "p.x"
+      
+      # Usando stringr para remover "| |" ou "|  |" e substituí-los por "|"
+      linhas <- str_replace_all(linhas, "\\|\\s*\\|", "|")  # Substitui "| |" ou "|  |" por "|"
+      
+      # Atualiza o conteúdo do subitem na lista 'dados_consolidados_bckp'
+      dados_consolidados_bckp[[i]][[subitem]] <- linhas
+    }
+  }
+}
+
+
+# Exibe o backup e os dados modificados
+dados_consolidados_bckp  # Exibe a versão original (backup)
+dados_consolidados  # Exibe a versão modificada após os ajustes
+
+dados_consolidados <- dados_consolidados_bckp
+
+```
+
+```{r}
+
+# Registrar o "endereço" de eventuais erros encontrados, para correção
+
+# Carregar os pacotes necessários
+library(dplyr)
+library(stringr)
+
+# Criar o backup da lista dados_consolidados
+dados_consolidados_bckp <- dados_consolidados
+
+# Inicializa o objeto 'erros' para armazenar as discrepâncias
+erros <- list()
+
+# Loop para percorrer a lista 'dados_consolidados_bckp' da sublista 1 até a 93
+for (i in 1:93) {
+  
+  # Acessa cada subitem (tesseract, pdf2text, poppler)
+  for (subitem in c("tesseract", "pdf2text", "poppler")) {
+    
+    # Verifica se o subitem existe para o índice atual
+    if (!is.null(dados_consolidados_bckp[[i]][[subitem]])) {
+      
+      # Obtém o conteúdo do subitem (como vetor de linhas)
+      linhas <- dados_consolidados_bckp[[i]][[subitem]]
+      
+      # Se for a coluna 'poppler', verifica se o início de cada linha corresponde ao 'tesseract'
+      if (subitem == "poppler") {
+        # Obtém as linhas de 'tesseract' para comparar
+        tesseract_linhas <- dados_consolidados_bckp[[i]]$tesseract
+        
+        # Verifica linha por linha se o início da linha em 'poppler' corresponde ao de 'tesseract'
+        for (j in 1:length(linhas)) {
+          # Extraímos o padrão "p.x Parágrafo y" da linha correspondente em 'tesseract'
+          tesseract_paragraph <- str_extract(tesseract_linhas[j], "^p\\.\\d+ Parágrafo \\d+")
+          
+          # Verifica se a linha extraída não é NA e se a linha em 'poppler' começa com o mesmo padrão
+          if (!is.na(tesseract_paragraph)) {
+            if (!str_starts(linhas[j], tesseract_paragraph)) {
+              # Adiciona o erro ao objeto 'erros' se houver discrepância
+              erros[[length(erros) + 1]] <- list(
+                subitem = subitem,
+                nome_subsubitem = c("tesseract", "poppler"),
+                indice_erro = j
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Exibe o objeto de 
+erros
+
+
+
+
+```
+
+```{r}
+
+# Esse script compara o % de coincidencia de conteúdo em itens de mesmo nível e posição, armazenados em dados_consolidados_bckp. Primeiro, comparei tesseract e pdf2text.
+
+# Exemplo de função para calcular a porcentagem de coincidência entre duas strings
+calcula_coincidencia <- function(texto1, texto2) {
+  # Transformar para minúsculas e remover pontuação básica (opcional)
+  texto1_limpo <- tolower(gsub("[[:punct:]]", "", texto1))
+  texto2_limpo <- tolower(gsub("[[:punct:]]", "", texto2))
+  
+  # Separar em palavras
+  palavras1 <- unlist(strsplit(texto1_limpo, "\\s+"))
+  palavras2 <- unlist(strsplit(texto2_limpo, "\\s+"))
+  
+  # Calcular interseção e união
+  intersec <- intersect(palavras1, palavras2)
+  uniao    <- union(palavras1, palavras2)
+  
+  # Evitar divisão por zero caso alguma string esteja vazia
+  if (length(uniao) == 0) {
+    return(0)
+  }
+  
+  # Percentual de coincidência
+  (length(intersec) / length(uniao)) * 100
+}
+
+# Exemplo de iteração sobre o objeto dados_consolidados_bckp
+for (i in seq_along(dados_consolidados_bckp)) {
+  sublista_atual <- dados_consolidados_bckp[[i]]
+  
+  # Verifica se existem as chaves "tesseract" e "pdf2text" na sublista
+  if ("tesseract" %in% names(sublista_atual) &&
+      "pdf2text"  %in% names(sublista_atual)) {
+    
+    vec_tesseract <- sublista_atual$tesseract
+    vec_pdf2text  <- sublista_atual$pdf2text
+    
+    # Determina o tamanho para comparação (até o menor comprimento das duas listas)
+    n_comp <- min(length(vec_tesseract), length(vec_pdf2text))
+    
+    # Cria um vetor (ou lista) para armazenar as coincidências de cada linha/posição
+    coincidencias <- numeric(n_comp)
+    
+    for (j in seq_len(n_comp)) {
+      coincidencias[j] <- calcula_coincidencia(vec_tesseract[j], vec_pdf2text[j])
+    }
+    
+    # Adiciona o novo elemento (4ª sublista no mesmo nível)
+    dados_consolidados_bckp[[i]]$coincidencia_tess_pdf2text <- coincidencias
+    
+  } else {
+    # Caso não existam as duas chaves, você pode decidir o que armazenar
+    # Exemplo: armazenando NA
+    dados_consolidados_bckp[[i]]$coincidencia_tess_pdf2text <- NA
+  }
+}
+
+# Agora, cada sublista de dados_consolidados_bckp terá 4 elementos:
+# $tesseract, $pdf2text, $poppler e $coincidencia_tess_pdf2text
+
+
+#Agora, a comparação tesseract e poppler:
+
+# Função de cálculo de coincidência entre duas strings
+calcula_coincidencia <- function(texto1, texto2) {
+  # Transformar para minúsculas e remover pontuação básica
+  texto1_limpo <- tolower(gsub("[[:punct:]]", "", texto1))
+  texto2_limpo <- tolower(gsub("[[:punct:]]", "", texto2))
+  
+  # Separar em palavras
+  palavras1 <- unlist(strsplit(texto1_limpo, "\\s+"))
+  palavras2 <- unlist(strsplit(texto2_limpo, "\\s+"))
+  
+  # Calcular interseção e união
+  intersec <- intersect(palavras1, palavras2)
+  uniao    <- union(palavras1, palavras2)
+  
+  # Evitar divisão por zero
+  if (length(uniao) == 0) {
+    return(0)
+  }
+  
+  # Percentual de coincidência
+  (length(intersec) / length(uniao)) * 100
+}
+
+# Loop para calcular coincidência entre tesseract e poppler
+for (i in seq_along(dados_consolidados_bckp)) {
+  sublista_atual <- dados_consolidados_bckp[[i]]
+  
+  # Verifica se existem as chaves "tesseract" e "poppler" na sublista
+  if ("tesseract" %in% names(sublista_atual) && 
+      "poppler"   %in% names(sublista_atual)) {
+    
+    vec_tesseract <- sublista_atual$tesseract
+    vec_poppler   <- sublista_atual$poppler
+    
+    # Determina o tamanho para comparação (até o menor comprimento)
+    n_comp <- min(length(vec_tesseract), length(vec_poppler))
+    
+    # Cria um vetor para armazenar as coincidências por posição
+    coincidencias <- numeric(n_comp)
+    
+    for (j in seq_len(n_comp)) {
+      coincidencias[j] <- calcula_coincidencia(vec_tesseract[j], vec_poppler[j])
+    }
+    
+    # Adiciona o novo elemento com os percentuais
+    # (4ª sublista ou 5ª sublista, dependendo de quantos já existam)
+    dados_consolidados_bckp[[i]]$coincidencia_tess_poppler <- coincidencias
+    
+  } else {
+    # Caso não existam as duas chaves, armazenar NA, por exemplo
+    dados_consolidados_bckp[[i]]$coincidencia_tess_poppler <- NA
+  }
+}
+
+dados_consolidados <- dados_consolidados_bckp
+
+```

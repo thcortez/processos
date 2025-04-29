@@ -1,0 +1,274 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+
+library(purrr)
+library(dplyr)
+library(tidyverse)
+library(stringi)
+library(stringr)
+
+
+View(write.csv2(tibble_p003561, "tibble_p003561.csv"))
+
+names(tibble_p003561_b)
+
+#[1] "20240829" "20241125" "20241201"
+#[4] "20250125" "pagina"  
+```
+
+
+```{r}
+
+names(tibble_p003561_b) <- c("d20240829", "d20241125", "d20241201", "d20250125", "pagina")
+
+tibble_p003561_b <- tibble_p003561 %>% mutate(pagina = 1:n())
+
+tibble_p003561_c <- tibble_p003561_b %>% select(pagina, d20240829, d20241125, d20241201, d20250125) #ordenar, para que página fique no começo!
+
+tibble_p003561_b <- tibble_p003561_c
+
+tibble_p003561 <- tibble_p003561_b
+
+```
+
+```{r}
+library(purrr)
+library(dplyr)
+library(tidyverse)
+library(stringi)
+
+# os procedimentos abaixo deram certo, mas não precisam ser executados, pois o próximo bloco contém a função que retira os espaços em excesso.
+
+tibble_p003561_b <- tibble_p003561_b %>%
+  mutate(d20240829 = map_chr(d20240829, ~ gsub(" +", " ", .x)))
+
+tibble_p003561_b <- tibble_p003561_b %>%
+  mutate(d20241125 = map_chr(d20241125, ~ gsub(" +", " ", .x)))
+
+tibble_p003561_b <- tibble_p003561_b %>%
+  mutate(d20241201 = map_chr(d20241201, ~ gsub(" +", " ", .x)))
+
+tibble_p003561_b <- tibble_p003561_b %>%
+  mutate(d20250125 = map_chr(d20250125, ~ gsub(" +", " ", .x)))
+
+
+```
+
+aplicar uma transformação em todas as colunas de texto de uma vez, excluindo a coluna de índice.
+
+```{r}
+
+# Instale e carregue os pacotes se ainda não os tiver
+# install.packages("tidyverse")
+# install.packages("stringi")
+library(tidyverse)
+library(stringi)
+
+tibble_p003561_b <- tibble_p003561_b %>%
+  mutate(across(
+    .cols = -pagina,  # Seleciona todas as colunas, exceto a de índice
+    .fns = ~ .x %>%
+      tolower() %>%
+      stri_trans_general("Latin-ASCII") %>% #para remover acentuação e converter caracteres especiais para sua representação ASCII
+      str_squish(),
+    .names = "{.col}_norm"  # O nome da nova coluna será o nome original com sufixo _norm
+  ))
+
+
+view(tibble_p003561_b)
+```
+
+Explicando o que cada parte faz:
+across(.cols = -pagina, ...): Aplica a função especificada a todas as colunas exceto a indice, 'pagina'.
+
+tolower(.)~ : Para cada valor da célula, converte para letras minúsculas. 
+
+Depois utiliza stri_trans_general("Latin-ASCII") para remover acentuação e converter caracteres especiais para sua representação ASCII.
+
+.names = "{.col}_norm": Cria novas colunas com o nome da coluna original acrescido de _norm.
+
+Eliminamos espaços extras com str_squish().
+
+
+# Comparação por página
+Para cada página (linha) que está presente em todas as extrações, você pode adotar os seguintes métodos:
+
+## Uso de funções de comparação textual
+Cálculo de hash:
+Gere um hash (por exemplo, com o pacote digest) para cada extração de uma página. Se os hashes forem idênticos, o conteúdo é exatamente o mesmo.
+
+
+```{r}
+
+library(digest)
+
+texto_extracao1 <- tibble_p003561_b$d20240829_norm
+
+texto_extracao2 <- tibble_p003561_b$d20241125_norm
+
+texto_extracao3 <- tibble_p003561_b$d20241201_norm
+
+texto_extracao4 <- tibble_p003561_b$d20250125_norm
+
+hash_texto1 <- sapply(texto_extracao1, digest)
+hash_texto2 <- sapply(texto_extracao2, digest)
+hash_texto3 <- sapply(texto_extracao3, digest)
+hash_texto4 <- sapply(texto_extracao4, digest)
+
+# hash_texto1, hash_texto2, hash_texto3 e hash_texto4 sejam vetores com o hash de cada página para cada extração.
+
+i <- 1 # índice da página a ser analisada
+
+page_hashes <- tibble(hash_texto1, hash_texto2, hash_texto3, hash_texto4)
+
+page_hashes$pagina <- c(1:length(hash_texto1))
+
+names(page_hashes) <- c("hash_d20240829", "hash_d20241125", "hash_d20241201", "hash_d20250125", "pagina")
+
+view(page_hashes)
+
+tibble_p003561_c <- tibble_p003561_b
+
+tibble_p003561_c <- right_join(tibble_p003561_b, page_hashes)
+
+view(tibble_p003561_c)
+
+tibble_p003561_b <- tibble_p003561_c
+
+tibble_p003561 <- tibble_p003561_b
+
+rm(tibble_p003561_c)
+
+# Construa a matriz comparativa:
+# Utilize a função outer() para comparar elemento a elemento (usando o operador de igualdade ==):
+
+comp_mat <- outer(page_hashes, page_hashes, FUN = "==")
+# comp_mat será uma matriz lógica 4 x 4, onde cada célula é TRUE se os hashes forem iguais e FALSE caso contrário.
+
+#Crie uma matriz de cores:
+# Defina, por exemplo, verde para igualdade e vermelho para diferença.
+
+# Se a célula for TRUE, use "green"; se for FALSE, "red".
+color_mat <- ifelse(comp_mat, "green", "red")
+
+# Visualize a matriz comparativa:
+
+# Uma forma simples de visualizar é utilizando o image() do R base ou, se preferir, utilizar um gráfico de tiles com o ggplot2. Vou mostrar uma opção com ggplot2:
+
+# Instale (se necessário) e carregue os pacotes:
+install.packages("reshape2")
+install.packages("ggplot2")
+library(reshape2)
+library(ggplot2)
+
+# Converta a matriz de comparação para um data frame (formato longo):
+df <- melt(comp_mat)
+# A coluna 'value' contém os valores lógicos.
+# Crie uma coluna de cores para o gráfico:
+df$color <- ifelse(df$value, "green", "red")
+
+# Crie o gráfico de tiles:
+ggplot(df, aes(x = Var2, y = Var1, fill = color)) +
+  geom_tile(color = "black", size = 0.5) +
+  scale_fill_identity() +
+  scale_y_reverse(breaks = 1:4) +  # inverte o eixo y para que fique na ordem "matricial"
+  scale_x_continuous(breaks = 1:4) +
+  labs(x = "Extração", y = "Extração",
+       title = paste("Comparação de hashes para a página", i)) +
+  theme_minimal()
+
+```
+
+
+Nesse gráfico:
+
+O eixo 
+𝑥
+x e o eixo 
+𝑦
+y representam as extrações (1 a 4).
+Cada célula é colorida de verde se os hashes comparados são iguais ou de vermelho se são diferentes.
+Aplicando a outras páginas:
+
+Se você quiser gerar esse quadro para outras páginas, pode criar uma função que receba o índice da página e execute os passos acima. Por exemplo:
+
+
+```{r}
+
+plot_comparacao_pagina <- function(i) {
+  page_hashes <- c(hash_texto1[i], hash_texto2[i], hash_texto3[i], hash_texto4[i])
+  comp_mat <- outer(page_hashes, page_hashes, FUN = "==")
+  df <- melt(comp_mat)
+  df$color <- ifelse(df$value, "green", "red")
+  
+  ggplot(df, aes(x = Var2, y = Var1, fill = color)) +
+    geom_tile(color = "black", size = 0.5) +
+    scale_fill_identity() +
+    scale_y_reverse(breaks = 1:4) +
+    scale_x_continuous(breaks = 1:4) +
+    labs(x = "Extração", y = "Extração",
+         title = paste("Comparação de hashes para a página", i)) +
+    theme_minimal()
+}
+
+# Exemplo: plotar a comparação para a página 1
+plot_comparacao_pagina(1)
+
+```
+
+
+Essa abordagem gera, para cada página, um quadro 4x4 comparativo onde cada célula indica visualmente se o hash da extração 
+𝑗
+j é igual ao da extração 
+𝑘
+k. Você pode ajustar as cores, rótulos e demais elementos gráficos conforme sua necessidade.
+
+
+Se o hash mudar de uma extração para outra, isso sinaliza que houve alguma alteração.
+
+## Cálculo de distância de edição:
+Utilize funções como adist() ou o pacote stringdist para calcular a distância de Levenshtein (ou outra métrica) entre os textos.
+
+
+Não utilize o código a seguir, pois a computação dele é pesada demais, irá travar. A distância de Levenshtein, subjacente ao código, é método para strings curtos, usado em aplicações como corretores ortográficos.
+```{r}
+#distancia <- adist(texto_extracao1, texto_extracao2)
+
+```
+
+Não testei ainda o código abaixo
+
+```{r}
+
+comparar_textos <- function(textos) {
+  # Supondo que 'textos' seja um vetor com o conteúdo de cada extração, 
+  # e que o último elemento seja a extração mais recente.
+  referencia <- textos[length(textos)]
+  
+  # Inicializa um vetor para armazenar as distâncias
+  distancias <- numeric(length(textos) - 1)
+  
+  # Itera pelas extrações anteriores e calcula a distância em relação à extração mais recente
+  for(i in 1:(length(textos) - 1)) {
+    # Se alguma extração for NA, registra NA na comparação
+    if(is.na(textos[i]) | is.na(referencia)) {
+      distancias[i] <- NA
+    } else {
+      distancias[i] <- stringdist::stringdist(textos[i], referencia, method = "lv")
+    }
+  }
+  
+  # Nomeia os elementos para indicar a comparação
+  names(distancias) <- paste0("Dist_texto", 1:(length(textos)-1), "_vs_recente")
+  return(distancias)
+}
+
+# Aplicando a função a cada linha (página) da base de dados (supondo que as colunas 1 a 5 sejam as extrações)
+resultados <- t(apply(dados[, 1:5], 1, comparar_com_referencia_recente))
+
+
+```

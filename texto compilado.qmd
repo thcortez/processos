@@ -1,0 +1,57 @@
+---
+title: "Memorial Jurídico"
+output: html_document
+---
+
+```{r}
+
+# Carregue os pacotes necessários
+library(dplyr)
+
+# Combine os vetores em um tibble
+memorial_df_parte1 <- tibble::tibble(
+  titulo = titulo,
+  conteudo = conteudo,
+  palavras_chave = palavras_chave,
+  normas_referencias = normas_referencias
+)
+
+# Caminho onde o arquivo .qmd será salvo
+arquivo_qmd <- "memorial_juridico.qmd"
+
+# Abrindo conexão para escrita no arquivo
+con <- file(arquivo_qmd, open = "wt", encoding = "UTF-8")
+
+# Escrevendo cabeçalho do arquivo Quarto (.qmd)
+cat(
+  "---\n",
+  "title: \"Memorial Jurídico Completo\"\n",
+  "format: html\n",
+  "toc: true\n",
+  "number-sections: true\n",
+  "---\n\n",
+  file = con
+)
+
+# Escrevendo o conteúdo de cada item do dataframe
+memorial_df_parte1 %>%
+  rowwise() %>%
+  do({
+    cat(
+      "## ", .$titulo, "\n\n",
+      .$conteudo, "\n\n",
+      "**Palavras-chave:** ", .$palavras_chave, "\n\n",
+      "**Normas e Referências Jurídicas:** ", .$normas_referencias, "\n\n",
+      "---\n\n",
+      file = con, sep = ""
+    )
+    data.frame()
+  })
+
+# Fechando o arquivo
+close(con)
+
+# Mensagem final
+cat("✅ Arquivo 'memorial_juridico.qmd' gerado com sucesso! Agora é só abrir e renderizar no RStudio.")
+
+```

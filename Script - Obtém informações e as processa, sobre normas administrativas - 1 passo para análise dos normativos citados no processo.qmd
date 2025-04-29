@@ -1,0 +1,3472 @@
+---
+title: "Untitled"
+format: html
+---
+
+
+# Obter a lista de nomenclatura de normas internas e formatos padrão a partir do formulário do NADM, no portal do Senado.
+a Página foi salva no computador em formato html, e o código fonte foi analisado para efetuar as extrações abaixo
+
+```{r}
+
+library(rvest)
+library(xml2)
+library(dplyr)
+library(purrr)
+library(tibble)
+
+# Caminho do arquivo
+arquivo <- "Pesquisar Atos Internos.html"
+
+# Ler o HTML
+pagina <- read_html(c(paste0(caminho, arquivo)))
+
+# Extrair todos os campos <select> e <input>
+selects <- pagina %>% html_elements("select")
+inputs <- pagina %>% html_elements("input")
+labels <- pagina %>% html_elements("label")
+
+# Criar dicionário de labels
+label_map <- tibble(
+  id = labels %>% html_attr("for"),
+  texto = labels %>% html_text(trim = TRUE)
+) %>% filter(!is.na(id))
+
+# Função para extrair uma tabela de um campo <select> com <optgroup>
+extrair_select_com_grupos <- function(select_node) {
+  nome_campo <- html_attr(select_node, "name")
+  if (is.na(nome_campo)) return(NULL)
+
+  grupos <- select_node %>% html_elements("optgroup")
+  opcoes <- purrr::map_df(grupos, function(grupo) {
+    label_grupo <- html_attr(grupo, "label")
+    options <- grupo %>% html_elements("option")
+    tibble(
+      campo = nome_campo,
+      grupo = label_grupo,
+      texto_opcao = html_text(options, trim = TRUE),
+      value = html_attr(options, "value"),
+      id = html_attr(options, "id")
+    )
+  })
+
+  # Também verificar opções soltas fora de optgroup
+  sem_grupo <- select_node %>% html_elements("option") %>%
+    discard(~ xml_find_lgl(., "ancestor::optgroup")) %>%
+    tibble(
+      campo = nome_campo,
+      grupo = NA_character_,
+      texto_opcao = html_text(., trim = TRUE),
+      value = html_attr(., "value"),
+      id = html_attr(., "id")
+    )
+
+  bind_rows(opcoes, sem_grupo)
+}
+
+# Aplicar para todos os selects
+selects_df <- bind_rows(lapply(selects, extrair_select_com_grupos))
+
+# Dividir a tabela por campo para facilitar exportação individual
+selects_divididas <- split(selects_df, selects_df$campo)
+
+# Extrair campos INPUT do tipo texto (ex: número da norma, ano)
+inputs_df <- tibble(
+  campo = html_attr(inputs, "name"),
+  id = html_attr(inputs, "id"),
+  type = html_attr(inputs, "type"),
+  maxlength = html_attr(inputs, "maxlength"),
+  pattern = html_attr(inputs, "pattern"),
+  placeholder = html_attr(inputs, "placeholder"),
+  onkeypress = html_attr(inputs, "onkeypress"),
+  onchange = html_attr(inputs, "onchange")
+) %>%
+  filter(type %in% c("text", "number", "date")) %>%
+  left_join(label_map, by = c("id" = "id")) %>%
+  select(campo, id, type, texto, maxlength, pattern, placeholder, onkeypress, onchange)
+
+# Mostrar todas as tabelas geradas separadamente
+print("Campos de preenchimento manual (número, ano, etc.):")
+print(inputs_df)
+
+print("Campos de seleção com grupos (como tipo, origem, classificação):")
+print(names(selects_divididas))
+
+library(rvest)
+library(dplyr)
+library(purrr)
+library(xml2)
+library(stringr)
+
+
+# Encontrar todos os <select>
+selects <- pagina %>% html_elements("select")
+
+# Função completa para extrair as opções (com e sem <optgroup>)
+extrair_opcoes_select <- function(sel_node) {
+  nome_campo <- html_attr(sel_node, "name") %||% html_attr(sel_node, "id") %||% "campo_desconhecido"
+  optgroups <- sel_node %>% html_elements("optgroup")
+
+  # Caso com <optgroup>
+  if (length(optgroups) > 0) {
+    map_df(optgroups, function(grupo) {
+      nome_grupo <- html_attr(grupo, "label")
+      opcoes <- grupo %>% html_elements("option")
+      tibble(
+        campo_select = nome_campo,
+        grupo = nome_grupo,
+        texto_opcao = html_text(opcoes, trim = TRUE),
+        value = html_attr(opcoes, "value"),
+        id = html_attr(opcoes, "id")
+      )
+    })
+  } else {
+    # Caso direto sem <optgroup>
+    opcoes <- sel_node %>% html_elements("option")
+    tibble(
+      campo_select = nome_campo,
+      grupo = NA_character_,
+      texto_opcao = html_text(opcoes, trim = TRUE),
+      value = html_attr(opcoes, "value"),
+      id = html_attr(opcoes, "id")
+    )
+  }
+}
+
+# Aplicar a todos os <select> encontrados
+selects_df <- map(selects, extrair_opcoes_select) %>% bind_rows()
+
+# Resultado: todas as opções, com texto visível, value, id, agrupadas por campo e grupo
+glimpse(selects_df)
+
+
+lista_opcoes_NADM_form <- selects_df
+
+nadm_info <- list(rotulos = label_map, opcoes_nadm = lista_opcoes_nadm, cod_html = pagina, xml_nodes = selects)
+
+nadm_info$metadados <- list(fonte = c(caminho, arquivo), data_extracao = Sys.Date())
+
+nadm_info$uso_sugerido <- "acesse separadamente cada item armazenado em nadm_info, pois sao independentes entre si. utilize por exemplo funcoes como 'as_tibble(nadm_info$opcoes_nadm)' para ter acesso à base de dados com os tipos de normas administrativas"
+
+#saveRDS(nadm_info, file = paste0(caminho,"Pesquisar Atos Internos nadm_info.rds"))
+
+
+```
+
+# agora, incorporaremos os tipos de normas e seus formatos em uma expressão generica para realizar a busca e a extração das citações nos textos do processo
+
+Com o objetivo de mapear num processo as normas internas de um dado órgão que são citadas, realizaremos as operações a seguir. Pretende-se calcular quantas vezes são citadas, em quais páginas ocorrem as citações, extrair o contexto em que são citadas (p. ex. 100 caracteres para trás e 100 para frente), e identificar quem é o autor do documento em que ela aparece. Nesse primeiro momento, preciso desenvolver uma forma segura para captar as ocorrências textuais das citações às normas. 
+
+Trabalhando no RStudio, iremos desenvolver  código que realize tais atividades. Pensei em utilizar expressoes regex. Para isso, vamos partir de um primeiro modelo mais simples, em que são admitidos os seguintes formatos para a regex: (('Sigla com 3 letras'|Tipo por extenso) + espaço + (opcional:('número '|'nº '|'n.º '|'num. '|'num '|'no '|'no. '|'n.o '|'nº. ')) + (de 1 a 5 posições de algarismos arábicos, cada uma variando de 0 a 9, com separador de milhar opcional:'.') + ('/'|'-'|' de ') +((YY|YYYY|Y.YYY|'DD de 'qualquer mês do ano por extenso' de ('YYYY'|'Y.YYY'))).
+
+A string a seguir especifica as siglas possíveis para o primeiro termo, imediatamente seguidas por suas representações escritas por extenso. Desconsidere o hifen e os espaços entre as siglas e os nomes por extenso; e dentro dos nomes por extenso, inclua a possibilidade de ter ou nao ter hifen.
+
+```{r}
+
+lista <- c("ADG", "ATO da  DIRETORIA  GERAL",
+"APR", "ATO  da  PRESIDÊNCIA  DO  SENADO",
+"APS", "ATO  da  PRIMEIRA-SECRETARIA",
+"ATC","ATO  da  COMISSÃO  DIRETORA",
+"ATL","ATA  da  REUNIÃO  DE  LÍDERES  DO  SENADO  FEDERAL",
+"INO","INSTRUÇÃO  NORMATIVA",
+"ORN","ORIENTAÇÃO  NORMATIVA",
+"PDG","PORTARIA  da  DIRETORIA-GERAL",
+"PPR","PORTARIA  da  PRESIDÊNCIA  DO  SF",
+"PPS","PORTARIA  DO  PRIMEIRO-SECRETÁRIO",
+"RES","RESOLUÇÃO",
+"ATA","ATA  DE  REUNIÃO  da  COMISSÃO  DIRETORA",
+"AAG","ATO  da  AUDITORIA  GERAL",
+"ACA","ATA  DO  CONSELHO  DE  ADMINISTRAÇÃO  (SF)",
+"ACC","ATA  DO  COMITÊ  DE  CONTRATAÇÕES",
+"ACD","ATO  CONJUNTO  DAS  DIRETORIAS-GERAIS  DO  SF  E  da  CD",
+"ACE","ATO  da  PRESIDÊNCIA  DO  CONSELHO  EDITORIAL",
+"ACG","ATO  DO  CONSULTOR-GERAL  LEGISLATIVO",
+"ACI","ATA  DO  CONSELHO  DE  SUPERVISÃO  DO  ILB",
+"ACJ","ATO  CONJUNTO",
+"ACL","ATO  CONJUNTO  DOS  PRESIDENTES  DO  SF  E  da  CD",
+"ACM","ATO  CONJUNTO  DAS  MESAS  da  CD  E  DO  SF",
+"ACO","ATO  da  SECRETARIA  DE  COMUNICAÇÃO  SOCIAL",
+"ACP","ATA  DO  COMITÊ  CIENTÍFICO-PEDAGÓGICO",
+"ACS","ATA  DO  CONSELHO  DE  SUPERVISÃO  DO  SISTEMA  INTEGRADO  DE  SAÚDE",
+"ADE","ATO  DECLARATÓRIO",
+"ADI","ATO  CONJUNTO  da  DGER  E  DEILB",
+"ADL","ATO  CONJUNTO  DAS  DGER  SF  E  CD  E  SECR.  GERAL  TCU",
+"ADP","ATO  DO  DIRETOR  DO  PRODASEN",
+"ADV","ATO  DO  ADVOGADO-GERAL",
+"AES","ATA  DE  ASSEMBLEIA  EXTRAORDINÁRIA  DO  CSSIS",
+"AGE","ATA  DO  COMITÊ  DE  GOVERNANÇA  E  GESTÃO  ESTRATÉGICA",
+"AGI","ATA  DO  GRUPO  DE  ESTUDOS  DO  ILB",
+"AGP","ATO  da  SECRETARIA  DE  GESTÃO  DE  PESSOAS",
+"AGR","ATO  DO  PRESIDENTE  DO  CONSELHO  DE  SUPERVISÃO  DO  CEGRAF",
+"AIL","ATO  DO  DIRETOR-EXECUTIVO  DO  ILB",
+"AMS","ATO  da  MESA  DO  SENADO  FEDERAL",
+"APA","ATA  da  COMISSÃO  PRÓPRIA  DE  AVALIAÇÃO",
+"APC","ATO  DO  PRESIDENTE  da  COMISSÃO  DIRETORA",
+"APD","ATO  DE  PRESIDENTE  DE  COMISSÃO  DE  PAD",
+"APG","ATA  DE  COMISSÃO  DE  CURSO  DE  PÓS-GRADUAÇÃO",
+"API","ATO  CONJUNTO  da  DGER,  SEGP  E  ILB",
+"APL","ATO  DO  PRESIDENTE  da  COMISSAO  PERMANENTE  DE  LICITAÇÃO  (COPELI)",
+"APM","ATO  CONJUNTO  DOS  PRESIDENTES  DAS  MESAS  DO  SF  E  da  CD",
+"APN","ATA  DO  CONSELHO  DE  SUPERVISÃO  DO  PRODASEN",
+"ASC","ATO  DO  DIRETOR  da  SECRETARIA  DE  CONTROLE  INTERNO",
+"ASD","ATO  CONJUNTO  da  SECRETARIA-GERAL  da  MESA  E  da  DGER",
+"ASG","ATO  da  SECRETARIA-GERAL  da  MESA",
+"ASI","ATO  DO  CONSELHO  DE  SUPERVISÃO  DO  SISTEMA  INTEGRADO  DE  SAÚDE",
+"ASL","ATO  CONJUNTO  da  SGM  DO  SF  E  da  SGM  da  CD",
+"ASS","ATO  DO  PRESIDENTE  DO  CONSELHO  DE  SUPERVISÃO  DO  SIS",
+"AT3","ATO  DO  TERCEIRO-SECRETÁRIO",
+"ATD","ATO  da  SECRETARIA  DE  GESTÃO  DE  INFORMAÇÃO  E  DOCUMENTAÇÃO",
+"ATO","ATO  (outras  autoridades)",
+"CCE","CHAMADA  PARA  SELEÇÃO  DE  COLABORADOR  EDUCACIONAL",
+"CIC","CHAMADA  PARA  INSCRIÇÃO  EM  CURSO  (ILB)",
+"DCD","DECISÃO  da  COMISSÃO  DIRETORA",
+"DDG","DECISÃO  da  DIRETORIA-GERAL",
+"DEC","DECISÃO",
+"DPR","DESPACHO  DO  PRESIDENTE",
+"DPS","DECISÃO  da  PRESIDÊNCIA  DO  SENADO  FEDERAL",
+"DSP","DESPACHO",
+"EAI","EDITAL  DE  AVALIAÇÃO  INDIVIDUAL  DE  DESEMPENHO",
+"ECE","EDITAL  DE  CIÊNCIA  DE  ELIMINAÇÃO  DE  DOCUMENTOS",
+"ECI","EDITAL  DE  CONVOCAÇÃO  DO  ILB",
+"ECP","EDITAL  DE  CONCURSO  PÚBLICO",
+"EES","EDITAL  DE  ELEIÇÃO  DO  CSIS",
+"EGP","EDITAL  DE  SELEÇÃO  DE  GRUPO  DE  ESTUDOS",
+"EPG","EDITAL  DE  PROCESSO  SELETIVO S?INTERNO S?DE S?GESTOR",
+"EPS","EDITAL  DE  PROCESSO  SELETIVO  (ILB)",
+"ESS","EDITAL  DE  PROCESSO  SELETIVO  SIMPLIFICADO  (DGER)",
+"ETD","EDITAL  DE  SELEÇÃO  DE  TESES,  DISSERTAÇÕES  E  MONOGRAFIAS",
+"ICB","INSTRUÇÃO  NORMATIVA  da  COORDENAÇÃO  da  BIBLIOTECA",
+"ICD","INSTRUÇÃO  da  COMISSÃO  DIRETORA",
+"IDG","INSTRUÇÃO  NORMATIVA  da  DIRETORIA  GERAL",
+"IGR","INSTRUÇÃO  NORMATIVA  DO  PRES.  CSCEGRAF  (1º  SECRETÁRIO)",
+"IIP","INSTRUÇÃO  NORMATIVA  CONJUNTA  DO  ILB  E  da  SERH/SEGP",
+"INA","INSTRUÇÃO  NORMATIVA  da  ADVOSF",
+"INC","INSTRUÇÃO  NORMATIVA  da  SECRETARIA  DE  CONTROLE  INTERNO",
+"IND","INSTRUÇÃO  NORMATIVA  da  SGIDOC",
+"ING","INSTRUÇÃO  NORMATIVA  da  SECRETARIA  DE  GESTÃO  DE  PESSOAS",
+"INI","INSTRUÇÃO  NORMATIVA  DO  ILB",
+"INM","INSTRUÇÃO  NORMATIVA  da  SECRETARIA  GERAL  da  MESA",
+"INP","INSTRUÇÃO  NORMATIVA  da  SECRETARIA  DE  POLÍCIA  LEGISLATIVA",
+"INS","INSTRUÇÃO  NORMATIVA  DO  CONSELHO  DE  SUPERVISÃO  DO  SIS",
+"IPS","INSTRUÇÃO  NORMATIVA  da  PRIMEIRA  SECRETARIA",
+"IPT","INSTRUÇÃO  NORMATIVA  da  SECRETARIA  DE  PATRIMÔNIO",
+"NAP","NORMA  ADMINISTRATIVA  DO  PRODASEN",
+"NTP","NORMA  TÉCNICA  DO  DIRETOR  DO  PRODASEN",
+"OF"  ,"OFÍCIO",
+"OSV","ORDEM  DE  SERVIÇO",
+"PAA","PARECER  da  ADVOSF",
+"PAG","PORTARIA  DO  AUDITOR-GERAL",
+"PAS","PORTARIA  da  ADVOCACIA  DO  SENADO",
+"PCC","PORTARIA  da  COMISSÃO  ESPECIAL  CURADORA",
+"PCE","PORTARIA  CONJUNTA  DAS  ESCOLAS  DE  GOVERNO    ILB,  CEFOR,  ISC",
+"PCL","PORTARIA  CONJUNTA  DO  SF,  da  CD  E  DO  TCU",
+"PCS","PORTARIA  DO  PRESIDENTE  DO  CONSELHO  DE  SUPERVISÃO  DO  SIS",
+"PDC","PORTARIA  da  DIRETORIA  DE  CONTRATAÇÕES",
+"PGO","(NÃO  UTILIZAR)  PORTARIA  da  CONSULTORIA  GERAL  DE  ORÇAMENTOS",
+"PGP","PORTARIA  da  SECRETARIA  DE  GESTÃO  DE  PESSOAS",
+"PIL","PORTARIA  DO  INSTITUTO  LEGISLATIVO  BRASILEIRO",
+"PLI","PORTARIA  DO  PRESIDENTE  da  COPELI",
+"PPA","PARECER",
+"PPC","PORTARIA  DO  PRESIDENTE  da  CODIR",
+"PPE","PORTARIA  da  COMISSÃO  da  ELEIÇÃO  DO  CSSIS",
+"PPL","PORTARIA  da  SECRETARIA  DE  POLÍCIA  LEGISLATIVA",
+"PRE","PORTARIA  REDE  EQUIDADE",
+"PRT","PORTARIA  (outras  autoridades)",
+"PSC","PORTARIA  da  SECRETARIA  DE  COMUNICAÇÃO  SOCIAL",
+"PSD","PORTARIA  CONJUNTA  da  SECRETARIA-GERAL  da  MESA  E  da  DGER",
+"PTO","PORTARIA da CONSULTORIA DE ORÇAMENTO, FISCALIZAÇÃO E CONTROLE",
+"LEI", "lei", "Lei", "Constituição Federal", "CF", "Constituição de 1988")
+
+
+lista <- c()
+
+
+```
+
+
+```{r}
+
+# Carregar o pacote stringr para manipulação de strings
+library(stringr)
+
+# Vetor com algumas siglas e suas representações por extenso
+# (Observe que, para efeitos do regex, retiramos hífens e espaços, permitindo opcionalmente espaços)
+normas <- lista #c(" \ADG\", \"ATO \S?da \S?DIRETORIA \S?GERAL\",
+
+
+# Parte numérica segura da data (apenas anos)
+
+  ano_regex <- paste0(
+  "(",
+    "(?:[0-9]{4})",                     # YYYY
+    "|",
+    "(?:[0-9]\\.[0-9]{3})",             # Y.YYY
+    "|",
+    "(?:[0-9]{2})(?![0-9])",            # YY, mas não seguido de número (lookahead negativo)
+  ")"
+)
+
+# Parte textual da data (ex: 15 de março de 2023)
+data_textual <- paste0(
+  "(?:[0-9]{1,2}\\s+de\\s+",
+  "(?:janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)",
+  "\\s+de\\s+(?:[0-9]{4}|[0-9]\\.[0-9]{3}))"
+)
+
+# Parte completa da data
+data_regex <- paste0("(", ano_regex, "|", data_textual, ")")
+
+# opções para ano: YY, YYYY ou Y.YYY
+    "|",                                          # OU
+    "(?:[0-9]{1,2}\\s+de\\s+(?:janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\\s+de\\s+(?:[0-9]{4}|[0-9]\\.[0-9]{3}))",
+  ")"                                             # fim do grupo da data
+)
+
+# Construir o padrão regex para identificar a citação
+# A ideia é: (sigla ou nome por extenso) + espaço + (parte opcional do número) +
+#             (1 a 5 dígitos com possível separador de milhar) + (separador) +
+#             (data: ano ou data completa com mês por extenso)
+pattern <- paste0(
+  "(?:", paste(normas, collapse = "|"), ")",         # Siglas ou nomes
+  "\\s+",
+  "(?:n[uú]mero\\s|n[ºo\\.]\\s|num\\.?\\s|no\\.?\\s)?",
+  "([0-9]{1,3}(?:\\.[0-9]{3})?|[0-9]{1,5})",
+  "\\s*",
+  "(?:/|-|\\s+de\\s+)",
+  "\\s*",
+  data_regex
+)
+
+
+pattern <- paste0(
+  "(?:", paste(normas, collapse = "|"), ")",    # uma das siglas ou nomes por extenso
+  "\\s+",                                         # espaço obrigatório
+  "(?:n[uú]mero\\s|n[ºo\\.]\\s|num\\.?\\s|no\\.?\\s)?",  # parte opcional do prefixo numérico
+  "([0-9]{1,3}(?:\\.[0-9]{3})?|[0-9]{1,5})",      # número com 1 a 5 dígitos, com ou sem separador de milhar
+  "\\s*",                                         # espaços opcionais
+  "(?:/|-|\\s+de\\s+)",                           # separador: '/', '-' ou ' de '
+  "\\s*",                                         # espaços opcionais
+  "(",                                            # início do grupo para a data
+  
+  
+
+# Exemplo de texto (substitua pelo conteúdo do seu documento)
+texto <- proc_3561_011224
+
+# Localizar as ocorrências com suas posições no texto
+ocorrencias <- str_locate_all(texto, pattern)[[1]]
+
+# Para cada ocorrência, extrair 100 caracteres antes e 100 depois
+extrair_contexto <- function(pos, texto, janela = 100) {
+  inicio_contexto <- max(pos[1] - janela, 1)
+  fim_contexto <- min(pos[2] + janela, nchar(texto))
+  substr(texto, inicio_contexto, fim_contexto)
+}
+
+# Montar uma lista com os resultados (texto exato da ocorrência, posição e contexto)
+resultados <- apply(ocorrencias, 1, function(pos) {
+  list(
+    ocorrencia = substr(texto, pos[1], pos[2]),
+    posicao_inicial = pos[1],
+    posicao_final = pos[2],
+    contexto = extrair_contexto(pos, texto)
+  )
+})
+
+# Exibir os resultados
+print(resultados)
+
+# Contar as ocorrências encontradas por citação (você pode adaptar para agrupar por sigla)
+citacoes <- str_extract_all(texto, pattern)[[1]]
+tabela_citacoes <- table(citacoes)
+print(tabela_citacoes)
+
+# Observação:
+# - Para mapear as páginas, se o texto contém marcadores (por exemplo, "Página 5"),
+#   você pode localizar esses marcadores e, a partir da posição de cada citação,
+#   determinar a qual página ela pertence.
+# - Para identificar o autor do documento, supondo que haja uma marcação padrão,
+#   pode-se definir outra expressão regular e aplicá-la de forma semelhante.
+
+# obter páginas do processo, para aplicação das funções de mapeamento das normas citadas
+
+library(pdftools)
+
+arquivo <- "2024 12 01 Processo 00200 003561 2020 66 Principal de acompanhamento AUTOS.pdf"
+caminho <- paste0(caminho, "PROCESSOS/")
+
+processo003561_path <- paste0(caminho, arquivo)
+
+processo003561 <- pdf_text(pdf = processo003561_path)
+
+proc_3561_011224 <- tibble(processo003561)
+
+proc_3561_011224 <- proc_3561_011224 %>% mutate(paginas = seq_along(processo003651))
+
+caminho
+
+```
+
+
+# Vamos testar esse pipeline workflow sugerido pelo GPT
+
+
+```{r}
+
+proc_3561_011224$pagina <- list(proc_3561_011224$processo003651)
+
+extrair_citacoes <- function(df) {
+  df %>%
+    # Aplicar regex em cada página da coluna 'paginas'
+    mutate(matches = map(paginas, ~ str_locate_all(.x, pattern)[[1]])) %>%
+    unnest(matches) %>%
+    filter(!is.na(start)) %>%
+    mutate(
+      trecho = map2_chr(paginas, start, ~ str_sub(.x, .y, .y + attr(.x, "match.length") - 1)),
+      contexto = pmap_chr(list(paginas, start, end),
+                          function(txt, ini, fim) {
+                            str_sub(txt, max(1, ini - 100), min(nchar(txt), fim + 100))
+                          }),
+      sigla = str_extract(trecho, "^[A-Z]{2,4}")
+    ) %>%
+    select(pagina, sigla, trecho, contexto, start, end)
+}
+
+
+info_citacoes <- extrair_citacoes(proc_3561_011224)
+
+
+```
+
+PERAE , é que esse código é para quem está com vetor chr. 
+
+```{r}
+# Pacotes necessários
+library(tidyverse)
+library(stringr)
+
+#-----------------------------
+# 1. Função auxiliar: expressão da data (com lógica segura)
+#-----------------------------
+regex_data <- function() {
+  meses <- "(?:janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)"
+  
+  ano_regex <- paste0(
+    "(",
+      "(?:[0-9]{4})",           # YYYY
+      "|",
+      "(?:[0-9]\\.[0-9]{3})",   # Y.YYY
+      "|",
+      "(?:[0-9]{2})(?![0-9])",  # YY, mas não seguido de outro número
+    ")"
+  )
+  
+  data_extenso <- paste0("[0-9]{1,2}\\s+de\\s+", meses, "\\s+de\\s+(?:[0-9]{4}|[0-9]\\.[0-9]{3})")
+  
+  paste0("(", ano_regex, "|", data_extenso, ")")
+}
+
+#-----------------------------
+# 2. Vetor de normas (exemplo resumido — adicione o restante conforme sua lista)
+#-----------------------------
+#normas <- c( "ADG", "ATO\\s?da\\s?DIRETORIA[-\\s]?GERAL",  "APR", "ATO\\s?da\\s?PRESIDÊNCIA\\s?DO\\s?SENADO",  "APS","ATO\\s?da\\s?PRIMEIRA[-\\s]?SECRETARIA",  "ATC", "ATO\\s?da\\s?COMISSÃO\\s?DIRETORA")
+
+lista <- c("ADG", "ATO da  DIRETORIA  GERAL",
+"APR", "ATO  da  PRESIDÊNCIA  DO  SENADO",
+"APS", "ATO  da  PRIMEIRA-SECRETARIA",
+"ATC","ATO  da  COMISSÃO  DIRETORA",
+"ATL","ATA  da  REUNIÃO  DE  LÍDERES  DO  SENADO  FEDERAL",
+"INO","INSTRUÇÃO  NORMATIVA",
+"ORN","ORIENTAÇÃO  NORMATIVA",
+"PDG","PORTARIA  da  DIRETORIA-GERAL",
+"PPR","PORTARIA  da  PRESIDÊNCIA  DO  SF",
+"PPS","PORTARIA  DO  PRIMEIRO-SECRETÁRIO",
+"RES","RESOLUÇÃO",
+"ATA","ATA  DE  REUNIÃO  da  COMISSÃO  DIRETORA",
+"AAG","ATO  da  AUDITORIA  GERAL",
+"ACA","ATA  DO  CONSELHO  DE  ADMINISTRAÇÃO  (SF)",
+"ACC","ATA  DO  COMITÊ  DE  CONTRATAÇÕES",
+"ACD","ATO  CONJUNTO  DAS  DIRETORIAS-GERAIS  DO  SF  E  da  CD",
+"ACE","ATO  da  PRESIDÊNCIA  DO  CONSELHO  EDITORIAL",
+"ACG","ATO  DO  CONSULTOR-GERAL  LEGISLATIVO",
+"ACI","ATA  DO  CONSELHO  DE  SUPERVISÃO  DO  ILB",
+"ACJ","ATO  CONJUNTO",
+"ACL","ATO  CONJUNTO  DOS  PRESIDENTES  DO  SF  E  da  CD",
+"ACM","ATO  CONJUNTO  DAS  MESAS  da  CD  E  DO  SF",
+"ACO","ATO  da  SECRETARIA  DE  COMUNICAÇÃO  SOCIAL",
+"ACP","ATA  DO  COMITÊ  CIENTÍFICO-PEDAGÓGICO",
+"ACS","ATA  DO  CONSELHO  DE  SUPERVISÃO  DO  SISTEMA  INTEGRADO  DE  SAÚDE",
+"ADE","ATO  DECLARATÓRIO",
+"ADI","ATO  CONJUNTO  da  DGER  E  DEILB",
+"ADL","ATO  CONJUNTO  DAS  DGER  SF  E  CD  E  SECR.  GERAL  TCU",
+"ADP","ATO  DO  DIRETOR  DO  PRODASEN",
+"ADV","ATO  DO  ADVOGADO-GERAL",
+"AES","ATA  DE  ASSEMBLEIA  EXTRAORDINÁRIA  DO  CSSIS",
+"AGE","ATA  DO  COMITÊ  DE  GOVERNANÇA  E  GESTÃO  ESTRATÉGICA",
+"AGI","ATA  DO  GRUPO  DE  ESTUDOS  DO  ILB",
+"AGP","ATO  da  SECRETARIA  DE  GESTÃO  DE  PESSOAS",
+"AGR","ATO  DO  PRESIDENTE  DO  CONSELHO  DE  SUPERVISÃO  DO  CEGRAF",
+"AIL","ATO  DO  DIRETOR-EXECUTIVO  DO  ILB",
+"AMS","ATO  da  MESA  DO  SENADO  FEDERAL",
+"APA","ATA  da  COMISSÃO  PRÓPRIA  DE  AVALIAÇÃO",
+"APC","ATO  DO  PRESIDENTE  da  COMISSÃO  DIRETORA",
+"APD","ATO  DE  PRESIDENTE  DE  COMISSÃO  DE  PAD",
+"APG","ATA  DE  COMISSÃO  DE  CURSO  DE  PÓS-GRADUAÇÃO",
+"API","ATO  CONJUNTO  da  DGER,  SEGP  E  ILB",
+"APL","ATO  DO  PRESIDENTE  da  COMISSAO  PERMANENTE  DE  LICITAÇÃO  (COPELI)",
+"APM","ATO  CONJUNTO  DOS  PRESIDENTES  DAS  MESAS  DO  SF  E  da  CD",
+"APN","ATA  DO  CONSELHO  DE  SUPERVISÃO  DO  PRODASEN",
+"ASC","ATO  DO  DIRETOR  da  SECRETARIA  DE  CONTROLE  INTERNO",
+"ASD","ATO  CONJUNTO  da  SECRETARIA-GERAL  da  MESA  E  da  DGER",
+"ASG","ATO  da  SECRETARIA-GERAL  da  MESA",
+"ASI","ATO  DO  CONSELHO  DE  SUPERVISÃO  DO  SISTEMA  INTEGRADO  DE  SAÚDE",
+"ASL","ATO  CONJUNTO  da  SGM  DO  SF  E  da  SGM  da  CD",
+"ASS","ATO  DO  PRESIDENTE  DO  CONSELHO  DE  SUPERVISÃO  DO  SIS",
+"AT3","ATO  DO  TERCEIRO-SECRETÁRIO",
+"ATD","ATO  da  SECRETARIA  DE  GESTÃO  DE  INFORMAÇÃO  E  DOCUMENTAÇÃO",
+"ATO","ATO  (outras  autoridades)",
+"CCE","CHAMADA  PARA  SELEÇÃO  DE  COLABORADOR  EDUCACIONAL",
+"CIC","CHAMADA  PARA  INSCRIÇÃO  EM  CURSO  (ILB)",
+"DCD","DECISÃO  da  COMISSÃO  DIRETORA",
+"DDG","DECISÃO  da  DIRETORIA-GERAL",
+"DEC","DECISÃO",
+"DPR","DESPACHO  DO  PRESIDENTE",
+"DPS","DECISÃO  da  PRESIDÊNCIA  DO  SENADO  FEDERAL",
+"DSP","DESPACHO",
+"EAI","EDITAL  DE  AVALIAÇÃO  INDIVIDUAL  DE  DESEMPENHO",
+"ECE","EDITAL  DE  CIÊNCIA  DE  ELIMINAÇÃO  DE  DOCUMENTOS",
+"ECI","EDITAL  DE  CONVOCAÇÃO  DO  ILB",
+"ECP","EDITAL  DE  CONCURSO  PÚBLICO",
+"EES","EDITAL  DE  ELEIÇÃO  DO  CSIS",
+"EGP","EDITAL  DE  SELEÇÃO  DE  GRUPO  DE  ESTUDOS",
+"EPG","EDITAL  DE  PROCESSO  SELETIVO S?INTERNO S?DE S?GESTOR",
+"EPS","EDITAL  DE  PROCESSO  SELETIVO  (ILB)",
+"ESS","EDITAL  DE  PROCESSO  SELETIVO  SIMPLIFICADO  (DGER)",
+"ETD","EDITAL  DE  SELEÇÃO  DE  TESES,  DISSERTAÇÕES  E  MONOGRAFIAS",
+"ICB","INSTRUÇÃO  NORMATIVA  da  COORDENAÇÃO  da  BIBLIOTECA",
+"ICD","INSTRUÇÃO  da  COMISSÃO  DIRETORA",
+"IDG","INSTRUÇÃO  NORMATIVA  da  DIRETORIA  GERAL",
+"IGR","INSTRUÇÃO  NORMATIVA  DO  PRES.  CSCEGRAF  (1º  SECRETÁRIO)",
+"IIP","INSTRUÇÃO  NORMATIVA  CONJUNTA  DO  ILB  E  da  SERH/SEGP",
+"INA","INSTRUÇÃO  NORMATIVA  da  ADVOSF",
+"INC","INSTRUÇÃO  NORMATIVA  da  SECRETARIA  DE  CONTROLE  INTERNO",
+"IND","INSTRUÇÃO  NORMATIVA  da  SGIDOC",
+"ING","INSTRUÇÃO  NORMATIVA  da  SECRETARIA  DE  GESTÃO  DE  PESSOAS",
+"INI","INSTRUÇÃO  NORMATIVA  DO  ILB",
+"INM","INSTRUÇÃO  NORMATIVA  da  SECRETARIA  GERAL  da  MESA",
+"INP","INSTRUÇÃO  NORMATIVA  da  SECRETARIA  DE  POLÍCIA  LEGISLATIVA",
+"INS","INSTRUÇÃO  NORMATIVA  DO  CONSELHO  DE  SUPERVISÃO  DO  SIS",
+"IPS","INSTRUÇÃO  NORMATIVA  da  PRIMEIRA  SECRETARIA",
+"IPT","INSTRUÇÃO  NORMATIVA  da  SECRETARIA  DE  PATRIMÔNIO",
+"NAP","NORMA  ADMINISTRATIVA  DO  PRODASEN",
+"NTP","NORMA  TÉCNICA  DO  DIRETOR  DO  PRODASEN",
+"OF"  ,"OFÍCIO",
+"OSV","ORDEM  DE  SERVIÇO",
+"PAA","PARECER  da  ADVOSF",
+"PAG","PORTARIA  DO  AUDITOR-GERAL",
+"PAS","PORTARIA  da  ADVOCACIA  DO  SENADO",
+"PCC","PORTARIA  da  COMISSÃO  ESPECIAL  CURADORA",
+"PCE","PORTARIA  CONJUNTA  DAS  ESCOLAS  DE  GOVERNO    ILB,  CEFOR,  ISC",
+"PCL","PORTARIA  CONJUNTA  DO  SF,  da  CD  E  DO  TCU",
+"PCS","PORTARIA  DO  PRESIDENTE  DO  CONSELHO  DE  SUPERVISÃO  DO  SIS",
+"PDC","PORTARIA  da  DIRETORIA  DE  CONTRATAÇÕES",
+"PGO","(NÃO  UTILIZAR)  PORTARIA  da  CONSULTORIA  GERAL  DE  ORÇAMENTOS",
+"PGP","PORTARIA  da  SECRETARIA  DE  GESTÃO  DE  PESSOAS",
+"PIL","PORTARIA  DO  INSTITUTO  LEGISLATIVO  BRASILEIRO",
+"PLI","PORTARIA  DO  PRESIDENTE  da  COPELI",
+"PPA","PARECER",
+"PPC","PORTARIA  DO  PRESIDENTE  da  CODIR",
+"PPE","PORTARIA  da  COMISSÃO  da  ELEIÇÃO  DO  CSSIS",
+"PPL","PORTARIA  da  SECRETARIA  DE  POLÍCIA  LEGISLATIVA",
+"PRE","PORTARIA  REDE  EQUIDADE",
+"PRT","PORTARIA  (outras  autoridades)",
+"PSC","PORTARIA  da  SECRETARIA  DE  COMUNICAÇÃO  SOCIAL",
+"PSD","PORTARIA  CONJUNTA  da  SECRETARIA-GERAL  da  MESA  E  da  DGER",
+"PTO","PORTARIA da CONSULTORIA DE ORÇAMENTO, FISCALIZAÇÃO E CONTROLE",
+"LEI", "lei", "Lei", "Constituição Federal", "CF", "Constituição de 1988")
+
+normas <- lista
+
+normas_pattern <- paste(normas, collapse = "|")
+normas_pattern
+
+#-----------------------------
+# 3. Montagem do padrão regex completo
+#-----------------------------
+pattern <- paste0(
+  "(?:", normas_pattern, ")",              # sigla ou nome
+  "\\s+",
+  "(?:n[uú]mero\\s|n[ºo\\.]\\s|num\\.?\\s|no\\.?\\s)?", # prefixo opcional
+  "([0-9]{1,3}(?:\\.[0-9]{3})?|[0-9]{1,5})",            # número
+  "\\s*",
+  "(?:/|-|\\s+de\\s+)",                                 # separador
+  "\\s*",
+  regex_data()                                          # data
+)
+
+#-----------------------------
+# 4. Função de extração com contexto e página, a partir de vetor character
+#-----------------------------
+extrair_citacoes <- function(paginas_texto) {
+  
+  # Criar tibble com cada página
+  tibble(pagina = seq_along(paginas_texto),
+         texto = paginas_texto) %>%
+    
+    # Aplicar regex a cada página
+    mutate(matches = map(texto, ~ str_locate_all(.x, pattern)[[1]])) %>%
+    
+    # Expandir as ocorrências
+    unnest(matches) %>%
+    
+    # Remover linhas sem match real
+    filter(!is.na(start)) %>%
+    
+    # Extrair a norma citada e o contexto
+    mutate(
+      trecho = map2_chr(texto, start, ~ str_sub(.x, .y, .y + attr(.x, "match.length") - 1)),
+      contexto = pmap_chr(list(texto, start, end),
+                          function(txt, ini, fim) {
+                            str_sub(txt, max(1, ini - 100), min(nchar(txt), fim + 100))
+                          }),
+      sigla = str_extract(trecho, "^[A-Z]{2,4}")
+    ) %>%
+    
+    # Selecionar colunas úteis
+    select(pagina, sigla, trecho, contexto, start, end)
+}
+
+#-----------------------------
+# 5. Exemplo de uso
+#-----------------------------
+# Exemplo de vetor com páginas (substitua pelo seu)
+paginas_texto <- c(
+  "Na página inicial temos o ADG nº 1.234/2020 e também o ATO da COMISSÃO DIRETORA 22/2021.",
+  "Outra referência: APR número 45 de 15 de maio de 2022. Finaliza com APS 99-2.024."
+)
+
+# escolher arquivo para aplicar à função, basta nomeá-lo de paginas_texto, ou aplicá-lo dentro da função
+
+processo003561 <- pdf_text(paste0(caminho,arquivo))
+
+# Exemplo de aplicação
+# Aplicar a função
+citacoes <- extrair_citacoes(paginas_texto = processo003561)
+# Ver resultado
+print(citacoes)
+
+```
+
+# Código com a mesma proposta anterior, para extrair citações às normas a partir de vetor character
+
+```{r}
+
+library(tidyverse)
+library(stringr)
+
+#-----------------------------
+# 1. Função auxiliar: expressão da data (com lógica segura)
+#-----------------------------
+regex_data <- function() {
+  meses <- "(?:janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)"
+  
+  ano_regex <- paste0(
+    "(",
+      "(?:[0-9]{4})",           # YYYY
+      "|",
+      "(?:[0-9]\\.[0-9]{3})",   # Y.YYY
+      "|",
+      "(?:[0-9]{2})(?![0-9])",  # YY, mas não seguido de outro número
+    ")"
+  )
+  
+  data_extenso <- paste0("[0-9]{1,2}\\s+de\\s+", meses, "\\s+de\\s+(?:[0-9]{4}|[0-9]\\.[0-9]{3})")
+  
+  paste0("(", ano_regex, "|", data_extenso, ")")
+}
+
+#-----------------------------
+# 2. Vetor de normas (exemplo resumido – complete com sua lista)
+# # #-----------------------------
+# 
+
+
+
+lista <- tolower(c("ADG", "ATO da DIRETORIA GERAL",
+"APR", "ATO da PRESIDÊNCIA DO SENADO",
+"APS", "ATO da PRIMEIRA-SECRETARIA",
+"ATC","ATO da COMISSÃO DIRETORA",
+"ATL","ATA da REUNIÃO DE LÍDERES DO SENADO FEDERAL",
+"INO","INSTRUÇÃO NORMATIVA",
+"ORN","ORIENTAÇÃO NORMATIVA",
+"PDG","PORTARIA da DIRETORIA-GERAL",
+"PPR","PORTARIA da PRESIDÊNCIA DO SF",
+"PPS","PORTARIA DO PRIMEIRO-SECRETÁRIO",
+"RES","RESOLUÇÃO",
+"ATA","ATA DE REUNIÃO da COMISSÃO DIRETORA",
+"AAG","ATO da AUDITORIA GERAL",
+"ACA","ATA DO CONSELHO DE ADMINISTRAÇÃO",
+"ACC","ATA DO COMITÊ DE CONTRATAÇÕES",
+"ACD","ATO CONJUNTO DAS DIRETORIAS-GERAIS DO SENADO FEDERAL E da CÂMARA DOS DEPUTADOS",
+"ACE","ATO da PRESIDÊNCIA DO CONSELHO EDITORIAL",
+"ACG","ATO DO CONSULTOR-GERAL LEGISLATIVO",
+"ACI","ATA DO CONSELHO DE SUPERVISÃO DO ILB",
+"ACJ","ATO CONJUNTO",
+"ACL","ATO CONJUNTO DOS PRESIDENTES DO SF E da CD",
+"ACM","ATO CONJUNTO DAS MESAS da CD E DO SF",
+"ACO","ATO da SECRETARIA DE COMUNICAÇÃO SOCIAL",
+"ACP","ATA DO COMITÊ CIENTÍFICO-PEDAGÓGICO",
+"ACS","ATA DO CONSELHO DE SUPERVISÃO DO SISTEMA INTEGRADO DE SAÚDE",
+"ADE","ATO DECLARATÓRIO",
+"ADI","ATO CONJUNTO da DGER E DEILB",
+"ADL","ATO CONJUNTO DAS DGER SF E CD E SECR. GERAL TCU",
+"ADP","ATO DO DIRETOR DO PRODASEN",
+"ADV","ATO DO ADVOGADO-GERAL",
+"AES","ATA DE ASSEMBLEIA EXTRAORDINÁRIA DO CSSIS",
+"AGE","ATA DO COMITÊ DE GOVERNANÇA E GESTÃO ESTRATÉGICA",
+"AGI","ATA DO GRUPO DE ESTUDOS DO ILB",
+"AGP","ATO da SECRETARIA DE GESTÃO DE PESSOAS",
+"AGR","ATO DO PRESIDENTE DO CONSELHO DE SUPERVISÃO DO CEGRAF",
+"AIL","ATO DO DIRETOR EXECUTIVO DO ILB",
+"AMS","ATO da MESA DO SENADO FEDERAL",
+"APA","ATA da COMISSÃO PRÓPRIA DE AVALIAÇÃO",
+"APC","ATO DO PRESIDENTE da COMISSÃO DIRETORA",
+"APD","ATO DE PRESIDENTE DE COMISSÃO DE PAD",
+"APG","ATA DE COMISSÃO DE CURSO DE PÓS-GRADUAÇÃO",
+"API","ATO CONJUNTO da DGER, SEGP E ILB",
+"APL","ATO DO PRESIDENTE da COMISSAO PERMANENTE DE LICITAÇÃO (COPELI)",
+"APM","ATO CONJUNTO DOS PRESIDENTES DAS MESAS DO SF E da CD",
+"APN","ATA DO CONSELHO DE SUPERVISÃO DO PRODASEN",
+"ASC","ATO DO DIRETOR da SECRETARIA DE CONTROLE INTERNO",
+"ASD","ATO CONJUNTO da SECRETARIA-GERAL da MESA E da DIRETORIA GERAL",
+"ASG","ATO da SECRETARIA-GERAL da MESA",
+"ASI","ATO DO CONSELHO DE SUPERVISÃO DO SISTEMA INTEGRADO DE SAÚDE",
+"ASL","ATO CONJUNTO da SGM DO SF E da SGM da CD",
+"ASS","ATO DO PRESIDENTE DO CONSELHO DE SUPERVISÃO DO SIS",
+"AT3","ATO DO TERCEIRO-SECRETÁRIO",
+"ATD","ATO da SECRETARIA DE GESTÃO DE INFORMAÇÃO E DOCUMENTAÇÃO",
+"ATO","ATO",
+"CCE","CHAMADA PARA SELEÇÃO DE COLABORADOR EDUCACIONAL",
+"CIC","CHAMADA PARA INSCRIÇÃO EM CURSO DO ILB",
+"DCD","DECISÃO da COMISSÃO DIRETORA",
+"DDG","DECISÃO da DIRETORIA-GERAL",
+"DEC","DECISÃO",
+"DPR","DESPACHO DO PRESIDENTE",
+"DPS","DECISÃO da PRESIDÊNCIA DO SENADO FEDERAL",
+"DSP","DESPACHO",
+"EAI","EDITAL DE AVALIAÇÃO INDIVIDUAL DE DESEMPENHO",
+"ECE","EDITAL DE CIÊNCIA DE ELIMINAÇÃO DE DOCUMENTOS",
+"ECI","EDITAL DE CONVOCAÇÃO DO ILB",
+"ECP","EDITAL DE CONCURSO PÚBLICO",
+"EES","EDITAL DE ELEIÇÃO DO CSIS",
+"EGP","EDITAL DE SELEÇÃO DE GRUPO DE ESTUDOS",
+"EPG","EDITAL DE PROCESSO SELETIVO INTERNO DE GESTOR",
+"EPS","EDITAL DE PROCESSO SELETIVO",
+"ESS","EDITAL DE PROCESSO SELETIVO SIMPLIFICADO",
+"ETD","EDITAL DE SELEÇÃO DE TESES, DISSERTAÇÕES E MONOGRAFIAS",
+"ICB","INSTRUÇÃO NORMATIVA da COORDENAÇÃO da BIBLIOTECA",
+"ICD","INSTRUÇÃO da COMISSÃO DIRETORA",
+"IDG","INSTRUÇÃO NORMATIVA da DIRETORIA GERAL",
+"IGR","INSTRUÇÃO NORMATIVA DO PRESIDENTE DO CONSELHO EDITORIAL DA GRÁFICA DO SENADO FEDERAL",
+"IIP","INSTRUÇÃO NORMATIVA CONJUNTA DO ILB E da SERH",
+"IIP","INSTRUÇÃO NORMATIVA CONJUNTA DO ILB E da SEGP",
+"INA","INSTRUÇÃO NORMATIVA da ADVOSF",
+"INC","INSTRUÇÃO NORMATIVA da SECRETARIA DE CONTROLE INTERNO",
+"IND","INSTRUÇÃO NORMATIVA da SGIDOC",
+"ING","INSTRUÇÃO NORMATIVA da SECRETARIA DE GESTÃO DE PESSOAS",
+"INI","INSTRUÇÃO NORMATIVA DO ILB",
+"INM","INSTRUÇÃO NORMATIVA da SECRETARIA GERAL da MESA",
+"INP","INSTRUÇÃO NORMATIVA da SECRETARIA DE POLÍCIA LEGISLATIVA",
+"INS","INSTRUÇÃO NORMATIVA DO CONSELHO DE SUPERVISÃO DO SIS",
+"IPS","INSTRUÇÃO NORMATIVA da PRIMEIRA SECRETARIA",
+"IPT","INSTRUÇÃO NORMATIVA da SECRETARIA DE PATRIMÔNIO",
+"NAP","NORMA ADMINISTRATIVA DO PRODASEN",
+"NTP","NORMA TÉCNICA DO DIRETOR DO PRODASEN",
+"OF" ,"OFÍCIO",
+"OSV","ORDEM DE SERVIÇO",
+"PAA","PARECER da ADVOSF",
+"PAG","PORTARIA DO AUDITOR-GERAL",
+"PAS","PORTARIA da ADVOCACIA DO SENADO",
+"PCC","PORTARIA da COMISSÃO ESPECIAL CURADORA",
+"PCE","PORTARIA CONJUNTA DAS ESCOLAS DE GOVERNO  ILB, CEFOR, ISC",
+"PCL","PORTARIA CONJUNTA DO SF, da CD E DO TCU",
+"PCS","PORTARIA DO PRESIDENTE DO CONSELHO DE SUPERVISÃO DO SIS",
+"PDC","PORTARIA da DIRETORIA DE CONTRATAÇÕES",
+"PGO","(NÃO UTILIZAR) PORTARIA da CONSULTORIA GERAL DE ORÇAMENTOS",
+"PGP","PORTARIA da SECRETARIA DE GESTÃO DE PESSOAS",
+"PIL","PORTARIA DO INSTITUTO LEGISLATIVO BRASILEIRO",
+"PLI","PORTARIA DO PRESIDENTE da COPELI",
+"PPA","PARECER",
+"PPC","PORTARIA DO PRESIDENTE da CODIR",
+"PPE","PORTARIA da COMISSÃO da ELEIÇÃO DO CSSIS",
+"PPL","PORTARIA da SECRETARIA DE POLÍCIA LEGISLATIVA",
+"PRE","PORTARIA REDE EQUIDADE",
+"PRT","PORTARIA (outras autoridades)",
+"PSC","PORTARIA da SECRETARIA DE COMUNICAÇÃO SOCIAL",
+"PSD","PORTARIA CONJUNTA da SECRETARIA-GERAL da MESA E da DGER",
+"PTO","PORTARIA da CONSULTORIA DE ORÇAMENTO, FISCALIZAÇÃO E CONTROLE",
+"ADG", "Ato da Diretoria Geral",
+"APR", "Ato da Presidência da Senado",
+"APS", "Ato da Primeira-Secretaria",
+"ATC","Ato da Comissão Diretora",
+"ATL","Ata da Reunião de Líderes da Senado Federal",
+"INO","Instrução Normativa",
+"ORN","Orientação Normativa",
+"PDG","Portaria da Diretoria-Geral",
+"PPR","Portaria da Presidência da Sf",
+"PPS","Portaria da Primeiro-Secretário",
+"RES","Resolução",
+"ATA","Ata de Reunião da Comissão Diretora",
+"AAG","Ato da Auditoria Geral",
+"ACA","Ata da Conselho de Administração (Sf)",
+"ACC","Ata da Comitê de Contratações",
+"ACD","Ato Conjunto Das Diretorias-Gerais da Sf E da Cd",
+"ACE","Ato da Presidência da Conselho Editorial",
+"ACG","Ato da Consultor-Geral Legislativo",
+"ACI","Ata da Conselho de Supervisão da Ilb",
+"ACJ","Ato Conjunto",
+"ACL","Ato Conjunto Dos Presidentes da Sf E da Cd",
+"ACM","Ato Conjunto Das Mesas da Cd E da Sf",
+"ACO","Ato da Secretaria de Comunicação Social",
+"ACP","Ata da Comitê Científico-Pedagógico",
+"ACS","Ata da Conselho de Supervisão da Sistema Integrado de Saúde",
+"ADE","Ato Declaratório",
+"ADI","Ato Conjunto da Dger E Deilb",
+"ADL","Ato Conjunto Das Dger Sf E Cd E Secr. Geral Tcu",
+"ADP","Ato da Diretor da Prodasen",
+"ADV","Ato da Advogado-Geral",
+"AES","Ata de Assembleia Extraordinária da Csis",
+"AGE","Ata da Comitê de Governança E Gestão Estratégica",
+"AGI","Ata da Grupo de Estudos da Ilb",
+"AGP","Ato da Secretaria de Gestão de Pessoas",
+"AGR","Ato da Presidente da Conselho de Supervisão da Cegraf",
+"AIL","Ato da Diretor-Executivo da Ilb",
+"AMS","Ato da Mesa da Senado Federal",
+"APA","Ata da Comissão Própria de Avaliação",
+"APC","Ato da Presidente da Comissão Diretora",
+"APD","Ato de Presidente de Comissão de Pad",
+"APG","Ata de Comissão de Curso de Pós-Graduação",
+"API","Ato Conjunto da Dger, Segp E Ilb",
+"APL","Ato da Presidente da Comissao Permanente de Licitação (Copeli)",
+"APM","Ato Conjunto Dos Presidentes Das Mesas da Sf E da Cd",
+"APN","Ata da Conselho de Supervisão da Prodasen",
+"ASC","Ato da Diretor da Secretaria de Controle Interno",
+"ASD","Ato Conjunto da Secretaria-Geral da Mesa E da Dger",
+"ASG","Ato da Secretaria-Geral da Mesa",
+"ASI","Ato da Conselho de Supervisão da Sistema Integrado de Saúde",
+"ASL","Ato Conjunto da Sgm da Sf E da Sgm da Cd",
+"ASS","Ato da Presidente da Conselho de Supervisão da Sis",
+"AT3","Ato da Terceiro-Secretário",
+"ATD","Ato da Secretaria de Gestão de Informação E Documentação",
+"ATO","Ato (Outras Autoridades)",
+"CCE","Chamada Para Seleção de Colaborador Educacional",
+"CIC","Chamada Para Inscrição Em Curso (Ilb)",
+"DCD","Decisão da Comissão Diretora",
+"DDG","Decisão da Diretoria-Geral",
+"DEC","Decisão",
+"DPR","Despacho da Presidente",
+"DPS","Decisão da Presidência da Senado Federal",
+"DSP","Despacho",
+"EAI","Edital de Avaliação Individual de Desempenho",
+"ECE","Edital de Ciência de Eliminação de Documentos",
+"ECI","Edital de Convocação da Ilb",
+"ECP","Edital de Concurso Público",
+"EES","Edital de Eleição da Csis",
+"EGP","Edital de Seleção de Grupo de Estudos",
+"EPG","Edital de Processo Seletivo S?interno S?de S?gestor",
+"EPS","Edital de Processo Seletivo (Ilb)",
+"ESS","Edital de Processo Seletivo Simplificado (Dger)",
+"ETD","Edital de Seleção de Teses, Dissertações E Monografias",
+"ICB","Instrução Normativa da Coordenação da Biblioteca",
+"ICD","Instrução da Comissão Diretora",
+"IDG","Instrução Normativa da Diretoria Geral",
+"IGR","Instrução Normativa da Pres. Cscegraf (1º Secretário)",
+"IIP","Instrução Normativa Conjunta da Ilb E da Serh/Segp",
+"INA","Instrução Normativa da Advosf",
+"INC","Instrução Normativa da Secretaria de Controle Interno",
+"IND","Instrução Normativa da Sgidoc",
+"ING","Instrução Normativa da Secretaria de Gestão de Pessoas",
+"INI","Instrução Normativa da Ilb",
+"INM","Instrução Normativa da Secretaria Geral da Mesa",
+"INP","Instrução Normativa da Secretaria de Polícia Legislativa",
+"INS","Instrução Normativa da Conselho de Supervisão da Sis",
+"IPS","Instrução Normativa da Primeira Secretaria",
+"IPT","Instrução Normativa da Secretaria de Patrimônio",
+"NAP","Norma Administrativa da Prodasen",
+"NTP","Norma Técnica da Diretor da Prodasen",
+"OF" ,"Ofício",
+"OSV","Ordem de Serviço",
+"PAA","Parecer da Advosf",
+"PAG","Portaria da Auditor-Geral",
+"PAS","Portaria da Advocacia da Senado",
+"PCC","Portaria da Comissão Especial Curadora",
+"PCE","Portaria Conjunta Das Escolas de Governo Ilb, Cefor, Isc",
+"PCL","Portaria Conjunta da Sf, da Cd E da Tcu",
+"PCS","Portaria da Presidente da Conselho de Supervisão da Sis",
+"PDC","Portaria da Diretoria de Contratações",
+"PGO","(Não Utilizar) Portaria da Consultoria Geral de Orçamentos",
+"PGP","Portaria da Secretaria de Gestão de Pessoas",
+"PIL","Portaria do Instituto Legislativo Brasileiro",
+"PLI","Portaria da Presidente da Copeli",
+"PPA","Parecer",
+"PPC","Portaria da Presidente da Codir",
+"PPE","Portaria da Comissão da Eleição da Csis",
+"PPL","Portaria da Secretaria de Polícia Legislativa",
+"PRE","Portaria Rede Equidade",
+"PRT","Portaria (Outras Autoridades)",
+"PSC","Portaria da Secretaria de Comunicação Social",
+"PSD","Portaria Conjunta da Secretaria-Geral da Mesa E da Dger",
+"PTO","Portaria da Consultoria de Orçamento, Fiscalização E Controle",
+"Lei", "CF", "Constituição Federal", "RASF", "Regulamento Administrativo do Senado Federal", "Anexo IV", "Política de Capacitação do Senado Federal", "Anexo IV", "Anexo-IV", "ANEXO-IV", "Ato", "ADG", "Ato da Diretora Geral", "Ato da Diretora-Geral", "Ato da Diretoria-Geral", "Ato da Diretoria Geral", "APS","Ato da Primeira Secretaria", "Ato da Primeira-Secretaria", "Ato do Primeiro Secretário",
+"Ato do Primeiro-Secretário", "Estatuto do Servidor Público", "Estatuto do Serviço Público", "Res", "Resolução", "Ata"))
+
+# Texto original copiado como string (por brevidade, aqui chamamos de `texto`)
+texto <- lista
+
+
+# 1. Separar as siglas (duas ou três letras, todas maiúsculas originalmente — aqui já em minúsculas)
+siglas <- lista[nchar(lista) <= 3 & !grepl(" ", lista)]
+siglas <- unique(siglas)
+siglas
+siglas2 <- c("ppr",
+             "pps",
+                      "pcl",
+                      "pcs",
+                     "pcc", 
+                     "pce", 
+                     "pcl", 
+                     "pcs", 
+                     "pdc", 
+                     "pgo", 
+                     "pgp", 
+                     "ppa", 
+                     "ppc", 
+                     "ppe", 
+                     "ppl",
+                     "pre", 
+                     "prt", 
+                     "psc", 
+                     "psd", 
+                     "pto", 
+                     "paa") 
+
+siglas3 <- setdiff(siglas, siglas2)
+siglas4 <- c(siglas3, "despacho")
+siglas4
+siglas5 <- c(siglas4, "ofício", "oficio", "ata", "anexo IV", "portaria", "resolução", "resolucao", "rasf", "regulamento", "constituição", "constituicao", "cf", "desp")
+siglas5
+
+siglas_select <- siglas5[c(1,2,3,4,5,8,9,10,17,18,19,20, 25, 28, 29, 30, 31, 32, 33, 34,57, 58,59,60, 73, 84, 88, 90,91, 92, 93, 94, 95, 96, 97, 98,99, 100, 101, 102, 103, 104, 105, 106, 107,109)]
+siglas_select2 <- c(siglas_select, "artigos?", "art", "art\\.", "arts\\.", "§", "§§", "alínea",  "alíneas", "parágrafos?", "paragrafos?", "incisos?")
+siglas_select2
+
+itens_retirar <- c(27, 15, 16, 23, 24, 20, 17, 26, 13, 19) # esses itens são retirados pois causaram problemas na identificação das citações, nenhum deles retornou referência real a normas, mas se confundiram com outros termos. O caso mais gritante dissso é 'of' sigla de 'ofício' mas também preposição inglesa 'of', que apareceu indevidamente mais de 5000 vezes.
+
+siglas_select2[itens_retirar]
+
+siglas_select3 <- siglas_select2[-itens_retirar]
+
+siglas_select4 <- c(siglas_select3, "decreto", "sumula", "pilb", "cepe", "ppgcp", "decisão", "despacho", "estatuto", "instrução", "norma", "parecer", "reg")
+siglas_select4
+
+
+siglas_select2 <- siglas_select4 #isso é feito apenas para não ter que mudar o restante do código
+
+#,-"age", -"aes", -"dps", -"ail", -"arte", -"agi", -"ips",-"adi", -"agr", -"artv") siglas_select2
+siglas_select <- siglas_select2
+siglas_select
+
+
+# siglas_fixed <- map(siglas, ~fixed(.x, ignore_case = TRUE)) não utilizar, pois fixed() altera regex
+
+# Para cada elemento, crie um padrão regex que inclua limites de começo e fim de palavra (usa-se '\\b' para isso). Assim evita-se que sejam capturados termos dentro de outros termos, como pil em pilhagem, e atl em atlântico. 
+library(tidyverse)
+
+#Adiciona os limites de palavras às 'siglas' e utiliza a função regex para deixá-la pre-configurada para não diferenciar letra maiuscula de minúscula.
+#siglas_regex <- regex(paste0("\\b",siglas_select,"\\b"), ignore_case = TRUE)
+#siglas_regex
+ 
+
+
+# Aqui faz-se um colapse dentro de paste0(), o que significa unir todos os termos em um só string. O operador "|" (=OU) é utilizado para determinar a relação entre os termos do string, a ser observada durante a busca textuazx l: OU um termo OU outro termo OU...
+siglas_onestring <- regex((paste0("\\b", siglas_select, "\\b", collapse = "|")), ignore_case = TRUE) # use este para 'siglas' em fórmulas regex para 
+
+view(siglas_onestring)
+
+#busca de termos no processo
+
+
+insumos_regex <- c()
+
+#insumos_regex$siglas <- siglas_regex # essa  variavel é uma string regex, armazenada como character em lista. Util quando a função admite objetos desta classe 
+
+#class(insumos_regex$siglas)
+
+insumos_regex$siglas_onestring <- siglas_onestring
+
+class(insumos_regex$siglas_onestring) # essa variável é character armazenada como vetor em uma lista. Pode ser transformada em string caso necessário.
+insumos_regex
+
+
+   # 2. Separar os termos compostos (tudo que tem espaço)
+termos_compostos <- lista[grepl(" ", lista)]
+termos_compostos
+
+# 3. Separar a primeira palavra de cada termo composto
+primeiras_palavras <- sub("^([^ ]+).*", "\\1", termos_compostos)
+palavras_unique <- primeiras_palavras %>% sort(., decreasing = FALSE) %>% unique()
+palavras_unique
+
+palavras_retirar <- c(1,2,3,4, 5, 6, 9, 13, 14, 16)
+palavras_unique[palavras_retirar]
+
+
+palavras_selected <- palavras_unique[-palavras_retirar]
+palavras_selected
+
+
+#palavras_regex <- regex((paste0("\\b", palavras_unique, "\\b")), ignore_case = TRUE) 
+
+
+#palavras_selected <- palavras_regex[-18]
+
+palavras_selected <- sort(palavras_selected) # use este para 'primeiras_palavras' em fórmulas regex para busca de termos no processo. Poderia ser o palavras_regex, mas palavras_selected está sem "(não" e ordenada alfabeticamente.
+palavras_selected
+
+
+
+insumos_regex$primeiras_palavras <- palavras_selected
+insumos_regex
+
+
+primeiras_onestring <- regex((paste0("\\b", palavras_selected, "\\b", collapse = "|")), ignore_case = TRUE)
+
+print(primeiras_onestring) #copie e cole o string, pois não consegui tirar o "(" do termo (não
+
+insumos_regex$primeiras_onestring <- primeiras_onestring
+
+insumos_regex
+
+#insumos_regex$primeiras_palavras2 <- palavras_regex2 # essa opção foi deixada de lado, pois também é inserida como lista de characteres no objeto da lista, uma vez que não é da classe string ou vetor de tamanho um.
+#insumos_regex
+
+ # 4. Separar o resto da frase (sem a primeira palavra)
+resto_termos <- sub("^[^ ]+ (.+)$", "\\1", termos_compostos)
+resto_termos[resto_termos == termos_compostos] <- ""
+resto_termos
+
+preposicoes <- c("de", "da", "do", "das", "dos", "em", "para", "com", "na", "no", "nas", "nos", "a", "ao", "as", "aos", "às", "por", "e", "o")
+padrao_semprepos <- paste0("\\b(", paste(preposicoes, collapse = "|"), ")\\b")
+
+# 4.a Eliminar preposições, conjunções, pronomes
+resto_sem_prepos <- gsub(padrao_semprepos, "", resto_termos)
+resto_sem_prepos
+
+
+# 5.a Eliminar acentos e pontuações indesejadass
+restos_semacent <- gsub(")", "", resto_sem_prepos)
+restos_semacent <- gsub("/", " ", restos_semacent)
+restos_semacent <- gsub("-", " ", restos_semacent)
+restos_semacent <- gsub(",", " ", restos_semacent)
+#restos_semacent <- gsub("s?", " ", restos_semacent)
+#restos_semacent <- gsub("(i", " ", restos_semacent)
+#restos_semacent <- gsub("(1", " ", restos_semacent)
+#restos_semacent <- gsub("(o", " ", restos_semacent)
+#restos_semacent <- gsub("(d", " ", restos_semacent)
+restos_semacent
+
+termos_trimmed <- str_squish(string = restos_semacent)  
+termos_trimmed 
+
+
+chr_termos <- str_split(termos_trimmed, " ")
+termos_unlisted <- unlist(chr_termos)
+termos_unlisted
+
+termos_unique <- unique(termos_unlisted)
+termos_sorted <- str_sort(termos_unique)
+termos_sorted
+lista_exclusos <- sort(c(1:9, 11, 13:19, 21, 23:28, 32:35,37:49, 52, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71, 73, 74 ,75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 88, 89, 90, 91, 94, 98, 99, 100, 101, 103, 104, 105, 106, 116, 117,118,120, 122,123,124,130, 131,137:139,141:148), decreasing = TRUE)                                            
+lista_exclusos
+
+termos_sorted <- setdiff(termos_sorted, termos_sorted[lista_exclusos])
+termos_sorted
+
+chr_termos <- regex(paste0("\\b", termos_sorted, "\\b"), ignore_case = TRUE)    # use este objeto para o regex de pesquisa ou conjunto_termos
+chr_termos
+
+conjunto_termos <- regex(paste0("\\b",termos_sorted,"\\b", collapse = "|"), ignore_case = TRUE)    # Use este objeto para o regex de pesquisa ou chr_termos
+conjunto_termos     
+
+#chr_termos2 <- paste0("(\\b", termos_sorted, "\\b)")
+#chr_termos2
+
+
+
+insumos_regex$conjunto_termos <- chr_termos
+insumos_regex
+
+insumos_regex$conjunto_onestring <- conjunto_termos
+insumos_regex
+
+
+
+```
+
+# Veja nos testes abaixo o porquê de usar um vetor character de string único para as buscas!!!
+## é muito mais rápido, prático, intuitivo, 
+
+
+|> Aqui é apenas preparação:
+insumos_regex
+$siglas
+ [1] "\\badg\\b"          "\\bapr\\b"          "\\baps\\b"          "\\batc\\b"          "\\batl\\b"          "\\bpdg\\b"         
+ [7] "\\bres\\b"          "\\bata\\b"          "\\baci\\b"          "\\bacj\\b"          "\\bacl\\b"          "\\bacm\\b"         
+[13] "\\badi\\b"          "\\badv\\b"          "\\baes\\b"          "\\bage\\b"          "\\bagi\\b"          "\\bagp\\b"         
+[19] "\\bagr\\b"          "\\bail\\b"          "\\bdec\\b"          "\\bdpr\\b"          "\\bdps\\b"          "\\bdsp\\b"         
+[25] "\\bidg\\b"          "\\bips\\b"          "\\bof\\b"           "\\bpag\\b"          "\\bpas\\b"          "\\bpil\\b"         
+[31] "\\bpli\\b"          "\\blei\\b"          "\\bcf\\b"           "\\bdespacho\\b"     "\\bofício\\b"       "\\boficio\\b"      
+[37] "\\bata\\b"          "\\banexo IV\\b"     "\\bportaria\\b"     "\\bresolução\\b"    "\\bresolucao\\b"    "\\brasf\\b"        
+[43] "\\bregulamento\\b"  "\\bconstituição\\b" "\\bconstituicao\\b" "\\bdesp\\b"        
+attr(,"options")
+attr(,"options")$case_insensitive
+[1] TRUE
+
+attr(,"options")$comments
+[1] FALSE
+
+attr(,"options")$dotall
+[1] FALSE
+
+attr(,"options")$multiline
+[1] FALSE
+
+attr(,"class")
+[1] "stringr_regex"   "stringr_pattern" "character"      
+
+$siglas_onestring
+[1] "\\badg\\b|\\bapr\\b|\\baps\\b|\\batc\\b|\\batl\\b|\\bpdg\\b|\\bres\\b|\\bata\\b|\\baci\\b|\\bacj\\b|\\bacl\\b|\\bacm\\b|\\badi\\b|\\badv\\b|\\baes\\b|\\bage\\b|\\bagi\\b|\\bagp\\b|\\bagr\\b|\\bail\\b|\\bdec\\b|\\bdpr\\b|\\bdps\\b|\\bdsp\\b|\\bidg\\b|\\bips\\b|\\bof\\b|\\bpag\\b|\\bpas\\b|\\bpil\\b|\\bpli\\b|\\blei\\b|\\bcf\\b|\\bdespacho\\b|\\bofício\\b|\\boficio\\b|\\bata\\b|\\banexo IV\\b|\\bportaria\\b|\\bresolução\\b|\\bresolucao\\b|\\brasf\\b|\\bregulamento\\b|\\bconstituição\\b|\\bconstituicao\\b|\\bdesp\\b"
+attr(,"options")
+attr(,"options")$case_insensitive
+[1] TRUE
+
+attr(,"options")$comments
+[1] FALSE
+
+attr(,"options")$dotall
+[1] FALSE
+
+attr(,"options")$multiline
+[1] FALSE
+
+attr(,"class")
+[1] "stringr_regex"   "stringr_pattern" "character"      
+
+$primeiras_palavras
+ [1] "\\banexo\\b"        "\\bata\\b"          "\\bato\\b"          "\\bchamada\\b"      "\\bconstituição\\b" "\\bdecisão\\b"     
+ [7] "\\bdespacho\\b"     "\\bedital\\b"       "\\bestatuto\\b"     "\\binstrução\\b"    "\\bnorma\\b"        "\\bordem\\b"       
+[13] "\\borientação\\b"   "\\bparecer\\b"      "\\bpolítica\\b"     "\\bportaria\\b"     "\\bregulamento\\b" 
+attr(,"options")
+attr(,"options")$case_insensitive
+[1] TRUE
+
+attr(,"options")$comments
+[1] FALSE
+
+attr(,"options")$dotall
+[1] FALSE
+
+attr(,"options")$multiline
+[1] FALSE
+
+attr(,"class")
+[1] "stringr_regex"   "stringr_pattern" "character"      
+
+$primeiras_onestring
+[1] "\\b(não\\b|\\banexo\\b|\\bata\\b|\\bato\\b|\\bchamada\\b|\\bconstituição\\b|\\bdecisão\\b|\\bdespacho\\b|\\bedital\\b|\\bestatuto\\b|\\binstrução\\b|\\bnorma\\b|\\bordem\\b|\\borientação\\b|\\bparecer\\b|\\bpolítica\\b|\\bportaria\\b|\\bregulamento\\b"
+attr(,"options")
+attr(,"options")$case_insensitive
+[1] TRUE
+
+attr(,"options")$comments
+[1] FALSE
+
+attr(,"options")$dotall
+[1] FALSE
+
+attr(,"options")$multiline
+[1] FALSE
+
+attr(,"class")
+[1] "stringr_regex"   "stringr_pattern" "character"      
+
+$conjunto_termos
+ [1] "\\badvocacia\\b"   "\\badvosf\\b"      "\\bcâmara\\b"      "\\bcd\\b"          "\\bcomissao\\b"    "\\bcomissão\\b"   
+ [7] "\\bcomitê\\b"      "\\bconselho\\b"    "\\bdeilb\\b"       "\\bdeputados\\b"   "\\bdger\\b"        "\\bdiretor\\b"    
+[13] "\\bdiretora\\b"    "\\bdiretoria\\b"   "\\bdiretorias\\b"  "\\bexecutivo\\b"   "\\bfederal\\b"     "\\bilb\\b"        
+[19] "\\binstituto\\b"   "\\blegislativa\\b" "\\blegislativo\\b" "\\blíderes\\b"     "\\bmesa\\b"        "\\bmesas\\b"      
+[25] "\\bpad\\b"         "\\bpolícia\\b"     "\\bportaria\\b"    "\\bpós\\b"         "\\bpres.\\b"       "\\bpresidência\\b"
+[31] "\\bpresidente\\b"  "\\bpresidentes\\b" "\\bprimeira\\b"    "\\bprimeiro\\b"    "\\bpúblico\\b"     "\\breunião\\b"    
+[37] "\\bsaúde\\b"       "\\bsecr.\\b"       "\\bsecretaria\\b"  "\\bsecretário\\b"  "\\bsegp\\b"        "\\bsenado\\b"     
+[43] "\\bserh\\b"        "\\bserviço\\b"     "\\bservidor\\b"    "\\bsf\\b"          "\\bsis\\b"        
+attr(,"options")
+attr(,"options")$case_insensitive
+[1] TRUE
+
+attr(,"options")$comments
+[1] FALSE
+
+attr(,"options")$dotall
+[1] FALSE
+
+attr(,"options")$multiline
+[1] FALSE
+
+attr(,"class")
+[1] "stringr_regex"   "stringr_pattern" "character"      
+
+|> aqui começam os testes!!! Veja o resultado da chamada 'posicao_regex':
+- utiliza str_locate_all para achar todos os matches de uma vez, e no caso eu selecionei apenas as paginas de 1 a 10.
+- como pattern (padrão de string que o código ira procurar, incluí um vetor character unicelular, isto é, apenas um string contendo várias possibilidaes, utilizando para isso o operador "OU", representado no código por '|', conforme pode ser visto acima, nas formulas que definem os objetos que chamei de 'onestring'. O computador nem pára para pensar, já dá o resultado imediatamente.
+
+> posicao_regex <- str_locate_all(string = meu_documento$texto_limpo[1:10],
++                                 pattern = regex(siglas_onestring))
+Aviso: Coercing `pattern` to a plain character vector.
+> View(posicao_regex)
+
+Aqui tentei resgatar o conteúdo do match a partir da posição de inicio e fim que a função retorna como informação, indicando também a página de ocorrência. As páginas onde ocorrem matches e as posições podem ser visualizadas com a chamada 'View(posicao_regex)'. Abaixo puxei exclusivamente as informações da página2.
+> posicao_regex[[2]]
+     start  end
+[1,]   657  667
+[2,]  1745 1747
+
+Aqui comecei a brincar, puxando o termo que 'deu' match com a lista que forneci, chamada "siglas_onestring", e também o contexto em que ela incidiu, isto é, a frase no entorno da palavra encontrada pelo código. Note que eu seleciono o começo e o fim do match conforme achar necessário:
+
+> str_sub(meu_documento$texto_limpo[[2]], start=657, end=667)
+[1] "regulamento"
+> str_sub(meu_documento$texto_limpo[[2]], start=627, end=687)
+[1] "os tipos de afastamento: a.1) regulamento ou regimento do pro"
+> str_sub(meu_documento$texto_limpo[[2]], start=607, end=717)
+[1] "retendido: a) Todos os tipos de afastamento: a.1) regulamento ou regimento do programa pleiteado; a.2) calendár"
+> str_sub(meu_documento$texto_limpo[[2]], start=557, end=767)
+[1] "cumentação relativa ao programa de pós-graduação pretendido: a) Todos os tipos de afastamento: a.1) regulamento ou regimento do programa pleiteado; a.2) calendário acadêmico completo ou, em caso de calendário in"
+> View(posicao_regex)
+> posicao_regex[[6]]
+     start  end
+[1,]  2480 2482
+> str_sub(meu_documento$texto_limpo[[6]], start=2380, end=2582)
+[1] "tificou o afastamento, salvo na hipótese comprovada de força maior ou de caso fortuito, na forma da lei; e) não cumprir as obrigações contidas no item 2 deste Termo de Compromisso. Assumo, ainda, total r"
+> str_sub(meu_documento$texto_limpo[[6]], start=2480, end=2482)
+[1] "lei"
+> siglas_onestring
+[1] "\\badg\\b|\\bapr\\b|\\baps\\b|\\batc\\b|\\batl\\b|\\bpdg\\b|\\bres\\b|\\bata\\b|\\baci\\b|\\bacj\\b|\\bacl\\b|\\bacm\\b|\\badi\\b|\\badv\\b|\\baes\\b|\\bage\\b|\\bagi\\b|\\bagp\\b|\\bagr\\b|\\bail\\b|\\bdec\\b|\\bdpr\\b|\\bdps\\b|\\bdsp\\b|\\bidg\\b|\\bips\\b|\\bof\\b|\\bpag\\b|\\bpas\\b|\\bpil\\b|\\bpli\\b|\\blei\\b|\\bcf\\b|\\bdespacho\\b|\\bofício\\b|\\boficio\\b|\\bata\\b|\\banexo IV\\b|\\bportaria\\b|\\bresolução\\b|\\bresolucao\\b|\\brasf\\b|\\bregulamento\\b|\\bconstituição\\b|\\bconstituicao\\b|\\bdesp\\b"
+attr(,"options")
+attr(,"options")$case_insensitive
+[1] TRUE
+
+attr(,"options")$comments
+[1] FALSE
+
+attr(,"options")$dotall
+[1] FALSE
+
+attr(,"options")$multiline
+[1] FALSE
+
+attr(,"class")
+[1] "stringr_regex"   "stringr_pattern" "character"      
+> # Aqui faz-se um colapse dentro de paste0(), o que significa unir todos os termos em um só string. O operador "|" (=OU) é utilizado para determinar a relação entre os termos do string, a ser observada durante a busca textual: OU um termo OU outro termo OU...
+> siglas_onestring <- regex((paste("\\b", siglas_select, "\\b", collapse = "|")), ignore_case = TRUE) # use este para 'siglas' em fórmulas regex para 
+> siglas_onestring
+[1] "\\b adg \\b|\\b apr \\b|\\b aps \\b|\\b atc \\b|\\b atl \\b|\\b pdg \\b|\\b res \\b|\\b ata \\b|\\b aci \\b|\\b acj \\b|\\b acl \\b|\\b acm \\b|\\b adi \\b|\\b adv \\b|\\b aes \\b|\\b age \\b|\\b agi \\b|\\b agp \\b|\\b agr \\b|\\b ail \\b|\\b dec \\b|\\b dpr \\b|\\b dps \\b|\\b dsp \\b|\\b idg \\b|\\b ips \\b|\\b of \\b|\\b pag \\b|\\b pas \\b|\\b pil \\b|\\b pli \\b|\\b lei \\b|\\b cf \\b|\\b despacho \\b|\\b ofício \\b|\\b oficio \\b|\\b ata \\b|\\b anexo IV \\b|\\b portaria \\b|\\b resolução \\b|\\b resolucao \\b|\\b rasf \\b|\\b regulamento \\b|\\b constituição \\b|\\b constituicao \\b|\\b desp \\b"
+attr(,"options")
+attr(,"options")$case_insensitive
+[1] TRUE
+
+attr(,"options")$comments
+[1] FALSE
+
+attr(,"options")$dotall
+[1] FALSE
+
+attr(,"options")$multiline
+[1] FALSE
+
+attr(,"class")
+[1] "stringr_regex"   "stringr_pattern" "character"      
+> # Aqui faz-se um colapse dentro de paste0(), o que significa unir todos os termos em um só string. O operador "|" (=OU) é utilizado para determinar a relação entre os termos do string, a ser observada durante a busca textual: OU um termo OU outro termo OU...
+> siglas_onestring <- regex((paste0("\\b", siglas_select, "\\b", collapse = "|")), ignore_case = TRUE) # use este para 'siglas' em fórmulas regex para 
+> siglas_onestring
+[1] "\\badg\\b|\\bapr\\b|\\baps\\b|\\batc\\b|\\batl\\b|\\bpdg\\b|\\bres\\b|\\bata\\b|\\baci\\b|\\bacj\\b|\\bacl\\b|\\bacm\\b|\\badi\\b|\\badv\\b|\\baes\\b|\\bage\\b|\\bagi\\b|\\bagp\\b|\\bagr\\b|\\bail\\b|\\bdec\\b|\\bdpr\\b|\\bdps\\b|\\bdsp\\b|\\bidg\\b|\\bips\\b|\\bof\\b|\\bpag\\b|\\bpas\\b|\\bpil\\b|\\bpli\\b|\\blei\\b|\\bcf\\b|\\bdespacho\\b|\\bofício\\b|\\boficio\\b|\\bata\\b|\\banexo IV\\b|\\bportaria\\b|\\bresolução\\b|\\bresolucao\\b|\\brasf\\b|\\bregulamento\\b|\\bconstituição\\b|\\bconstituicao\\b|\\bdesp\\b"
+attr(,"options")
+attr(,"options")$case_insensitive
+[1] TRUE
+
+attr(,"options")$comments
+[1] FALSE
+
+attr(,"options")$dotall
+[1] FALSE
+
+attr(,"options")$multiline
+[1] FALSE
+
+attr(,"class")
+[1] "stringr_regex"   "stringr_pattern" "character"      
+> view(siglas_onestring)
+> siglas_onestring[1]
+[1] "\\badg\\b|\\bapr\\b|\\baps\\b|\\batc\\b|\\batl\\b|\\bpdg\\b|\\bres\\b|\\bata\\b|\\baci\\b|\\bacj\\b|\\bacl\\b|\\bacm\\b|\\badi\\b|\\badv\\b|\\baes\\b|\\bage\\b|\\bagi\\b|\\bagp\\b|\\bagr\\b|\\bail\\b|\\bdec\\b|\\bdpr\\b|\\bdps\\b|\\bdsp\\b|\\bidg\\b|\\bips\\b|\\bof\\b|\\bpag\\b|\\bpas\\b|\\bpil\\b|\\bpli\\b|\\blei\\b|\\bcf\\b|\\bdespacho\\b|\\bofício\\b|\\boficio\\b|\\bata\\b|\\banexo IV\\b|\\bportaria\\b|\\bresolução\\b|\\bresolucao\\b|\\brasf\\b|\\bregulamento\\b|\\bconstituição\\b|\\bconstituicao\\b|\\bdesp\\b"
+attr(,"options")
+attr(,"options")$case_insensitive
+[1] TRUE
+
+attr(,"options")$comments
+[1] FALSE
+
+attr(,"options")$dotall
+[1] FALSE
+
+attr(,"options")$multiline
+[1] FALSE
+
+attr(,"class")
+[1] "stringr_regex"   "stringr_pattern" "character"      
+
+****Nessas tentativas acima e nessa próxima também estou tentando selecionar apenas o string de busca de siglas_onestring, para evitar o aviso de que os dados serão coercididos ou coercivados enfim forçados ao formato de vetor de tamanho 1, isto é, desconsiderando o restante das informações além dos dados do string propriamente dito. Mas em todas as minhas tentativas, o resultado que vem é esse mesmo aqui:
+
+> siglas_onestring[1][1]
+[1] "\\badg\\b|\\bapr\\b|\\baps\\b|\\batc\\b|\\batl\\b|\\bpdg\\b|\\bres\\b|\\bata\\b|\\baci\\b|\\bacj\\b|\\bacl\\b|\\bacm\\b|\\badi\\b|\\badv\\b|\\baes\\b|\\bage\\b|\\bagi\\b|\\bagp\\b|\\bagr\\b|\\bail\\b|\\bdec\\b|\\bdpr\\b|\\bdps\\b|\\bdsp\\b|\\bidg\\b|\\bips\\b|\\bof\\b|\\bpag\\b|\\bpas\\b|\\bpil\\b|\\bpli\\b|\\blei\\b|\\bcf\\b|\\bdespacho\\b|\\bofício\\b|\\boficio\\b|\\bata\\b|\\banexo IV\\b|\\bportaria\\b|\\bresolução\\b|\\bresolucao\\b|\\brasf\\b|\\bregulamento\\b|\\bconstituição\\b|\\bconstituicao\\b|\\bdesp\\b"
+attr(,"options")
+attr(,"options")$case_insensitive
+[1] TRUE
+
+attr(,"options")$comments
+[1] FALSE
+
+attr(,"options")$dotall
+[1] FALSE
+
+attr(,"options")$multiline
+[1] FALSE
+
+attr(,"class")
+[1] "stringr_regex"   "stringr_pattern" "character"      
+
+
+***** Eu passo então a experimentar com as outras variáveis que construí com a mesma informação das siglas! a versão em vetor de lista com vários itens (siglas_regex, salva na base), e a siglas_onestring (salva na base, no environment, seja em lista ou em vetor de tamanho 1).
+Testei várias formas de escrever a chamada, e todas deram resultado equivalente, exceto 1. Tanto o objeto solto no environment, quanto o armazenado na lista que criei, a 'insumos_regex' deram os mesmos resultados e rapidamente. A exceção foi quando especifiquei o patter com a função regex() aplicada à lista com os termos/padrões que o código iria buscar. Descobri no teste 'posicao_regex5' que isso se deveu ao fato de que a funçao regex(), quando invocada pontualmente, se sobrepõe ao objeto que já havia sido especificado como expressão regex. Daí decorre que o programa ignora a configuração prévia e responde prioritariamente a função regex() recém chamada. Assim, como não especifiquei que não queria diferenciação entre maiuscula e minuscula, então o programa distinguiu, por padrão, e por isso foram encontrados menos casos de matches.
+
+> posicao_regex <- str_locate_all(string = meu_documento$texto_limpo[1:10], pattern = insumos_regex$siglas_onestring)
+> posicao_regex
+[[1]]
+     start end
+
+[[2]]
+     start  end
+[1,]   657  667
+[2,]  1745 1747
+[3,]  3203 3210
+[4,]  3215 3225
+[5,]  3623 3631
+
+[[3]]
+     start end
+
+[[4]]
+     start end
+
+[[5]]
+     start  end
+[1,]  1243 1246
+[2,]  1270 1278
+[3,]  2070 2073
+[4,]  2916 2919
+
+[[6]]
+      start  end
+ [1,]   238  240
+ [2,]   259  266
+ [3,]   271  281
+ [4,]   317  320
+ [5,]   687  694
+ [6,]   700  703
+ [7,]  1182 1189
+ [8,]  1195 1198
+ [9,]  1225 1232
+[10,]  1591 1598
+[11,]  1603 1606
+[12,]  1951 1958
+[13,]  1964 1967
+[14,]  2480 2482
+
+[[7]]
+     start end
+[1,]   183 185
+
+[[8]]
+     start end
+
+[[9]]
+     start end
+[1,]   381 383
+
+[[10]]
+     start end
+
+> view(posicao_regex)
+Error in (function (..., row.names = NULL, check.rows = FALSE, check.names = TRUE,  : 
+  argumentos implicam em número de linhas distintos: 0, 5, 4, 14, 1
+> View(posicao_regex)
+> posicao_regex2 <- str_locate_all(string = meu_documento$texto_limpo[1:10], pattern = insumos_regex$siglas_onestring)
+> posicao_regex <- str_locate_all(string = meu_documento$texto_limpo[1:10], pattern = regex(siglas_onestring))
+Aviso em regex(siglas_onestring) :
+  Coercing `pattern` to a plain character vector.
+> View(posicao_regex)
+> View(posicao_regex2)
+> posicao_regex <- str_locate_all(string = meu_documento$texto_limpo[1:10], pattern = siglas_onestring)
+> posicao_regex3 <- str_locate_all(string = meu_documento$texto_limpo[1:10], pattern = siglas_onestring)
+> posicao_regex <- str_locate_all(string = meu_documento$texto_limpo[1:10], pattern = regex(siglas_onestring))
+Aviso em regex(siglas_onestring) :
+  Coercing `pattern` to a plain character vector.
+> View(posicao_regex3)
+> posicao_regex4 <- str_locate_all(string = meu_documento$texto_limpo[1:10], pattern = regex(siglas_onestring, ignore_case = TRUE))
+Aviso em regex(siglas_onestring, ignore_case = TRUE) :
+  Coercing `pattern` to a plain character vector.
+> View(posicao_regex4)
+> posicao_regex5 <- str_locate_all(string = meu_documento$texto_limpo[1:10], pattern = siglas)
+Error in `str_locate_all()`:
+! Can't recycle `string` (size 10) to match `pattern` (size 114).
+Run `rlang::last_trace()` to see where the error occurred.
+> 
+
+
+# Vamos continuar, portanto, usando a fórmula do str_locate_all(), que é simples, está dando certo e armazena os resultados em objeto à parte. A ideia aqui é a de obter uma matriz de posições para cada tipo de termo listado como sigla, primeiras_palavras, conjunto_termos (geralmente autoridade ou instância responsável pela norma), e termos especiais. De posse de uma matriz para cada, teremos as páginas em que cada conjunto de termos ocorre. No cruzamento/sobreposição dessas matrizes, teremos a co-incidência dos termos de mais de um grupo, aumentando a possibilidade de serem uma citação. Talvez não  seja necessário chegar a tanto. Outro caminho, seria a partir de uma ou duas matrizes, fazer checagens do tipo look-behind e look-ahead, para verificar a ocorrência de termos de outros grupos.
+
+## antes disso, talvez seja importante obter os termos e os contextos textuais em que as citações ocorrem
+
+```{r}
+
+termos_especiais <- c(8112, 8.112, 9784, 9.784)
+
+termos_especiais <- regex(paste0("\\b", termos_especiais, "\\b", collapse = "|"), ignore_case = TRUE)
+
+insumos_regex$termos_especiais_onestring <- termos_especiais
+insumos_regex
+
+matriz_posicao_siglas <- str_locate_all(string = meu_documento$texto_limpo, pattern = insumos_regex$siglas_onestring)
+
+matriz_posicao_primeiras_palavras <- str_locate_all(string = meu_documento$texto_limpo, pattern = insumos_regex$primeiras_onestring)
+
+matriz_posicao_conjunto_termos <- str_locate_all(string = meu_documento$texto_limpo, pattern = insumos_regex$conjunto_onestring)
+
+matriz_posicao_termos_especiais <- str_locate_all(string = meu_documento$texto_limpo, pattern = insumos_regex$termos_especiais_onestring)
+```
+
+# continuando com a minha solução, criei esse loop para extrair as posições de start e end da matriz_posicao_[qualquer] gerada por str_locate_all, pois todas as opçoes de unnest, unlist, flatten nao se mostraram úteis nesse caso.
+
+
+
+```{r}
+
+pos_lista <- list()  # lista acumuladora
+k <- 1               # índice da lista
+
+for (i in seq_along(matriz_posicao_siglas)) {
+  matriz_i <- matriz_posicao_siglas[[i]]
+  
+  if (nrow(matriz_i) > 0) {
+    for (j in 1:nrow(matriz_i)) {
+      pos_lista[[k]] <- tibble(
+        pagina = i,
+        start = matriz_i[j, "start"],
+        end   = matriz_i[j, "end"]
+      )
+      k <- k + 1
+    }
+  }
+}
+
+# !!!!ATENÇÃO!!!!
+# 
+# retomado a partir daqui após tentativa de trabalhar com todas as matrizes. 
+# Funcionou, mas infrutífero esforço, pois não agrega citações a normas
+# Inicializa vetores vazios
+resultado <- tibble()
+pagina <- integer()
+start  <- integer()
+end    <- integer()
+
+# Loop vetorial para extrair e empilhar
+for (i in seq_along(matriz_posicao_siglas)) {
+  matriz_i <- matriz_posicao_siglas[[i]]
+  
+  if (nrow(matriz_i) > 0) {
+    j <- nrow(matriz_i)
+    
+    # Repetição do número da página
+    pagina <- c(pagina, rep(i, j))
+    
+    # Adiciona os valores de start e end
+    start  <- c(start, matriz_i[, "start"])
+    end    <- c(end,   matriz_i[, "end"])
+  }
+}
+
+# Combina em um tibble
+resultado <- tibble(
+  pagina = pagina,
+  start  = start,
+  end    = end
+)
+
+view(resultado)
+
+# !!!ATENÇÃO!!!!
+# siga para o bloco referente à matriz_produção_siglas, pois o bloco abaixo utiliza matriz_primeiras_palavras e ZERA os vetores pagina, start e end!!
+
+```
+
+
+# PRIMEIRAS PALAVRAS - CATEGORIA DE TERMOS QUASE EXTINTOS, PORQUE FORAM INCORPORADOS ÀS SIGLAS POR PRATICIDADE
+
+
+```{r}
+#primeiras palavras
+
+pagina_primeiras <- integer()
+start_primeiras  <- integer()
+end_primeiras    <- integer()
+resultado_primeiras <- tibble()
+end = ""
+start = ""
+matriz_i = ""
+
+# Loop vetorial para extrair e empilhar
+for (i in seq_along(matriz_posicao_primeiras_palavras)) {
+  matriz_i <- matriz_posicao_primeiras_palavras[[i]]
+  
+  if (nrow(matriz_i) > 0) {
+    j <- nrow(matriz_i)
+    
+    # Repetição do número da página
+    pagina_primeiras <- c(pagina_primeiras, rep(i, j))
+    
+    # Adiciona os valores de start e end
+    start_primeiras  <- c(start_primeiras, matriz_i[, "start"])
+    end_primeiras    <- c(end_primeiras,   matriz_i[, "end"])
+  }
+}
+
+# Combina em um tibble
+resultado_primeiras <- tibble(
+  pagina = pagina_primeiras,
+  start  = start_primeiras,
+  end    = end_primeiras
+)
+
+view(resultado_primeiras)
+
+```
+
+para conferir se está correto o resultado, posso somar a quantidade de vezes que cada página aparece no resultado final. Aproveito para fazer essa conta e apresentar numa tabela que inclua as páginas que haviam ficado de fora por terem valor 0 ou nulo. 
+
+
+```{r siglas}
+library(dplyr)
+library(tidyr)
+
+# Conta quantas vezes cada página aparece
+tabela_contagem <- resultado |>
+  count(pagina, name = "n_ocorrencias") |>
+  complete(pagina = seq_along(matriz_posicao_siglas), fill = list(n_ocorrencias = 0))
+
+tabela_contagem
+
+view(tabela_contagem)
+
+```
+
+
+```{r primeiras_palavras}
+
+# Primeiras_palavrasConta quantas vezes cada página aparece
+tabela_contagem_primeiras <- resultado_primeiras |>
+  count(pagina, name = "n_ocorrencias") |>
+  complete(pagina = seq_along(matriz_posicao_primeiras_palavras), fill = list(n_ocorrencias = 0))
+
+tabela_contagem_primeiras
+
+view(tabela_contagem_primeiras)
+
+
+library(dplyr)
+library(stringr)
+
+texto_paginado <- meu_documento$texto_limpo
+
+resultado_com_texto_primeiras <- resultado_primeiras |>
+  mutate(
+    trecho = str_sub(
+      string = texto_paginado[pagina],  # texto da respectiva página
+      start  = start,
+      end    = end
+    )
+  )
+
+
+view(resultado_com_texto_primeiras)
+# confira alguns resultados:
+
+texto_paginado[[1767]] |> str_sub(1768, 1778)
+
+
+resultado_com_texto_primeiras <- resultado_primeiras |>
+  mutate(
+    trecho_primeiras = str_sub(
+      string = texto_paginado[pagina],  # texto da respectiva página
+      start  = start,
+      end    = end
+    ),
+      contexto_primeiras = str_sub(
+      string = tolower(texto_paginado)[pagina],
+      start = pmax(start - 100, 1),
+      end   = pmin(end + 100, str_length(texto_paginado[pagina]))
+    ),
+    # Destaca o trecho dentro do contexto
+    contexto_primeiras = str_replace(
+      string = contexto_primeiras,
+      pattern = fixed(str_sub(tolower(texto_paginado[pagina]), start, end)),
+      replacement = str_c("<<", toupper(str_sub(texto_paginado[pagina], start, end)), ">>")
+    )
+  )
+
+
+view(resultado_com_texto_primeiras)
+
+```
+
+Confira o resulado da tabela_contagem com o número de ocorrencias de 'match' em cada página de matriz_posicao_siglas.
+
+# Agora vamos obter os trechos captados com os matches propriamente ditos. Na sequencia, obteremos os contextos dos matches.
+
+```{r siglas}
+
+library(dplyr)
+library(stringr)
+
+texto_paginado <- meu_documento$texto_limpo
+
+resultado_com_texto <- resultado |>
+  mutate(
+    trecho = str_sub(
+      string = texto_paginado[pagina],  # texto da respectiva página
+      start  = start,
+      end    = end
+    )
+  )
+
+
+view(resultado_com_texto)
+# confira alguns resultados:
+
+texto_paginado[[1767]] |> str_sub(1768, 1778)
+```
+
+Show! Adicionar **contexto textual em torno do match** é uma excelente ideia — especialmente para revisão manual ou classificação.
+
+Vamos criar essa coluna chamada `contexto`, extraindo uma **janela de 100 caracteres antes e depois** do trecho localizado por `start` e `end`.
+
+---
+
+## ✅ Solução: janela de contexto com `str_sub()`
+
+```{r}
+
+
+resultado_com_texto <- resultado |>
+  mutate(
+    trecho = str_sub(
+      string = texto_paginado[pagina],  # texto da respectiva página
+      start  = start,
+      end    = end
+    ),
+      contexto = str_sub(
+      string = tolower(texto_paginado)[pagina],
+      start = pmax(start - 100, 1),
+      end   = pmin(end + 100, str_length(texto_paginado[pagina]))
+    ),
+    # Destaca o trecho dentro do contexto
+    contexto = str_replace(
+      string = contexto,
+      pattern = fixed(str_sub(tolower(texto_paginado[pagina]), start, end)),
+      replacement = str_c("<<", toupper(str_sub(texto_paginado[pagina], start, end)), ">>")
+    )
+  )
+
+
+view(resultado_com_texto)
+
+
+tabela_freq_trechos <- resultado_com_texto |>
+  count(trecho, sort = TRUE)
+
+
+view(tabela_freq_trechos)
+
+# do primeiro resultado, restou a necessidade de retirar as siglas abaixo do conteúdo, pois nenhuma delas aparece vinculada a norma citada. of, por exemplo aparece mais de 5 mil vezes, mas é por causa da preposição 'of' em inglês.
+# retirar of, age, aes, dps, ail, arte, agi, ips, adi, agr, artv
+
+# Há uma lista extensa de variações de termos (com diferenças de caixa, acentos, plural/singular, etc.), e uma estratégia é montar uma tabela de mapeamento (tipo dicionário), e fazer um join ou case_when() baseado nela.
+
+library(tibble)
+dicionario_normalizacao <- c()
+
+dicionario_normalizacao <- tribble(
+  ~original,        ~normalizado,
+  # Artigos
+  "art",            "artigo",
+  "art.",           "artigo",
+  "artigo",         "artigo",
+  "artigos",        "artigo",
+  "Art",            "artigo",
+  "Artigos",        "artigo",
+  "Artigo",         "artigo",
+  # Lei
+  "lei",            "lei",
+  "Lei",            "lei",
+  # Constituição
+  "constituição",   "constituicao",
+  "Constituição",   "constituicao",
+  "cf",             "constituicao",
+  # RASF
+  "RASF",           "rasf",
+  "Rasf",           "rasf",
+  # Regulamento
+  "regulamento",    "regulamento",
+  "Regulamento",    "regulamento",
+  "REGULAMENTO",    "regulamento",
+  # Resolução
+  "resolução",      "resolucao",
+  "Resolução",      "resolucao",
+  "RES",            "resolucao",
+  "res",            "resolucao",
+  "RESOLUÇÃO",      "resolucao",
+  "Res",            "resolucao",
+  # Anexo
+  "Anexo IV",       "anexo_iv",
+  "anexo IV",       "anexo_iv",
+  "ANEXO IV",       "anexo_iv",
+  # Ofício
+  "ofício",         "oficio",
+  "Ofício",         "oficio",
+  "oficio",         "oficio",
+  "Oficio",         "oficio",
+  "OFÍCIO",         "oficio",
+  # Despacho
+  "despacho",       "despacho",
+  "Despacho",       "despacho",
+  "DESPACHO",       "despacho",
+  "desp",           "despacho",
+  # Decreto
+  "DEC",            "decreto",
+  "dec",            "decreto",
+  "Decreto",        "decreto",
+  "DECRETO",        "decreto",
+  "decreto",        "decreto",
+  # Portaria
+  "Portaria",       "portaria",
+  # Parágrafo
+  "parágrafo",      "paragrafo",
+  "Parágrafo",      "paragrafo",
+  "§",              "paragrafo",
+  "§§",             "paragrafo",
+  # Inciso
+  "inciso",         "inciso",
+  "Inciso",         "inciso",
+  "incisos",        "inciso",
+  # Alínea
+  "alínea",         "alinea",
+  "alíneas",        "alinea",
+  "alínea",         "alinea",
+  "Alínea",         "alinea",
+  # ATA
+  "ATA",            "ata",
+  "ata",            "ata",
+  "Ata",            "ata"
+  # ...adicione mais conforme necessário
+)
+
+
+resultado_com_texto2 <- resultado_com_texto |>
+  mutate(trecho_lower = tolower(trecho)) |>
+  left_join(dicionario_normalizacao, by = c("trecho_lower" = "original")) |>
+  mutate(
+    termo_normalizado = coalesce(normalizado, trecho_lower)
+  )
+
+tabela_freq_trechos_normal <- resultado_com_texto2 |>
+  count(termo_normalizado, sort = TRUE)
+
+
+
+view(tabela_freq_trechos_normal)
+
+```
+
+---
+
+### 🧠 Explicações rápidas:
+
+- `pmax(start - 100, 1)`: limita o início da janela ao mínimo de 1 (evita erro por índice negativo).
+- `pmin(end + 100, str_length(...))`: garante que o final da janela não ultrapasse o comprimento do texto da página.
+- `str_sub()` aplica a extração para cada linha.
+
+---
+
+### 🧪 Resultado esperado:
+
+| pagina | start | end | trecho | contexto           |
+|--------|-------|-----|--------|--------------------|
+| 1      | 100   | 105 | "SIGLA" | "... contexto SIGLA mais ..." |
+| 2      | 300   | 308 | "XYZ"   | "... texto anterior XYZ posterior ..." |
+
+---
+
+Se quiser destacar visualmente a sigla dentro do contexto, posso te mostrar como inserir por exemplo `<<SIGLA>>` no meio da string. Deseja fazer isso também?
+
+
+#Agora vou tentar uma abordagem para todas as matrizes
+
+## resultado: é muito interessante, porém a inclusão das outras matrizes e termos de busca gera muito lixo de conteúdo, isto é, referencias sem propósito que não agregaram citações normativas, que é o nosso foco.
+```{r}
+
+library(tibble)
+
+# Função auxiliar para converter lista de matrizes em tibble com origem
+converter_para_tibble <- function(lista_matrizes, origem) {
+  pagina <- integer()
+  start  <- integer()
+  end    <- integer()
+  matriz_origem <- character()
+  
+  for (i in seq_along(lista_matrizes)) {
+    matriz_i <- lista_matrizes[[i]]
+    
+    if (nrow(matriz_i) > 0) {
+      j <- nrow(matriz_i)
+      
+      pagina <- c(pagina, rep(i, j))
+      start  <- c(start,  matriz_i[, "start"])
+      end    <- c(end,    matriz_i[, "end"])
+      matriz_origem <- c(matriz_origem, rep(origem, j))
+    }
+  }
+  
+  tibble(
+    pagina = pagina,
+    start  = start,
+    end    = end,
+    matriz_origem = matriz_origem
+  )
+}
+
+# Agora aplicamos a função para as duas listas:
+
+resultado_siglas <- converter_para_tibble(matriz_posicao_siglas, "siglas")
+resultado_primeiras <- converter_para_tibble(matriz_posicao_primeiras_palavras, "primeiras_palavras")
+resultado_conjunto <- converter_para_tibble(matriz_posicao_conjunto_termos, "conjunto_termos")
+resultado_especiais <- converter_para_tibble(matriz_posicao_termos_especiais, "termos_especiais")
+
+
+resultado_geral <- bind_rows(resultado_siglas, resultado_primeiras, resultado_conjunto, resultado_especiais)
+
+view(resultado_geral)
+
+# se quiser ordenar por página e posição de início:
+
+resultado_com_texto <- resultado_geral |>
+  mutate(
+    trecho = str_sub(
+      string = texto_paginado[pagina],
+      start = start,
+      end = end
+    ),
+    
+    contexto = str_sub(
+      string = tolower(texto_paginado)[pagina],
+      start = pmax(start - 100, 1),
+      end   = pmin(end + 100, str_length(texto_paginado[pagina]))
+    ),
+    
+    contexto = str_replace(
+      string = contexto,
+      pattern = fixed(tolower(trecho)),
+      replacement = str_c("<<", toupper(trecho), ">>")
+    )
+  )
+
+view(resultado_com_texto)
+
+```
+
+
+# DESCARTAND MATCHES QUE NÃO TÊM NÚMEROS POR PERTO, O QUE SIGNIFICA QUE NÃO SE TRATAM DE REFERENCIAS NORMATIVAS OU SÃO CITAÇÕES GENÉRICAS
+
+
+A ideia é, para cada linha (match) do seu data frame, extrair uma “janela” ao redor dos marcadores (<< e >>) que delimitam o termo encontrado e, em seguida, verificar se nessa janela (por exemplo, 25 caracteres antes do “<<” e 25 caracteres após o “>>”) existe algum dígito. Assim, você pode filtrar (ou separar) os matches que não têm nenhum número nessa região, pois isso pode indicar que a citação de norma não está completa (ou é um falso positivo).
+
+Suponha que você tenha um data frame (por exemplo, chamado df_resultados) com uma coluna contexto que já contém, para cada match, o contexto extraído do texto (por exemplo, 100 caracteres antes e depois) e que dentro desse texto o termo exato de match é marcado com << e >> (por exemplo, ... (<<ART>>. 235, inciso...). Além disso, você tem a coluna trecho com o termo exato encontrado.
+
+Você pode fazer algo como o seguinte usando funções do dplyr e stringr:
+
+
+```{R}
+
+library(dplyr)
+library(stringr)
+
+
+resultados_para_filtrar1 <- resultado_com_texto2
+
+
+resultado_filtrado1 <- resultados_para_filtrar1 %>%
+  mutate(
+    # Localiza a posição de '<<' e '>>' no contexto:
+    pos_inicio_marker = str_locate(contexto, fixed("<<"))[,1],
+    pos_fim_marker    = str_locate(contexto, fixed(">>"))[,2],
+    # Cria uma janela de 25 caracteres antes do '<<' e 25 após o '>>'
+    janela = if_else(!is.na(pos_inicio_marker) & !is.na(pos_fim_marker),
+                     str_sub(contexto,
+                             pmax(1, pos_inicio_marker - 25),
+                             pmin(nchar(contexto), pos_fim_marker + 25)),
+                     contexto)
+  ) %>%
+  # Filtra os casos onde nessa janela há pelo menos um dígito
+  filter(str_detect(janela, "[0-9]"))
+
+# Opcionalmente, para ver quais foram descartados:
+resultado_descartado1 <- resultados_para_filtrar1 %>%
+  mutate(
+    pos_inicio_marker = str_locate(contexto, fixed("<<"))[,1],
+    pos_fim_marker    = str_locate(contexto, fixed(">>"))[,2],
+    janela = if_else(!is.na(pos_inicio_marker) & !is.na(pos_fim_marker),
+                     str_sub(contexto,
+                             pmax(1, pos_inicio_marker - 25),
+                             pmin(nchar(contexto), pos_fim_marker + 25)),
+                     contexto)
+  ) %>%
+  filter(!str_detect(janela, "[0-9]"))
+
+```
+
+
+Explicação:
+Extrair a posição dos marcadores:
+
+str_locate(contexto, fixed("<<"))[,1] obtém a posição de início do marcador “<<”.
+
+str_locate(contexto, fixed(">>"))[,2] obtém a posição final do marcador “>>”.
+
+Criar a janela:
+
+Usamos str_sub() para extrair a substring do contexto que vai de 25 caracteres antes da posição do “<<” até 25 caracteres após o “>>”.
+
+Usamos pmax(1, ...) e pmin(nchar(contexto), ...) para garantir que não ultrapassamos os limites da string.
+
+Filtrar com str_detect():
+
+str_detect(janela, "[0-9]") verifica se há pelo menos um dígito na janela extraída.
+
+Separação dos itens descartados:
+
+No segundo pipeline, usando filter(!str_detect(...)), você obtém os matches que não possuem números na janela, ou seja, os que serão descartados.
+
+Dessa forma, você tem um filtro direto baseado na coluna contexto já existente, sem precisar reprocessar o texto original. Essa abordagem também permite, depois, que você revise os itens descartados (df_descartados) e, se achar conveniente, reinseri-los em análises futuras.
+
+Se precisar de mais alguma modificação ou esclarecimento, estou à disposição!
+
+
+
+# AGRUPANDO MATCHES COM INTERSECÇÃO DE CONTEXTO, OU DESCARTANDO OS MATCHES QUE POR PROXIMIDADE SE INFERE QUE SEJAM A MESMA CITAÇÃO DE NORMA
+
+Tratamento por Eliminação de Matches Dentro de um Intervalo
+Se a ideia for, em vez de mesclar, simplesmente descartar os matches que ocorram dentro de 25 caracteres do primeiro, a lógica seria:
+
+Para cada página, ordenar os matches, e manter o primeiro e descartar os que estiverem dentro do limite de 25 caracteres do final do primeiro match.
+
+OUTRA IDEIA, MANTENDO AS INFORMAÇÕES DESCARTADAS PARA CONSULTA E VISUALIZAÇAÔ - E MAIOR CONTROLE TAMBÈM
+
+A ideia é que, em vez de apenas retornar os matches que você decidiu "manter" (keep), você acrescente uma coluna que indique se o match foi mantido ou descartado. Assim, você pode separar ou visualizar ambos. Existem duas abordagens comuns:
+
+Adicionar uma coluna de status:
+Modifique a função para gerar, para cada linha de entrada, um tibble com uma coluna (por exemplo, chamada status) que vale "keep" se o match for aceito e "discard" se for descartado.
+
+Retornar uma lista com dois objetos:
+Uma lista com dois tibbles, um para os items mantidos e outro para os descartados.
+
+Vou sugerir a Abordagem 1 (mais fácil de ver o resultado em um único objeto) adaptando sua função descartar_matches_proximos.
+
+Código Adaptado:
+
+```{r}
+library(dplyr)
+library(stringr)
+library(tibble)
+
+descartar_matches_proximos <- function(df, limiar = 50) {
+  df <- df %>% arrange(start)
+  keep <- logical(nrow(df))
+  keep[1] <- TRUE
+  ultimo_kept <- df$end[1]
+  
+  if(nrow(df) > 1){
+    for(i in 2:nrow(df)){
+      if(df$start[i] - ultimo_kept >= limiar){
+        keep[i] <- TRUE
+        ultimo_kept <- df$end[i]
+      } else {
+        keep[i] <- FALSE
+      }
+    }
+  }
+  # Retorna o data frame com uma nova coluna que indica se o match foi mantido ou descartado
+  df %>% mutate(status = if_else(keep, "keep", "discard"))
+}
+
+resultados_para_filtrar <- resultado_filtrado1 # o resultado_filtrado1 já passou previamente pelo filtro do chunk anterior, em que foram selecionados apenas as linhas em que o match estava perto de algum número, a pelo menos 25 caracteres de distância.
+
+# Exemplo de uso:
+# Suponha que "resultados_para_filtrar" seja um tibble com as colunas "pagina", "start" e "end".
+# Em seguida, aplicamos a função agrupando por página e unindo os resultados:
+
+resultado_filtrado3 <- resultados_para_filtrar %>%
+  group_by(pagina) %>%
+  do(descartar_matches_proximos(.)) %>% 
+  ungroup()
+
+# Visualiza o resultado
+view(resultado_filtrado3)
+
+```
+O Que Esse Código Faz
+Dentro de descartar_matches_proximos:
+
+Ordena o data frame df (matches da mesma página) pela coluna start.
+
+Inicializa um vetor lógico keep e define que o primeiro match é sempre mantido.
+
+Para os demais, se a distância entre o início do match atual e o final do último match mantido for menor que o limiar (por exemplo, 50 caracteres), define keep = FALSE; caso contrário, TRUE e atualiza o ultimo_kept.
+
+No final, adiciona uma nova coluna chamada status que indica "keep" ou "discard".
+
+No pipeline final:
+
+Para cada grupo (página) do resultados_para_filtrar, a função é aplicada (com do()).
+
+O resultado final é um tibble em que cada linha possui as colunas originais (como pagina, start, end, etc.) e a nova coluna status.
+
+Dessa forma, você terá acesso aos matches mantidos e aos que foram descartados no mesmo objeto e poderá, por exemplo, visualizar ou exportar os resultados descartados separadamente:
+
+r
+Copiar
+matches_mantidos <- resultado_filtrado2 %>% filter(status == "keep")
+matches_descartados <- resultado_filtrado2 %>% filter(status == "discard")
+Essa abordagem é prática para visualizar todo o conjunto e, se desejar, reinserir manualmente os itens descartados.
+# captar segundo essa regra:
+# qualquer das 'siglas' + numeração no raio de 30 caracteres antes ou depois, OU 'primeiras_palavras' + qualquer palavra do 'conjunto_termos' no raio de 50 caracteres + numeração no raio de 50 caracteres. 
+# 
+
+# Passo 1: Funções auxiliares
+1.1. Achar posições de um padrão no texto
+Para cada termo de uma lista, podemos procurar todas as ocorrências no texto (case-insensitive) usando str_locate_all() com fixed(..., ignore_case=TRUE). Exemplo:
+
+
+# Nova solução, considerando duas alternativas: rastrear a ocorrência dos termos que indicam normas aplicando uma regra a cada loop e descartando linhas em que não há termos adicionais; ou mapear as posições de todos os termos que indicam normas no processo, posteriormente unificando as menções que por sobreposição de posições possam ser consideradas uma só (isso evita o processamento do texto várias vezes).
+
+A seguir apresento duas implementações distintas para lidar com sua lógica de 4 regras (4→1→3→2) e a condição de “descartar a linha após a primeira captura, salvo se ainda houver outra sigla ou ‘primeira_palavra’ que justifique continuar analisando a mesma linha”.
+
+Para facilitar o exemplo, chamo:
+
+siglas: vetor de siglas (ex: c("ADG","APS","APR",...))
+
+primeiras_palavras: vetor de palavras (ex: c("ato","ata","portaria",...))
+
+conjunto_termos: vetor com o resto dos termos (ex: c("diretoria","geral","comissão",...))
+
+termos_especiais (Regra 4): c("rasf","anexo iv","8112","8.112")
+
+Suponho também que você tenha um tibble chamado meu_documento com colunas:
+
+paginas (número da página),
+
+texto_limpo (todo minúsculo, sem quebras de linha, sem espaços duplicados, etc.),
+
+(opcional) texto_original caso queria extrair o contexto do texto original.
+
+Por fim, assumo que você queira filtrar as páginas a serem analisadas via um vetor paginas_selecionadas. Assim, cada função inicia aplicando filter(...) para só pegar as páginas desejadas.
+
+# Parte 1: Funções Auxiliares Gerais
+Ambas as abordagens vão precisar de:
+
+Buscar termo (case-insensitive) e retornar todas as posições (start/end);
+
+Buscar número (regex de dígitos) e retornar posições;
+
+Extrair contexto;
+
+Verificar se linha ainda possui nova sigla ou “primeira_palavra” para decidir se descartar a linha ou não.
+
+Criaremos essas funções de forma genérica.
+
+```{r}
+
+library(dplyr)
+library(purrr)
+library(stringr)
+library(tidyr)
+
+########################
+# Funções Auxiliares
+########################
+
+# A) Buscar todas as ocorrências de "termo" (case-insensitive) no texto,
+#    retornando [start, end].
+buscar_termo <- function(texto, termo) {
+  locs <- str_locate_all(texto, fixed(termo, ignore_case = TRUE))[[1]]
+  if (!is.matrix(locs) || nrow(locs) == 0) {
+    return(tibble(start = integer(), end = integer(), termo = character()))
+  }
+  tibble(start = locs[,1], end = locs[,2], termo = termo)
+}
+
+# B) Buscar todos os dígitos (regex "[0-9]+") no texto
+buscar_numeros <- function(texto) {
+  locs <- str_locate_all(texto, regex("[0-9]+", ignore_case=TRUE))[[1]]
+  if (!is.matrix(locs) || nrow(locs) == 0) {
+    return(tibble(start = integer(), end = integer(), termo = character()))
+  }
+  tibble(start = locs[,1], end = locs[,2], termo = "numero")
+}
+
+# C) Extrair contexto (N chars antes e depois)
+extrair_contexto <- function(texto, ini, fim, janela = 50) {
+  start_ct <- max(1, ini - janela)
+  end_ct   <- min(nchar(texto), fim + janela)
+  str_sub(texto, start_ct, end_ct)
+}
+
+# D) Verifica se, *após* ter encontrado um match, ainda sobra
+#    alguma sigla ou primeira_palavra (fora do trecho encontrado)
+#    A ideia: Se não há mais nada, podemos descartar essa linha.
+possui_outra_sigla_ou_primeira <- function(texto, siglas, primeiras_palavras,
+                                           trechos_utilizados) {
+  # 'trechos_utilizados' supõe ser uma lista data frame com (start, end)
+  # ou um data frame único. Podemos cortar esse(s) trecho(s) do texto substituindo por algo,
+  # ou só verificar se existe outra sigla/palavra em outro local.
+  
+  # Maneira mais simples: localiza TUDO de siglas e de primeiras_palavras
+  # e verifica se há algum start/end que não intersecta um dos trechos_utilizados.
+  
+  all_siglas <- map_dfr(siglas, ~ buscar_termo(texto, .x)) %>% mutate(tipo = "sigla")
+  all_primei <- map_dfr(primeiras_palavras, ~ buscar_termo(texto, .x)) %>% mutate(tipo="primeira")
+  tudo <- bind_rows(all_siglas, all_primei)
+  if(nrow(tudo) == 0) {
+    return(FALSE)  # não há nada
+  }
+  # Para cada match (start/end), ver se ele está completamente "coberto" pelos trechos_utilizados
+  # Se encontrarmos algum match que não está coberto, retorna TRUE
+  
+  coberto <- rep(FALSE, nrow(tudo))
+  if(nrow(trechos_utilizados) == 0) {
+    return(TRUE) # se não usamos nada, então certamente tem algo
+  }
+  
+  for(i in seq_len(nrow(tudo))) {
+    st <- tudo$start[i]
+    en <- tudo$end[i]
+    # Se esse [st,en] intersecciona completamente algum dos trechos usados, consideramos coberto
+    # Se não, temos algo fora e retornamos TRUE
+    inters <- FALSE
+    for(j in seq_len(nrow(trechos_utilizados))) {
+      use_st <- trechos_utilizados$start[j]
+      use_en <- trechos_utilizados$end[j]
+      # Se [st,en] está dentro de [use_st,use_en], então coberto
+      if(st >= use_st && en <= use_en) {
+        inters <- TRUE
+        break
+      }
+    }
+    coberto[i] <- inters
+  }
+  # se há ao menos um item em 'tudo' que não está coberto, return TRUE
+  any(!coberto)
+}
+
+```
+No código acima, a função possui_outra_sigla_ou_primeira() faz uma checagem simples: Se existe alguma sigla/primeira_palavra que não esteja totalmente coberta pelos matches já usados, então temos um “motivo” para continuar analisando a linha.
+
+Parte 2: Abordagem 1 – “Rodada” para cada regra
+Nesta abordagem, faremos:
+
+Seleção das páginas que queremos (ex.: filter(meu_documento, paginas %in% paginas_selecionadas)).
+
+Aplicamos Regra 4 em todas as linhas.
+
+Se a linha tiver match, guardamos esse match no resultados.
+
+Em seguida, checamos se ainda resta alguma sigla/primeira_palavra fora do match encontrado.
+
+Se não restar nada, descartamos essa linha das próximas rodadas.
+
+Se sim, mantemos a linha para a próxima regra.
+
+Obs. Se a linha tiver mais de 1 match para a mesma regra, guardamos todos mas unimos as posições de match para ver se ainda sobra algo.
+
+Aplicamos Regra 1 às linhas não descartadas, com a mesma lógica.
+
+Aplicamos Regra 3 …
+
+Aplicamos Regra 2 …
+
+Ao final, unimos todos os matches num tibble final.
+
+Obs. Para implementar “raio de 30 chars” para sigla+numero, ou “numero+sigla” etc., faremos mini-funções.
+
+Segue uma implementação demonstrativa (simplificada – não trata casos de sobreposição complexa entre matches múltiplos, mas deve dar a ideia):
+
+```{r}
+
+########## Abordagem 1 ##########
+extrair_mencoes_approach1 <- function(meu_documento,
+                                      paginas_selecionadas,
+                                      siglas,
+                                      primeiras_palavras,
+                                      conjunto_termos,
+                                      termos_especiais) {
+  # Filtra pelas páginas desejadas
+  doc <- meu_documento %>%
+    filter(paginas %in% paginas_selecionadas) %>%
+    mutate(linha_id = row_number())  # id interno
+  
+  # Objeto para armazenar resultados
+  resultados <- tibble()
+  
+  # Vetor que identifica quais linhas ainda estão "ativas" (não descartadas)
+  linhas_ativas <- doc$linha_id
+  
+  # Data structure para guardar "trechos_utilizados" por linha
+  # Assim quando match for encontrado, marcamos esse trecho
+  used_regions <- vector("list", length = nrow(doc))  # cada item é data frame (start,end)
+  names(used_regions) <- doc$linha_id
+  
+  # Funções para cada regra (mini)
+  # REGRAS:
+  # 4) termos_especiais
+  apply_regra4 <- function(texto, pagina, linha_id) {
+    # localiza todos
+    locs <- map_dfr(termos_especiais, ~ buscar_termo(texto, .x))
+    if(is.null(locs) || nrow(locs) == 0) return(tibble(start = integer(), end = integer(), termo = character()))
+    # Montar tibble de matches
+    locs <- locs %>%
+      mutate(regra = "Regra 4",
+             pagina = pagina,
+             linha_id = linha_id)
+    # extrair contexto
+    locs <- locs %>%
+      rowwise() %>%
+      mutate(contexto = extrair_contexto(texto, start, end, 50))
+    locs
+  }
+  
+  # 1) siglas + numero em 30 chars
+  apply_regra1 <- function(texto, pagina, linha_id, siglas) {
+    # Localiza siglas
+    locs_sig <- map_dfr(siglas, ~ buscar_termo(texto, .x))
+    if(is.null(locs_sig) || nrow(locs_sig)==0) return(tibble(start = integer(), end = integer(), termo = character()))
+    out <- list()
+    ccount <- 0
+    for(i in seq_len(nrow(locs_sig))) {
+      st <- locs_sig$start[i]
+      en <- locs_sig$end[i]
+      rec_ini <- en + 1
+      rec_end <- min(nchar(texto), rec_ini + 30)
+      if(rec_ini <= rec_end) {
+        trecho <- str_sub(texto, rec_ini, rec_end)
+        # buscar numero
+        nums <- str_locate_all(trecho, regex("[0-9]+", ignore_case=TRUE))[[1]]
+        if(is.matrix(nums) && nrow(nums)>0) {
+          # achou
+          # pega só a primeira ou pega todas? Pegamos todas
+          for(k in seq_len(nrow(nums))) {
+            st_num <- rec_ini + nums[k,1] - 1
+            en_num <- rec_ini + nums[k,2] - 1
+            ccount <- ccount + 1
+            out[[ccount]] <- tibble(
+              regra    = "Regra 1",
+              pagina   = pagina,
+              linha_id = linha_id,
+              start    = st,
+              end      = en_num,
+              termo    = paste(locs_sig$termo[i], "+numero"),
+              contexto = extrair_contexto(texto, st, en_num, 50)
+            )
+          }
+        }
+      }
+    }
+    if(ccount==0) return(tibble(start = integer(), end = integer(), termo = character()))
+    bind_rows(out)
+  }
+  
+  # 3) primeira_palavra + (conjunto_termos em 30 chars) + numero em 30 chars
+  apply_regra3 <- function(texto, pagina, linha_id, 
+                           primeiras_palavras, conjunto_termos) {
+    locs_pw <- map_dfr(primeiras_palavras, ~ buscar_termo(texto, .x))
+    if(is.null(locs_pw) || nrow(locs_pw)==0) return(tibble(start = integer(), end = integer(), termo = character()))
+    out <- list()
+    ccount <- 0
+    for(i in seq_len(nrow(locs_pw))) {
+      st_pw <- locs_pw$start[i]
+      en_pw <- locs_pw$end[i]
+      rec_ini <- en_pw + 1
+      rec_end <- min(nchar(texto), rec_ini + 30)
+      if(rec_ini <= rec_end) {
+        trecho <- str_sub(texto, rec_ini, rec_end)
+        # ver se tem conj_termos
+        achou_termo <- any(map_lgl(conjunto_termos, 
+                                   ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+        if(achou_termo) {
+          # ver se tem numero no MESMO recorte
+          # se sim, guardamos match
+          has_num <- str_detect(trecho, regex("[0-9]+", ignore_case=TRUE))
+          if(has_num) {
+            ccount <- ccount + 1
+            out[[ccount]] <- tibble(
+              regra    = "Regra 3",
+              pagina   = pagina,
+              linha_id = linha_id,
+              start    = st_pw,
+              end      = rec_end,
+              termo    = paste(locs_pw$termo[i], "+conjTermos+numero"),
+              contexto = extrair_contexto(texto, st_pw, rec_end, 50)
+            )
+          }
+        }
+      }
+    }
+    if(ccount==0) return(tibble(start = integer(), end = integer(), termo = character()))
+    bind_rows(out)
+  }
+  
+  # 2) numero + (sigla ou primeira_palavra) em 30 chars
+  apply_regra2 <- function(texto, pagina, linha_id, siglas, primeiras_palavras) {
+    locs_num <- buscar_numeros(texto)
+    if(is.null(locs_num) || nrow(locs_num)==0) return(tibble(start = integer(), end = integer(), termo = character()))
+    out <- list()
+    ccount <- 0
+    for(i in seq_len(nrow(locs_num))) {
+      st_num <- locs_num$start[i]
+      en_num <- locs_num$end[i]
+      rec_ini <- en_num + 1
+      rec_end <- min(nchar(texto), rec_ini + 30)
+      if(rec_ini <= rec_end) {
+        trecho <- str_sub(texto, rec_ini, rec_end)
+        # ver se tem sigla ou primeira_palavra
+        tem_sigla <- any(map_lgl(siglas, ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+        tem_pw    <- any(map_lgl(primeiras_palavras, ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+        if(tem_sigla || tem_pw) {
+          ccount <- ccount + 1
+          out[[ccount]] <- tibble(
+            regra    = "Regra 2",
+            pagina   = pagina,
+            linha_id = linha_id,
+            start    = st_num,
+            end      = rec_end,
+            termo    = paste("numero + (sigla|primeira)"),
+            contexto = extrair_contexto(texto, st_num, rec_end, 50)
+          )
+        }
+      }
+    }
+    if(ccount==0) return(tibble(start = integer(), end = integer(), termo = character()))
+    bind_rows(out)
+  }
+  
+  # Lista de regras na ordem: 4->1->3->2
+  funs_regras <- list(
+    R4 = function(texto, pg, ln) apply_regra4(texto, pg, ln),
+    R1 = function(texto, pg, ln) apply_regra1(texto, pg, ln, siglas),
+    R3 = function(texto, pg, ln) apply_regra3(texto, pg, ln, primeiras_palavras, conjunto_termos),
+    R2 = function(texto, pg, ln) apply_regra2(texto, pg, ln, siglas, primeiras_palavras)
+  )
+  
+  ordem <- c("R4","R1","R3","R2")
+  
+  # Execução em rodadas
+  for(regra_id in ordem) {
+    # Filtra as linhas ainda ativas
+    lines_df <- doc %>% filter(linha_id %in% linhas_ativas)
+    if(nrow(lines_df)==0) break
+    
+    # Aplica a regra em cada linha
+    resultado_regra <- lines_df %>%
+      rowwise() %>%
+      do({
+        texto <- .$texto_limpo
+        ln_id <- .$linha_id
+        pg    <- .$paginas
+        
+        matches <- funs_regras[[regra_id]](texto, pg, ln_id)
+        if(!is.null(matches) && nrow(matches)>0) {
+          # Precisamos marcar os trechos usados
+          # Vamos supor que se houver >1 match, unimos em used_regions
+          # Note: simplificando, apenas anexa
+          for(i in seq_len(nrow(matches))) {
+            used_regions[[as.character(ln_id)]] <- bind_rows(
+              used_regions[[as.character(ln_id)]],
+              tibble(start=matches$start[i], end=matches$end[i])
+            )
+          }
+        }
+        matches %>% ungroup()
+      }) %>%
+      ungroup()
+    
+    # Adiciona no pool de resultados
+    if(nrow(resultado_regra)>0) {
+      resultados <- bind_rows(resultados, resultado_regra)
+    }
+    
+    # Agora, para cada linha em que encontramos ALGO, checar se sobra alguma sigla/primeira
+    linhas_com_match <- unique(resultado_regra$linha_id)
+    for(ln_id in linhas_com_match) {
+      idx <- which(linhas_ativas==ln_id)
+      if(length(idx)==0) next
+      txt <- doc$texto_limpo[doc$linha_id==ln_id]
+      used_df <- used_regions[[as.character(ln_id)]]
+      if(!possui_outra_sigla_ou_primeira(txt, siglas, primeiras_palavras, used_df)) {
+        # descarta
+        linhas_ativas <- setdiff(linhas_ativas, ln_id)
+      }
+    }
+  }
+  
+  # Retorna
+  # Merge com doc se precisar
+  resultados %>%
+    arrange(linha_id, start)
+}
+
+```
+Observações dessa abordagem (“Rodada por regra”)
+Cada regra faz uma passada pelas linhas restantes. Isso pode ser custoso para textos muito grandes, mas é simples de entender.
+
+A checagem “possui_outra_sigla_ou_primeira” remove a linha se não sobrar nada para procurar.
+
+Caso a linha nunca tenha match em nenhuma regra, ela permanece até o fim e não aparece nos resultados.
+
+Essa é a Alternativa 1 que você descreveu.
+
+# Parte 3: Abordagem 2 – Mapear primeiro, depois aplicar a lógica e descartar linhas
+Nesta abordagem, a ideia é:
+
+Para cada página selecionada, localizamos e guardamos todas as posições de:
+
+termos_especiais (Regra 4),
+
+siglas,
+
+primeiras_palavras,
+
+conjunto_termos,
+
+números.
+
+Em seguida, ordenamos essas ocorrências pela posição start.
+
+Fazemos uma varredura somente sobre essas “listas de posições” para ver se alguma das 4 regras pode ser disparada. Ao disparar, registramos o match e decidimos se a linha continua ou não (conforme “descartar se não houver mais siglas/palavras”).
+
+O pseudo-código:
+
+```{r}
+
+########## Abordagem 2 ##########
+extrair_mencoes_approach2 <- function(meu_documento,
+                                      paginas_selecionadas,
+                                      siglas,
+                                      primeiras_palavras,
+                                      conjunto_termos,
+                                      termos_especiais) {
+  # Filtra
+  doc <- meu_documento %>%
+    filter(paginas %in% paginas_selecionadas) %>%
+    mutate(linha_id = row_number())
+  
+  resultados <- list()
+  
+  for(i in seq_len(nrow(doc))) {
+    linha_id <- doc$linha_id[i]
+    pg       <- doc$paginas[i]
+    texto    <- doc$texto_limpo[i]
+    
+    # Mapeia todas as posições
+    loc_espec <- map_dfr(termos_especiais, ~ buscar_termo(texto, .x)) %>%
+      mutate(tipo="R4")
+    loc_siglas <- map_dfr(siglas, ~ buscar_termo(texto, .x)) %>%
+      mutate(tipo="sigla")
+    loc_prims  <- map_dfr(primeiras_palavras, ~ buscar_termo(texto, .x)) %>%
+      mutate(tipo="primeira")
+    loc_conjt  <- map_dfr(conjunto_termos, ~ buscar_termo(texto, .x)) %>%
+      mutate(tipo="conjTermo")
+    loc_nums   <- buscar_numeros(texto)
+    if(!is.null(loc_nums) && nrow(loc_nums)>0) {
+      loc_nums <- loc_nums %>% mutate(tipo="numero")
+    } else {
+      loc_nums <- tibble()
+    }
+    
+    # Junta tudo e ordena por start
+    all_positions <- bind_rows(loc_espec, loc_siglas, loc_prims, loc_conjt, loc_nums)
+    if(nrow(all_positions)==0) {
+      # sem nada -> sem match
+      next
+    }
+    all_positions <- all_positions %>%
+      arrange(start)
+    
+    # Precisamos varrer all_positions e tentar disparar as regras 4,1,3,2 em cada “ponto”.
+    # Se alguma regra bater, registramos, e então checamos se descartamos a linha.
+    used_regions <- tibble::tibble(start=integer(), end=integer())
+    found_something <- FALSE
+    
+    # Funções "checar_regra" que usam 'all_positions' e o texto
+    # Regra 4: se item for R4, pronto.
+    check_regra4 <- function(pos_i) {
+      if(all_positions$tipo[pos_i]=="R4") {
+        # match instantâneo
+        st <- all_positions$start[pos_i]
+        en <- all_positions$end[pos_i]
+        contexto <- extrair_contexto(texto, st, en, 50)
+        tibble(
+          regra = "Regra 4",
+          start = st,
+          end   = en,
+          termo = all_positions$termo[pos_i],
+          contexto = contexto
+        )
+      } else {
+        NULL
+      }
+    }
+    # Regra 1: "sigla + numero em 30 chars"
+    check_regra1 <- function(pos_i) {
+      if(all_positions$tipo[pos_i] != "sigla") return(NULL)
+      st_sig <- all_positions$start[pos_i]
+      en_sig <- all_positions$end[pos_i]
+      # ver se há numero em [en_sig+1, en_sig+30]
+      rec_ini <- en_sig+1
+      rec_fim <- min(nchar(texto), en_sig+30)
+      # filtrar all_positions com tipo=numero e start nesse range
+      cand <- all_positions %>% 
+        filter(tipo=="numero", start >= rec_ini, start <= rec_fim)
+      if(nrow(cand)>0) {
+        # match
+        # pega a 1a
+        st_num <- cand$start[1]
+        en_num <- cand$end[1]
+        tibble(
+          regra="Regra 1",
+          start=st_sig,
+          end=en_num,
+          termo=paste0(all_positions$termo[pos_i],"+numero"),
+          contexto=extrair_contexto(texto, st_sig, en_num, 50)
+        )
+      } else NULL
+    }
+    # Regra 3: "primeira_palavra + conjTermo em 30 chars + numero em 30 chars"
+    check_regra3 <- function(pos_i) {
+      if(all_positions$tipo[pos_i] != "primeira") return(NULL)
+      st_pw <- all_positions$start[pos_i]
+      en_pw <- all_positions$end[pos_i]
+      rec_ini <- en_pw+1
+      rec_fim <- min(nchar(texto), en_pw+30)
+      # ver se existe conjTermo e numero nesse intervalo
+      conj <- all_positions %>%
+        filter(tipo=="conjTermo", start>=rec_ini, start<=rec_fim)
+      has_conj <- (nrow(conj)>0)
+      num <- all_positions %>%
+        filter(tipo=="numero", start>=rec_ini, start<=rec_fim)
+      has_num <- (nrow(num)>0)
+      if(has_conj && has_num) {
+        # match
+        tibble(
+          regra="Regra 3",
+          start=st_pw,
+          end=rec_fim,
+          termo=paste0(all_positions$termo[pos_i],"+conjTermo+numero"),
+          contexto=extrair_contexto(texto, st_pw, rec_fim, 50)
+        )
+      } else NULL
+    }
+    # Regra 2: "numero + (sigla ou primeira_palavra) em 30 chars"
+    check_regra2 <- function(pos_i) {
+      if(all_positions$tipo[pos_i] != "numero") return(NULL)
+      st_num <- all_positions$start[pos_i]
+      en_num <- all_positions$end[pos_i]
+      rec_ini <- en_num+1
+      rec_fim <- min(nchar(texto), en_num+30)
+      cand_sig <- all_positions %>%
+        filter(tipo=="sigla" | tipo=="primeira",
+               start>=rec_ini, start<=rec_fim)
+      if(nrow(cand_sig)>0) {
+        tibble(
+          regra="Regra 2",
+          start=st_num,
+          end=rec_fim,
+          termo="numero+(sigla|primeira)",
+          contexto=extrair_contexto(texto, st_num, rec_fim, 50)
+        )
+      } else NULL
+    }
+    
+    # Vamos agora “varrer all_positions” na ordem, aplicando 4->1->3->2
+    # Se alguma disparar, paramos e checamos se a linha descarta ou não.
+    # Se descartar, encerramos. Se não descartar, continuamos. (Ou paramos? Depende do enunciado.)
+    # O enunciado diz: “A ocorrência de 1 match E a inocorrência de outra sigla/palavra => descartar”
+    
+    pos_i <- 1
+    discard_line <- FALSE
+    
+    while(pos_i <= nrow(all_positions)) {
+      # Tenta 4,1,3,2
+      match4 <- check_regra4(pos_i)
+      if(!is.null(match4)) {
+        found_something <- TRUE
+        # Armazena
+        resultados[[length(resultados)+1]] <- match4 %>%
+          mutate(pagina=pg, linha_id=linha_id)
+        # Checa se sobrou algo
+        used_regions <- bind_rows(used_regions, tibble(start=match4$start, end=match4$end))
+        if(!possui_outra_sigla_ou_primeira(texto, siglas, primeiras_palavras, used_regions)) {
+          discard_line <- TRUE
+        }
+        break
+      }
+      
+      match1 <- check_regra1(pos_i)
+      if(!is.null(match1)) {
+        found_something <- TRUE
+        resultados[[length(resultados)+1]] <- match1 %>%
+          mutate(pagina=pg, linha_id=linha_id)
+        used_regions <- bind_rows(used_regions, tibble(start=match1$start, end=match1$end))
+        if(!possui_outra_sigla_ou_primeira(texto, siglas, primeiras_palavras, used_regions)) {
+          discard_line <- TRUE
+        }
+        break
+      }
+      
+      match3 <- check_regra3(pos_i)
+      if(!is.null(match3)) {
+        found_something <- TRUE
+        resultados[[length(resultados)+1]] <- match3 %>%
+          mutate(pagina=pg, linha_id=linha_id)
+        used_regions <- bind_rows(used_regions, tibble(start=match3$start, end=match3$end))
+        if(!possui_outra_sigla_ou_primeira(texto, siglas, primeiras_palavras, used_regions)) {
+          discard_line <- TRUE
+        }
+        break
+      }
+      
+      match2 <- check_regra2(pos_i)
+      if(!is.null(match2)) {
+        found_something <- TRUE
+        resultados[[length(resultados)+1]] <- match2 %>%
+          mutate(pagina=pg, linha_id=linha_id)
+        used_regions <- bind_rows(used_regions, tibble(start=match2$start, end=match2$end))
+        if(!possui_outra_sigla_ou_primeira(texto, siglas, primeiras_palavras, used_regions)) {
+          discard_line <- TRUE
+        }
+        break
+      }
+      
+      pos_i <- pos_i + 1
+    } # fim while
+    
+    if(discard_line) {
+      # descarta e segue pra proxima linha/pagina
+      next
+    }
+    
+    # Se chegamos aqui sem descartar, significa que (ou) não houve match ou
+    # sobrou outra sigla/palavra e iremos para a próxima "posição" do all_positions
+    # repetindo a checagem?  -> No pseudo atual, paramos. 
+    # Se quiser checar repetidamente, teria que aninhar outro loop ou recursão.
+  }
+  
+  # Junta tudo
+  if(!is.null(length(resultados)) || length(resultados)== 0) return(tibble(pagina = integer(), linha_id = integer(), regra = character(), start = integer(), end = integer(), termo = character(), contexto = character())
+  dfres <- bind_rows(resultados) %>%
+    select(pagina, linha_id, regra, start, end, termo, contexto) %>%
+    arrange(linha_id, start)
+  dfres
+}
+
+
+extrato_mencoes_approach2 <- extrair_mencoes_approach2(meu_documento = meu_documento,
+                                                       paginas_selecionadas = c(1000:1050),
+                                      siglas = paste0("\\b",siglas,"\\b"),
+                                      primeiras_palavras = paste0("\\b",primeiras_palavras,"\\b"),
+                                      conjunto_termos = paste0("\\b",conjunto_termos,"\\b"),
+                                      termos_especiais = paste0("\\b",termos_especiais,"\\b"))
+
+
+```
+
+Observações dessa “Abordagem 2”
+Faz uma única coleta de todas as posições de cada “tipo” (sigla, primeira_palavra, conjTermo, numero, e R4) e, em seguida, “roda” a lógica de ordem das regras.
+
+A checagem “descartar se não houver sigla/palavra extra” é implementada do mesmo jeito: se achou um match, chamamos possui_outra_sigla_ou_primeira().
+
+O pseudo-código acima para no primeiro match de uma dada linha. Se a ideia fosse “pode haver mais de um match se ainda sobra outra sigla/palavra”, precisaríamos continuar no while. Mas isso pode exigir mais loops.
+
+Em termos de eficiência, é em geral melhor do que varrer todo o texto 4 vezes – mas a lógica de “continuar” vs. “descartar” pode ficar complexa, pois você precisa “simular” a priorização.
+
+Conclusão
+Foram apresentadas duas implementações:
+
+Abordagem 1 (“Rodada por Regra”):
+
+Em cada “rodada”, aplicamos uma regra no subconjunto de linhas ainda ativas.
+
+Para cada match, se não sobra sigla/palavra, descartamos a linha.
+
+Então passamos à próxima regra.
+
+Mais simples de entender, mas pode ser menos eficiente se o texto for muito grande e houver muitas regras.
+
+Abordagem 2 (“Mapeamento de posições e aplicação de prioridade”):
+
+Indexamos todas as ocorrências de “siglas”, “primeiras_palavras”, “números”, etc.
+
+Depois, num loop sobre essa “lista de posições”, tentamos disparar as regras (na ordem 4→1→3→2).
+
+Se alguma bater, checamos se descartamos a linha ou não.
+
+Mais eficiente quando o texto é grande ou se você tiver muitas regras, pois evita passadas repetitivas.
+
+Lógica pode ficar mais elaborada se quiser permitir múltiplos matches na mesma linha, etc.
+
+Em ambas as abordagens:
+
+O match é case-insensitive,
+
+Extraímos contexto,
+
+Indicamos a página,
+
+Salvamos tudo num tibble de resultados,
+
+E podemos filtrar as páginas com paginas_selecionadas.
+
+Naturalmente, esses exemplos podem ser ajustados (por exemplo, para permitir que uma linha tenha vários matches se ainda sobra outra sigla/palavra), ou para unificar matches sobrepostos, ou para registrar a posição exata do número em Regra 3, e assim por diante. Mas a estrutura geral atende ao que você pediu de:
+
+Aplicar as regras na ordem 4→1→3→2,
+
+Descartar a linha se não sobrar outra sigla/primeira-palavra,
+
+Capturar contexto, indicar página, e poder analisar apenas páginas selecionadas.
+
+
+conjunto_termos <- c(diretoria, geral, presidência, senado, primeira-secretaria, comissão, diretora, reunião, líderes, senado, federal,normativa,normativa, diretoria-geral, presidência, sf, primeiro-secretário, reunião, comissão, diretora, auditoria, geral, conselho, administração, comitê, contratações,conjunto, diretorias-gerais, senado, federal, , câmara, deputados, presidência, conselho, editorial, consultor-geral, legislativo, conselho, supervisão, ilb,conjunto,conjunto, presidentes, sf, , cd,conjunto, mesas, cd, , sf, secretaria, comunicação, social, comitê, científico-pedagógico, conselho, supervisão, sistema, integrado, saúde,declaratório,conjunto, dger, deilb,conjunto, dger, sf, cd, secr., geral, tcu, diretor, prodasen, advogado-geral, assembleia, extraordinária, cssis, comitê, governança, gestão, estratégica, grupo, estudos, ilb, secretaria, gestão, pessoas, presidente, conselho, supervisão, cegraf, diretor, executivo, ilb, mesa, senado, federal, comissão, própria, avaliação, presidente, comissão, diretora, presidente, comissão, pad, comissão, curso, pós-graduação,conjunto, dger, segp, ilb, presidente, comissao, permanente, licitação, (copeli),conjunto, presidentes, mesas, sf, , cd, conselho, supervisão, prodasen, diretor, secretaria, controle, interno,conjunto, secretaria-geral, mesa, , diretoria, geral, secretaria-geral, mesa, conselho, supervisão, sistema, integrado, saúde,conjunto, sgm, sf, , sgm, cd, presidente, conselho, supervisão, sis, terceiro-secretário, secretaria, gestão, informação, documentação, seleção, colaborador, educacional, inscrição, curso, ilb, comissão, diretora, diretoria-geral, presidente, presidência, senado, federal, avaliação, individual, desempenho, ciência, eliminação, documentos, convocação, ilb, concurso, público, eleição, csis, seleção, grupo, estudos, processo, seletivo, interno, gestor, processo, seletivo, processo, seletivo, simplificado, seleção, teses, dissertações, monografias,normativa, coordenação, biblioteca, comissão, diretora,normativa, diretoria, geral,normativa, presidente, conselho, editorial, gráfica, senado, federal,normativa, conjunta, ilb, , serh,normativa, conjunta, ilb, , segp,normativa, advosf,normativa, secretaria, controle, interno,normativa, sgidoc,normativa, secretaria, gestão, pessoas,normativa, ilb,normativa, secretaria, geral, mesa,normativa, secretaria, polícia, legislativa,normativa, conselho, supervisão, sis,normativa, primeira, secretaria,normativa, secretaria, patrimônio,administrativa, prodasen,técnica, diretor, prodasen, serviço, advosf, auditor-geral, advocacia, senado, comissão, especial, curadora,conjunta, escolas, governo, ilb, cefor, isc,conjunta, sf, cd, , tcu, presidente, conselho, supervisão, sis, diretoria, contratações,utilizar), portaria, consultoria, geral, orçamentos, secretaria, gestão, pessoas, instituto, legislativo, brasileiro, presidente, copeli, presidente, codir, comissão, eleição, cssis, secretaria, polícia, legislativa,rede, equidade,(outras, autoridades), secretaria, comunicação, social,conjunta, secretaria-geral, mesa, , dger, consultoria, orçamento, fiscalização, controle, diretoria, geral, presidência, senado, primeira-secretaria, comissão, diretora, reunião, líderes, senado, federal,normativa,normativa, diretoria-geral, presidência, sf, primeiro-secretário, reunião, comissão, diretora, auditoria, geral, conselho, administração, (sf), comitê, contratações,conjunto, diretorias-gerais, sf, , cd, presidência, conselho, editorial, consultor-geral, legislativo, conselho, supervisão, ilb,conjunto,conjunto, presidentes, sf, , cd,conjunto, mesas, cd, , sf, secretaria, comunicação, social, comitê, científico-pedagógico, conselho, supervisão, sistema, integrado, saúde,declaratório,conjunto, dger, deilb,conjunto, dger, sf, cd, secr., geral, tcu, diretor, prodasen, advogado-geral, assembleia, extraordinária, csis, comitê, governança, gestão, estratégica, grupo, estudos, ilb, secretaria, gestão, pessoas, presidente, conselho, supervisão, cegraf, diretor-executivo, ilb, mesa, senado, federal, comissão, própria, avaliação, presidente, comissão, diretora, presidente, comissão, pad, comissão, curso, pós-graduação,conjunto, dger, segp, ilb, presidente, comissao, permanente, licitação, (copeli),conjunto, presidentes, mesas, sf, , cd, conselho, supervisão, prodasen, diretor, secretaria, controle, interno,conjunto, secretaria-geral, mesa, , dger, secretaria-geral, mesa, conselho, supervisão, sistema, integrado, saúde,conjunto, sgm, sf, , sgm, cd, presidente, conselho, supervisão, sis, terceiro-secretário, secretaria, gestão, informação, documentação,(outras, autoridades), seleção, colaborador, educacional, inscrição, curso, (ilb), comissão, diretora, diretoria-geral, presidente, presidência, senado, federal, avaliação, individual, desempenho, ciência, eliminação, documentos, convocação, ilb, concurso, público, eleição, csis, seleção, grupo, estudos, processo, seletivo, s?interno, s?, s?gestor, processo, seletivo, (ilb), processo, seletivo, simplificado, (dger), seleção, teses, dissertações, monografias,normativa, coordenação, biblioteca, comissão, diretora,normativa, diretoria, geral,normativa, pres., cscegraf, (1º, secretário),normativa, conjunta, ilb, , serh/segp,normativa, advosf,normativa, secretaria, controle, interno,normativa, sgidoc,normativa, secretaria, gestão, pessoas,normativa, ilb,normativa, secretaria, geral, mesa,normativa, secretaria, polícia, legislativa,normativa, conselho, supervisão, sis,normativa, primeira, secretaria,normativa, secretaria, patrimônio,administrativa, prodasen,técnica, diretor, prodasen, serviço, advosf, auditor-geral, advocacia, senado, comissão, especial, curadora,conjunta, escolas, governo, ilb, cefor, isc,conjunta, sf, cd, , tcu, presidente, conselho, supervisão, sis, diretoria, contratações,utilizar), portaria, consultoria, geral, orçamentos, secretaria, gestão, pessoas, instituto, legislativo, brasileiro, presidente, copeli, presidente, codir, comissão, eleição, csis, secretaria, polícia, legislativa,rede, equidade,(outras, autoridades), secretaria, comunicação, social,conjunta, secretaria-geral, mesa, , dger, consultoria, orçamento, fiscalização, controle,federal,administrativo, senado, federal,iv, capacitação, senado, federal,iv, diretora, geral, diretora-geral, diretoria-geral, diretoria, geral, primeira, secretaria, primeira-secretaria, primeiro, secretário, primeiro-secretário, servidor, público, serviço, público)
+
+
+
+
+
+Segue abaixo um exemplo “completo” (ainda que prototípico) de duas abordagens—denominadas Abordagem 1 e Abordagem 2—que implementam a seguinte lógica:
+
+Ordem de verificação das regras
+
+Regra 4: ocorrência de qualquer dos termos especiais
+
+Regra 1: uma sigla (do vetor siglas) seguida, num raio de 30 caracteres, de algum número
+
+Regra 3: uma “primeira_palavra” (do vetor primeiras_palavras) seguida, em até 30 caracteres, de alguma palavra de conjunto_termos e, também, de um número (em até 30 caracteres)
+
+Regra 2: a ocorrência de um número que, dentro dos próximos 30 caracteres, seja seguido por alguma sigla ou alguma “primeira_palavra”
+
+Além disso, a regra de “descartar” a linha é a seguinte:
+
+Após o match de qualquer regra, se nos 25 caracteres imediatamente seguintes não houver uma nova ocorrência de (qualquer sigla ou “primeira_palavra”), aquela linha (ou seja, aquele trecho da página) é considerado “esgotado” e não se continua a análise nela. Caso contrário, se houver essa “ocorrência disparadora” dentro dos 25 caracteres, a análise prossegue a partir logo após o match atual para identificar novos matches.
+
+Também estão previstas as seguintes condições:
+
+Case-insensitive
+
+Extração do contexto (por exemplo, 50 caracteres antes e depois)
+
+Registro da página
+
+O resultado é armazenado num objeto à parte (por exemplo, um tibble)
+
+É possível restringir a análise a um conjunto de páginas (por exemplo, “paginas_selecionadas”)
+
+A seguir há dois exemplos de implementação.
+Você poderá testar e depois ajustar (janela de 30/25 caracteres, critérios de “match” e de “descartar”) conforme a necessidade dos seus dados reais.
+
+Preparação – Definição de Dicionários e Funções Auxiliares
+Suponha que você tenha os seguintes vetores (exemplos; ajuste conforme seu dicionário real):
+
+```{r}
+
+library(dplyr)
+library(stringr)
+library(purrr)
+library(tidyr)
+
+paginas_selecionadas <- c(1000:1050)
+
+
+#Função para buscar ocorrências (retorna um tibble com start e end)
+buscar_termo <- function(texto, termo, pos_inicial = 1) {
+  locs <- str_locate_all(texto, fixed(termo, ignore_case = TRUE))[[1]]
+  if (!is.matrix(locs) || nrow(locs) == 0) return(tibble(start = integer(), end = integer(), termo = character())) # Filtra ocorrências que iniciem após pos_inicial
+  locs <- locs[locs[,1] >= pos_inicial, drop = FALSE]
+  if(!is.matrix(locs) || nrow(locs)==0) return(tibble(start = integer(), end = integer(), termo = character())) # Filtra ocorrências que iniciem
+  tibble(start = locs[,1], end = locs[,2], termo = termo)
+}
+
+```
+
+
+```{r}
+buscar_termo <- function(texto, termo, pos_inicial = 1) {
+  # Monta o padrão com limites de palavra.
+  # Se o termo contiver espaços, a inclusão de \\b no final pode ser problemática;
+  # para termos com múltiplas palavras, podemos considerar "início de string ou não alfanumérico"
+  # como alternativa. Aqui, usamos \\b de forma simples.
+  padrao <- regex(paste0("\\b", termo, "\\b"), ignore_case = TRUE)
+  
+  locs <- str_locate_all(texto, padrao)[[1]]
+  
+  # Se nada encontrado, retorna um tibble vazio com as colunas esperadas.
+  if (!is.matrix(locs) || nrow(locs) == 0) {
+    return(tibble(start = integer(), end = integer(), termo = character(), match = character()))
+  }
+  # Filtra apenas ocorrências que iniciem após pos_inicial
+  locs <- locs[locs[,1] >= pos_inicial, , drop = FALSE]
+  if(!is.matrix(locs) || nrow(locs)==0) {
+    return(tibble(start = integer(), end = integer(), termo = character(), match = character()))
+  }
+  
+  tibble(
+    start = locs[,1],
+    end   = locs[,2],
+    termo = termo,
+    match = str_sub(texto, locs[,1], locs[,2])
+  )
+}
+
+# Função para buscar números
+
+
+
+buscar_numeros <- function(texto, pos_inicial = 1) { 
+  padrao <- regex("\\b[0-9]{1,5}(?:\\.[0-9]{3})\\b", ignore_case = TRUE)
+  locs <- str_locate_all(texto, padrao)[[1]]
+  if (!is.matrix(locs) || nrow(locs) == 0) {
+    return(tibble(start = integer(), end = integer(), termo = character(), match = character()))
+  }
+  locs <- locs[locs[,1] >= pos_inicial, , drop = FALSE]
+  if(!is.matrix(locs) || nrow(locs) == 0) {
+    return(tibble(start = integer(), end = integer(), termo = character(), match = character()))
+  }
+  
+  tibble(
+    start = locs[,1],
+    end   = locs[,2],
+    termo = "numero",
+    match = str_sub(texto, locs[,1], locs[,2])
+  )
+}
+
+
+# Função para extrair contexto
+
+extrair_contexto <- function(texto, ini, fim, janela = 50) {
+  start_ct <- max(1, ini - janela)
+  end_ct   <- min(nchar(texto), fim + janela)
+  str_sub(texto, start_ct, end_ct)
+}
+
+```
+Função para verificar se há nova ocorrência (sigla ou primeira_palavra) entre duas posições
+
+
+```{r}
+
+possui_outra_ocorrencia <- function(texto, siglas, primeiras_palavras, ini, fim) {
+  trecho <- str_sub(texto, ini, fim)
+  any(map_lgl(c(siglas, primeiras_palavras), ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+}
+
+```
+
+Abordagem 1: Rodada por Regra (Iterativa – Rodadas separadas)
+Nesta abordagem, para cada regra (na ordem 4 → 1 → 3 → 2) fazemos uma “rodada” sobre cada linha que ainda esteja ativa. Após um match, se nos 25 caracteres seguintes não houver nova ocorrência de sigla ou primeira_palavra, descartamos a linha para futuras rodadas.
+
+```{r}
+
+extrair_mencoes_approach1 <- function(meu_documento,
+                                      paginas_selecionadas = c(1000:1050),
+                                      siglas = paste0("\\b",siglas,"\\b"),
+                                      primeiras_palavras = paste0("\\b",primeiras_palavras,"\\b"),
+                                      conjunto_termos = paste0("\\b",conjunto_termos,"\\b"),
+                                      termos_especiais = paste0("\\b",termos_especiais,"\\b"),
+                                      raio_match = 30,
+                                      skip_threshold = 30,
+                                      janela_contexto = 60) {
+  # Filtra as páginas desejadas
+  doc <- meu_documento %>%
+    filter(paginas %in% paginas_selecionadas) %>%
+    mutate(linha_id = row_number())
+  
+  resultados <- tibble()
+  # vetor de linhas ainda ativas (linha_id)
+  linhas_ativas <- doc$linha_id
+  
+  # Funções que aplicam cada regra em uma única linha, retornando os matches (podem ser mais de um)
+  # Regra 4: termos_especiais – basta buscar
+  aplicar_regra4 <- function(texto, pagina, linha_id) {
+    matches <- map_dfr(termos_especiais, ~ buscar_termo(texto, .x)) 
+    if(is.null(matches) || nrow(matches)==0) return(tibble(regra = character(),
+                                                           pagina = integer(),
+                                                           linha_id = integer(),
+                                                           contexto = character())) {
+    matches %>%
+      mutate(regra = "Regra 4",
+             pagina = pagina,
+             linha_id = linha_id,
+             contexto = purrr::map_chr(start, ~ extrair_contexto(texto, .x, 
+                                                                 {max(matches$end)} , janela_contexto)))
+      }
+  }
+  
+  # Regra 1: sigla seguida de número no raio de raio_match caracteres
+  aplicar_regra1 <- function(texto, pagina, linha_id) {
+    matches_sig <- map_dfr(siglas, ~ buscar_termo(texto, .x))
+    if(is.null(matches_sig) || nrow(matches_sig)==0) return(tibble(regra = character(),
+                                                           pagina = integer(),
+                                                           linha_id = integer(),
+                                                           start = integer(),
+                                                           end = integer(),
+                                                           termo = character(),
+                                                           contexto = character())) 
+    matches <- matches_sig %>% rowwise() %>% do({
+      st <- .$end + 1
+      en <- min(nchar(texto), st + raio_match)
+      trecho <- str_sub(texto, st, en)
+      num <- str_locate(trecho, regex("[0-9]+", ignore_case=TRUE))
+      if(is.na(num[1])) {
+        tibble()
+      } else {
+        tibble(
+          regra = "Regra 1",
+          pagina = pagina,
+          linha_id = linha_id,
+          start = .$start,
+          end = st + num[1,2] - 1,
+          termo = paste0(.$termo, " + numero"),
+          contexto = extrair_contexto(texto, .$start, st + num[1,2] -1, janela_contexto)
+        )
+      }
+    })
+    matches
+  }
+  
+  # Regra 3: primeira_palavra + (conjunto_termos) em raio_match + número em raio_match
+  aplicar_regra3 <- function(texto, pagina, linha_id) {
+    matches_pw <- map_dfr(primeiras_palavras, ~ buscar_termo(texto, .x))
+    if(is.null(matches_pw) || nrow(matches_pw)==0) return(tibble(regra = character(),
+                                                           pagina = integer(),
+                                                           linha_id = integer(),
+                                                           start = integer(),
+                                                           end = integer(),
+                                                           termo = character(),
+                                                           contexto = character()))
+    matches <- matches_pw %>% rowwise() %>% do({
+      st <- .$end + 1
+      en <- min(nchar(texto), st + raio_match)
+      trecho <- str_sub(texto, st, en)
+      tem_conj <- any(map_lgl(conjunto_termos, ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+      tem_num <- str_detect(trecho, regex("[0-9]+", ignore_case=TRUE))
+      if(tem_conj && tem_num) {
+        tibble(
+          regra = "Regra 3",
+          pagina = pagina,
+          linha_id = linha_id,
+          start = .$start,
+          end = en,
+          termo = paste0(.$termo, " + conj_termo + numero"),
+          contexto = extrair_contexto(texto, .$start, en, janela_contexto)
+        )
+      } else tibble()
+    })
+    matches
+  }
+  
+  # Regra 2: número + (sigla ou primeira_palavra) em raio_match
+  aplicar_regra2 <- function(texto, pagina, linha_id) {
+    matches_num <- buscar_numeros(texto)
+    if(is.null(matches_num) || nrow(matches_num)==0) return(tibble(regra = character(),
+                                                           pagina = integer(),
+                                                           linha_id = integer(),
+                                                           start = integer(),
+                                                           end = integer(),
+                                                           termo = character(),
+                                                           contexto = character()))
+    matches <- matches_num %>% rowwise() %>% do({
+      st <- .$end + 1
+      en <- min(nchar(texto), st + raio_match)
+      trecho <- str_sub(texto, st, en)
+      tem <- any(map_lgl(c(siglas, primeiras_palavras), ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+      if(tem) {
+        tibble(
+          regra = "Regra 2",
+          pagina = pagina,
+          linha_id = linha_id,
+          start = .$start,
+          end = en,
+          termo = "numero + (sigla/primeira_palavra)",
+          contexto = extrair_contexto(texto, .$start, en, janela_contexto)
+        )
+      } else tibble()
+    })
+    matches
+  }
+  
+  # Ordem de execução: 4, 1, 3, 2.
+  regras <- list(aplicar_regra4, aplicar_regra1, aplicar_regra3, aplicar_regra2)
+  ordem <- c("R4", "R1", "R3", "R2")
+  
+  # Para cada rodada, percorrer cada linha ativa.
+  for(reg in seq_along(regras)) {
+    func_reg <- regras[[reg]]
+    # Armazena os matches encontrados nesta rodada
+    matches_rodada <- doc %>%
+      filter(linha_id %in% linhas_ativas) %>%
+      rowwise() %>%
+      do( func_reg(.$texto_limpo, .$paginas, .$linha_id) ) %>%
+      ungroup()
+    # Se houver matches, para cada linha que teve match, verificar se entre os 25 caracteres após 
+    # o fim do match há nova sigla/primeira_palavra; se não houver, retire aquela linha das futuras rodadas.
+    if(nrow(matches_rodada) > 0) {
+      linhas_capturadas <- unique(matches_rodada$linha_id)
+      for(l in linhas_capturadas) {
+        linha_txt <- doc %>% filter(linha_id==l) %>% pull(texto_limpo)
+        # Para o match de menor end nesta linha (assumindo que os matches foram ordenados por start)
+        match_min <- matches_rodada %>% filter(linha_id==l) %>% arrange(start) %>% slice(1)
+        pos_final <- match_min$end
+        skip_limit <- pos_final + skip_threshold
+        if(skip_limit > nchar(linha_txt)) {
+          # sem mais para procurar
+          linhas_ativas <- setdiff(linhas_ativas, l)
+        } else {
+          # Se entre (pos_final+1, skip_limit) NÃO há nenhuma ocorrência de sigla ou primeira_palavra,
+          # descarte a linha
+          if(!possui_outra_ocorrencia(linha_txt, siglas, primeiras_palavras, pos_final+1, skip_limit)){
+            linhas_ativas <- setdiff(linhas_ativas, l)
+          }
+        }
+      }
+      resultados <- bind_rows(resultados, matches_rodada)
+    }
+  }
+  
+  resultados %>% arrange(linha_id, start)
+}
+
+extrato_mencoes_approach1 <- extrair_mencoes_approach1(meu_documento,
+                                      paginas_selecionadas = c(1000:1050),
+                                      siglas = paste0("\\b",siglas,"\\b"),
+                                      primeiras_palavras = paste0("\\b",primeiras_palavras,"\\b"),
+                                      conjunto_termos = paste0("\\b",conjunto_termos,"\\b"),
+                                      termos_especiais = paste0("\\b",termos_especiais,"\\b"),
+                                      raio_match = 30,
+                                      skip_threshold = 30,
+                                      janela_contexto = 60) 
+
+```
+
+
+Comentários sobre a Abordagem 1:
+
+Para cada regra (em ordem 4 → 1 → 3 → 2) percorremos as linhas que ainda estão ativas.
+
+Cada função aplicar_regraX procura por ocorrências na linha (considerando a partir da posição 1, isto é, toda a linha).
+
+Quando um match é encontrado, o resultado é salvo e, depois, para cada linha que teve um match, verificamos se entre match_end + 1 e match_end + 25 existe uma nova ocorrência de uma sigla ou de uma “primeira_palavra”. Se não houver, a linha é desativada para rodadas futuras.
+
+Essa solução não “revarre” a mesma linha (ou a mesma posição) múltiplas vezes dentro de cada regra – ela assume que a regra é aplicada em “rodadas” e que cada rodada capta o primeiro (ou todos os) matches daquela linha; depois, a linha pode ser descartada para evitar contagens duplicadas.
+
+Abordagem 2: Indexação Global de Ocorrências
+Nesta abordagem, primeiro mapeamos (para cada página) todas as ocorrências de:
+
+termos especiais (R4),
+
+siglas,
+
+primeiras_palavras,
+
+conjunto_termos,
+
+números
+
+Em seguida, ordenamos por posição e, fazendo uma varredura única, aplicamos a lógica de:
+
+Selecionar, entre as ocorrências, a que ocorrer primeiro (segundo a ordem de prioridade 4,1,3,2),
+
+Atualizar o “ponteiro” para pular 25 caracteres, a menos que entre os 25 haja outra sigla/primeira_palavra, permitindo nova verificação.
+
+Segue uma implementação simplificada:
+
+r
+Copiar
+extrair_mencoes_approach2 <- function(meu_documento,
+                                       paginas_selecionadas,
+                                       siglas,
+                                       primeiras_palavras,
+                                       conjunto_termos,
+                                       termos_especiais,
+                                       raio_match = 30,
+                                       skip_threshold = 25,
+                                       janela_contexto = 50) {
+  # Filtra as páginas desejadas
+  doc <- meu_documento %>%
+    filter(paginas %in% paginas_selecionadas) %>%
+    mutate(linha_id = row_number())
+  
+  resultados <- tibble()
+  
+  for(i in seq_len(nrow(doc))) {
+    linha_id <- doc$linha_id[i]
+    pg       <- doc$paginas[i]
+    texto    <- doc$texto_limpo[i]
+    pos <- 1
+    while(pos <= nchar(texto)) {
+      # Para a parte do texto a partir de pos
+      sub_txt <- str_sub(texto, pos, nchar(texto))
+      
+      # Mapeia todas as ocorrências de cada tipo, com posição ajustada absoluta
+      occ_R4 <- map_dfr(termos_especiais, ~ {
+        loc <- buscar_termo(texto, .x, pos)
+        if(is.null(loc)) tibble() else loc %>% mutate(tipo = "R4")
+      })
+      occ_sig <- map_dfr(siglas, ~ {
+        loc <- buscar_termo(texto, .x, pos)
+        if(is.null(loc)) tibble() else loc %>% mutate(tipo = "sigla")
+      })
+      occ_prime <- map_dfr(primeiras_palavras, ~ {
+        loc <- buscar_termo(texto, .x, pos)
+        if(is.null(loc)) tibble() else loc %>% mutate(tipo = "primeira")
+      })
+      occ_num <- buscar_numeros(texto, pos)
+      if(is.null(occ_num)) occ_num <- tibble()
+      occ_num <- occ_num %>% mutate(tipo = "numero")
+      
+      # Aqui, para regra 3 (que envolve conjunto_termos), nós poderíamos incluir 
+      # essas ocorrências se necessário. Entretanto, iremos usar o seguinte:
+      # A partir dos tokens indexados, aplicamos os critérios das regras na ordem 4->1->3->2.
+      
+      # Para regra 1, precisamos que haja uma sigla seguida (dentro de raio_match) por um número:
+      occ_R1 <- occ_sig %>% rowwise() %>% do({
+        st <- .$end + 1
+        en_lim <- min(nchar(texto), st + raio_match)
+        trecho <- str_sub(texto, st, en_lim)
+        num_loc <- str_locate(trecho, regex("[0-9]+", ignore_case = TRUE))
+        if(is.na(num_loc[1])) tibble() else tibble(start = .$start, end = st + num_loc[1,2] - 1, termo = paste0(.$termo, " + numero"), tipo = "R1")
+      })
+      
+      # Regra 3: se houver uma "primeira" seguida (em raio_match) por algo do conjunto_termos e um número.
+      occ_R3 <- occ_prime %>% rowwise() %>% do({
+        st <- .$end + 1
+        en_lim <- min(nchar(texto), st + raio_match)
+        trecho <- str_sub(texto, st, en_lim)
+        tem_conj <- any(map_lgl(conjunto_termos, ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+        tem_num <- str_detect(trecho, regex("[0-9]+", ignore_case=TRUE))
+        if(tem_conj && tem_num)
+          tibble(start = .$start, end = en_lim, termo = paste0(.$termo, " + conjTermo + numero"), tipo = "R3")
+        else tibble()
+      })
+      
+      # Regra 2: número seguido (raio_match) por sigla ou primeira
+      occ_R2 <- occ_num %>% rowwise() %>% do({
+        st <- .$end + 1
+        en_lim <- min(nchar(texto), st + raio_match)
+        trecho <- str_sub(texto, st, en_lim)
+        tem_token <- any(map_lgl(c(siglas, primeiras_palavras), ~ str_detect(trecho, fixed(.x, ignore_case=TRUE))))
+        if(tem_token) tibble(start = .$start, end = en_lim, termo = "numero + (sigla/primeira)", tipo = "R2")
+        else tibble()
+      })
+      
+      # Combine todas as ocorrências (de todos os tipos)
+      occ_all <- bind_rows(occ_R4, occ_R1, occ_R3, occ_R2)
+      if(nrow(occ_all)==0) {
+        pos <- pos + 1
+        next
+      }
+      
+      # Se houver mais de um, escolhe o de menor start
+      occ_all <- occ_all %>% arrange(start)
+      chosen <- occ_all[1,]
+      
+      # Registra o match
+      resultados <- bind_rows(resultados,
+                             tibble(pagina = pg,
+                                    linha_id = linha_id,
+                                    regra = chosen$tipo,
+                                    start = chosen$start,
+                                    end = chosen$end,
+                                    termo = chosen$termo,
+                                    contexto = extrair_contexto(texto, chosen$start, chosen$end, janela_contexto)))
+      
+      # Atualiza pos: define skip
+      new_pos <- chosen$end + 1
+      skip_limit <- chosen$end + skip_threshold
+      if(skip_limit > nchar(texto)) {
+        pos <- nchar(texto) + 1
+      } else {
+        # Se entre chosen$end+1 e skip_limit não há nova sigla ou primeira,
+        # pula para skip_limit+1; senão, pos = new_pos.
+        if(!possui_outra_ocorrencia(texto, siglas, primeiras_palavras, chosen$end+1, skip_limit)) {
+          pos <- skip_limit + 1
+        } else {
+          pos <- new_pos
+        }
+      }
+    } # end while da linha
+  } # end for de cada linha
+  resultados %>% arrange(linha_id, start)
+}
+Observações da Abordagem 2:
+
+Aqui indexamos as ocorrências de cada tipo diretamente (usando as funções auxiliares) em cada página (linha).
+
+Em cada iteração do while (a partir de uma posição pos da linha), aplicamos as quatro regras na ordem 4 → 1 → 3 → 2—usando janelas de raio_match (30 caracteres).
+
+Escolhemos o match mais à esquerda (com menor start) e registramos.
+
+Depois atualizamos pos para saltar 25 caracteres após o match, a menos que dentro deste intervalo haja outra ocorrência (sigla ou primeira_palavra) que “force” a continuar a analisar o trecho.
+
+O resultado final é um tibble com as ocorrências, indicando a página, o id da linha, a regra que disparou, as posições e o contexto.
+
+Conclusão
+Foram apresentadas duas alternativas completas:
+
+Abordagem 1 (rodadas por regra) – em que aplicamos cada regra sucessivamente por “rodadas” sobre as linhas ativas e descartamos linhas se não houver novas ocorrências.
+
+Abordagem 2 (indexação global dos tokens) – em que, para cada página, varremos o texto a partir de um ponteiro que é atualizado de forma iterativa conforme a ordem de regras (4, 1, 3, 2) e uma regra de skip de 25 caracteres.
+
+Em ambas as implementações:
+
+A verificação é case-insensitive;
+
+O contexto é extraído (janela de 50 caracteres antes/depois, ajustável);
+
+A página é registrada;
+
+O resultado é salvo num objeto (tibble) à parte;
+
+É possível filtrar por páginas escolhidas (usando o vetor paginas_selecionadas).
+
+Esses exemplos são protótipos que podem ser ajustados e refinados conforme as necessidades reais do seu processo (por exemplo, a resolução dos intervalos, tratamento de matches sobrepostos ou múltiplos na mesma página, etc.).
+
+Espero que esses exemplos ajudem a estruturar seu pipeline. Estou à disposição para esclarecimentos ou novos ajustes que se façam necessários!
+
+
+
+print(lista)
+collapse
+normas <- lista
+normas_pattern <- paste0(normas, collapse = "|")
+normas_pattern <- normas_pattern  %>%
+  str_replace_all("[\r\n\t]+", " ") %>%  # substitui quebras de linha e tabs por espaço
+  str_replace_all("\\s+", " ") %>% tolower()           # substitui múltiplos espaços por um único espaço
+print(normas_pattern[1:10])
+#-----------------------------
+# 3. Montagem do padrão regex completo com grupos de captura:
+#
+# Grupo 1: (norma) – captura o trecho que bate com uma das alternativas definidas em 'normas_pattern'
+# Grupo 2: (número) – captura a numeração (com ou sem separador de milhar)
+# Grupo 3: (data) – captura o ano ou a data completa
+#-----------------------------
+pattern <- paste0(
+  "(?<![A-Za-z0-9])(" , normas_pattern, ")",              # Grupo 1: Norma/Sigla
+  "\\s+",
+  "(?:n[uú]mero\\s|n[ºo\\.]\\s|num\\.?\\s|no\\.?\\s)?", # prefixo opcional
+  "([0-9]{1,3}(?:\\.[0-9]{3})?|[0-9]{1,5})",            # Grupo 2: Número
+  "\\s*",
+  "(?:/|-|\\s+de\\s+)",                                 # separador
+  "\\s*",
+  regex_data()                                          # Grupo 3: Data (já retorna uma captura)
+)
+
+
+pattern_extenso <- regex("
+  (?<![A-Za-z0-9])                                # Garante que não há caractere alfanumérico antes
+  (?<doctipo>Ato(?:s)?|Portaria|Edital|Parecer|Despacho|Chamada|Conjunt(?:o|a)|Instrução\\s+Normativa|Orientação\\s+Normativa|Decisão|Norma|Concurso|Seleção)
+  (?:                                             # Grupo não capturável para as autoridades (opcional, repetível)
+      \\s+(?:da|do|de|das|dos|para)\\s+             # preposição
+      (?<autoridade>[A-ZÁÉÍÓÚÃÕ][a-záéíóúãõ]+(?:\\s+[A-ZÁÉÍÓÚÃÕ][a-záéíóúãõ]+)*)  # nome da autoridade
+  )*                                              # pode ocorrer zero ou mais vezes
+  \\s+(?:n[uú]mero\\s|n[ºo\\.]\\s|num\\.?\\s|no\\.?\\s)? # prefixo opcional do número
+  (?<number>[0-9]{1,3}(?:\\.[0-9]{3})?|[0-9]{1,5}) # numeração
+  \\s*(?:/|-|\\s+de\\s+)\\s*                      # separador
+  (?<date>
+    (?:[0-9]{4}|[0-9]\\.[0-9]{3}|                # ano: YYYY ou Y.YYY ou
+     (?:[0-9]{1,2}\\s+de\\s+(?:janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\\s+de\\s+(?:[0-9]{4}|[0-9]\\.[0-9]{3})))
+  )
+", comments = TRUE, ignore_case = TRUE)
+
+
+#-----------------------------
+# 4. Função de extração de citações a partir de um tibble de páginas
+#
+# Supomos que você já tenha uma tibble com uma coluna 'paginas' contendo o texto de cada página.
+# Se sua tibble se chama, por exemplo, 'meu_documento' e tem colunas:
+#   - pagina (número da página)
+#   - paginas (conteúdo textual da página)
+#
+# A função abaixo usa `str_match_all` para extrair os grupos e também `str_locate_all` para obter as posições.
+#---------Pattern criado a partir da listagem de siglas e nomes--------------------
+extrair_citacoes <- function(df) {
+  df %>%
+    # Aplica a regex em cada página, usando o conteúdo da coluna 'texto_pagina'
+    mutate(matches = map(texto_pagina, ~ {
+      m <- str_match_all(.x, pattern)[[1]]
+      locs <- str_locate_all(.x, pattern)[[1]]
+      if (nrow(m) == 0) {
+        tibble(
+          full   = character(),
+          norma  = character(),
+          numero = character(),
+          ano    = character(),
+          start  = integer(),
+          end    = integer()
+        )
+      } else {
+        tibble(
+          full   = m[, 1],  # citação completa
+          norma  = m[, 2],  # grupo 1: norma/sigla
+          numero = m[, 3],  # grupo 2: numeração
+          ano    = m[, 4],  # grupo 3: data/ano
+          start  = locs[, 1],
+          end    = locs[, 2]
+        )
+      }
+    })) %>%
+    unnest(matches) %>%
+    mutate(
+      contexto = pmap_chr(
+        list(texto_pagina, start, end),
+        function(txt, ini, fim) {
+          str_sub(txt, max(1, ini - 100), min(nchar(txt), fim + 100))
+        }
+      )
+    ) %>%
+    # Seleciona as colunas desejadas: 'paginas' é o número da página
+    select(paginas, norma, numero, ano, full, contexto, start, end)
+}
+
+
+# A função abaixo usa `str_match_all` para extrair os grupos e também `str_locate_all` para obter as posições.
+#---------Pattern generalizado, tentado com o objetivo de pegar as variações de padrão de escrita e ordem dos termos que compõem o nome ou a numeração de leis e normas--------------------#
+
+extrair_citacoes_extenso <- function(df) {
+  df %>%
+    # Aplica a regex em cada página, usando o conteúdo da coluna 'texto_pagina'
+    mutate(matches = map(texto_pagina, ~ {
+      m <- str_match_all(.x, pattern_extenso)[[1]]
+      locs <- str_locate_all(.x, pattern_extenso)[[1]]
+      if (nrow(m) == 0) {
+        tibble(
+          full   = character(),
+          norma  = character(),
+          numero = character(),
+          ano    = character(),
+          start  = integer(),
+          end    = integer()
+        )
+      } else {
+        tibble(
+          full   = m[, 1],  # citação completa
+          norma  = m[, 2],  # grupo 1: norma/sigla
+          numero = m[, 3],  # grupo 2: numeração
+          ano    = m[, 4],  # grupo 3: data/ano
+          start  = locs[, 1],
+          end    = locs[, 2]
+        )
+      }
+    })) %>%
+    unnest(matches) %>%
+    mutate(
+      contexto = pmap_chr(
+        list(texto_pagina, start, end),
+        function(txt, ini, fim) {
+          str_sub(txt, max(1, ini - 100), min(nchar(txt), fim + 100))
+        }
+      )
+    ) %>%
+    # Seleciona as colunas desejadas: 'paginas' é o número da página
+    select(paginas, norma, numero, ano, full, contexto, start, end)
+}
+
+
+#-----------------------------
+# 5. Exemplo de aplicação
+#
+# Suponha que sua tibble já esteja pronta e se chame 'meu_documento' com colunas:
+#   - pagina: número da página
+#   - paginas: texto da página
+#
+# Exemplo:
+# meu_documento <- tibble(
+#   pagina = 1:2,
+#   paginas = c("No ADG nº 1.234/2020 verificamos...", 
+#               "Outra referência: APR número 45 de 15 de maio de 2022.")
+# )
+#
+# Para extrair as citações:
+#-----------------------------
+
+processo_3561_011224 <- tibble(processo003561) %>% mutate(paginas = seq_along(processo003561), texto_pagina = processo003561)
+
+processo_3561_011224$texto_pagina <- processo_3561_011224$texto_pagina %>%
+  str_replace_all("[\r\n\t]+", " ") %>%  # substitui quebras de linha e tabs por espaço
+  str_replace_all("\\s+", " ") %>% 
+  tolower() # substitui múltiplos espaços por um único espaço
+
+processo_3561_011224$texto_pagina <- tolower(processo_3561_011224$texto_pagina)
+# Agora 'texto_limpo' contém o texto sem as marcações indesejadas
+
+normas_citadas_3561_011224 <- extrair_citacoes(processo_3561_011224)
+
+# Exibir resultado
+print(normas_citadas_3561_011224)
+
+
+
+processo_3561_011224$processo003561 <- processo_3561_011224$processo003561 %>%
+  str_replace_all("[\r\n\t]+", " ") %>%  # substitui quebras de linha e tabs por espaço
+  str_replace_all("\\s+", " ") %>%
+  tolower()# substitui múltiplos espaços por um único espaço
+
+
+normas_cita_ext_3561_011224 <- extrair_citacoes_extenso(processo_3561_011224)
+
+# Exibir resultado
+print(normas_cita_ext_3561_011224)
+
+
+```
+

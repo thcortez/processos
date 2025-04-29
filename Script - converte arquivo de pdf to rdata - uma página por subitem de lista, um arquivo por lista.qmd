@@ -1,0 +1,169 @@
+---
+title: "PDF extractor to RData, page2page"
+format: html
+---
+
+# Este script extrai dados textuais de arquivos PDF. Ao iterar por todos os arquivos da pasta selecionada ou das pastas selecionadas, identifica os arquivos .pdf e extrai seu texto, quando disponível em camadas com fontes embutidas no arquivo ou mapeadas para Unicode. Caso contrário, converte cada página em imagem e aplica reconhecimento de texto por OCR. O resultado é um processo menos sujeito a falhas, com maior eficiência no processamento e reconhecimento de texto. O motor de reconhecimento baseou-se no Português Brasileiro para processar caracteres e grafia dos termos.
+
+Segue abaixo um exemplo de script em R que atende aos requisitos:
+
+- Permite definir múltiplas pastas de origem num único objeto (caso haja mais de uma) ou uma única pasta (caso haja apenas uma).
+- Lê todos os arquivos PDF de cada pasta de origem.
+- Extrai o texto de cada página, criando uma lista onde cada elemento é o texto de uma página específica.
+- Nomeia cada subitem da lista de acordo com o número da página.
+- Faz OCR caso a extração textual convencional falhe ou retorne conteúdo vazio em alguma página (por exemplo, PDFs digitalizados sem camada de texto).
+- Salva cada lista resultante como um arquivo .RData no diretório de saída indicado, usando o mesmo nome base do PDF.
+- Usa linguagem portuguesa no OCR, minimizando erros de reconhecimento.
+
+Importante:
+
+Este script depende das bibliotecas pdftools (para extração de texto) e tesseract (para OCR, se necessário).
+Para usar OCR em português, é preciso ter instalado o tesseract em seu sistema, bem como o treinamento do idioma português (normalmente chamado de tesseract-ocr-por em alguns sistemas).
+Se você não precisar de OCR, pode remover a parte referente a tesseract e pdf_ocr_text().
+
+```{r}
+
+###################################################
+# Carregar/instalar os pacotes necessários
+###################################################
+
+# Se algum dos pacotes não estiver instalado, use: install.packages("nomePacote")
+
+library(pdftools)
+library(tesseract)
+
+###################################################
+# Definir as pastas de origem e a pasta de saída
+###################################################
+
+# Pode ser uma única pasta ou múltiplas pastas para 'pastas_origem'.
+# Exemplo com múltiplas pastas:
+# pastas_origem <- c("C:/meus_projetos/pdfs1", "D:/outros_documentos/pdfs2")
+
+# Exemplo com apenas uma pasta:
+# pastas_origem <- "C:/meus_projetos/pdfs_unica"
+
+pastas_origem <- c("D:/thiag_q/Downloads/PROCESSOS/pdf_processo/pdf_origem") 
+pasta_destino   <- "D:/thiag_q/Downloads/PROCESSOS/pdf_processo/pdf_destino"
+
+
+
+
+###################################################
+# Função auxiliar para extrair texto de um PDF
+###################################################
+extrair_texto_pdf <- function(pdf_arquivo, idioma_tesseract = "por") {
+  # Tentar extrair texto diretamente
+  mensagem_erro <- NULL
+  texto_paginas <- tryCatch(
+    {
+      pdf_text(pdf_arquivo)
+    },
+    error = function(e) {
+      mensagem_erro <<- e
+      return(NULL)
+    }
+  )
+  
+  # Se houve erro ou algum conteúdo vazio, tentar OCR
+  # (por exemplo, pode ter retornado NULL ou uma string vazia para páginas que são apenas imagem).
+  if (is.null(texto_paginas) || any(nchar(texto_paginas) == 0)) {
+    message("Tentando OCR para arquivo: ", pdf_arquivo)
+    # Caso precise traduzir todo o PDF para texto via OCR:
+    texto_paginas <- tryCatch(
+      {
+        pdf_ocr_text(pdf_arquivo, language = idioma_tesseract)
+      },
+      error = function(e) {
+        mensagem_erro <<- e
+        return(NULL)
+      }
+    )
+  }
+  
+  # Retorna a lista de páginas ou NULL (se não foi possível extrair)
+  return(texto_paginas)
+}
+
+###################################################
+# Loop para processar cada PDF em cada pasta
+###################################################
+for (pasta in pastas_origem) {
+  
+  # Verificar se a pasta existe
+  if (!dir.exists(pasta)) {
+    message("Pasta nao encontrada: ", pasta)
+    next
+  }
+  
+  # Listar todos os PDFs na pasta
+  arquivos_pdf <- list.files(path = pasta, pattern = "\\.pdf$", full.names = TRUE, ignore.case = TRUE)
+  
+  # Se não houver PDFs, pula para a próxima pasta
+  if (length(arquivos_pdf) == 0) {
+    message("Nenhum PDF encontrado em: ", pasta)
+    next
+  }
+  
+  # Criar pasta de saída se não existir
+  if (!dir.exists(pasta_destino)) {
+    dir.create(pasta_destino, recursive = TRUE)
+  }
+  
+  # Iterar sobre cada arquivo PDF
+  for (pdf_arq in arquivos_pdf) {
+    
+    # Extrair nome-base do arquivo (sem extensão)
+    nome_base <- tools::file_path_sans_ext(basename(pdf_arq))
+    
+    # Mensagem de progresso
+    message("Processando: ", pdf_arq)
+    
+    # Tentar extrair texto das páginas
+    texto_paginas <- extrair_texto_pdf(pdf_arq, idioma_tesseract = "por")
+    
+    # Se não obteve sucesso na extração, avisa e pula este arquivo
+    if (is.null(texto_paginas)) {
+      message("Falha ao extrair texto do PDF: ", pdf_arq)
+      next
+    }
+    
+    # Montar a lista final, nomeando cada elemento por número de página
+    # Exemplo de nomenclatura: "Página 1", "Página 2", ...
+    lista_pdf <- setNames(as.list(texto_paginas),
+                          paste0("Página ", seq_along(texto_paginas)))
+    
+    # Definir caminho de saída .RData
+    arquivo_saida <- file.path(pasta_destino, paste0(nome_base, ".RData"))
+    
+    # Salvar a lista em arquivo .RData
+    save(lista_pdf, file = arquivo_saida)
+    
+    message("Salvo como: ", arquivo_saida)
+  }
+}
+
+message("Processamento concluído.")
+
+```
+Como funciona o script
+Definições iniciais:
+
+pastas_origem: vetor com uma ou mais pastas de origem.
+pasta_saida: onde serão salvos os arquivos .RData.
+Função extrair_texto_pdf:
+
+Primeiro, tenta extrair texto via pdf_text() (pacote pdftools).
+Se houver erro ou se identificar páginas cujo texto esteja vazio (possivelmente PDFs digitalizados sem camada de texto), tenta então o OCR via pdf_ocr_text(), definindo o idioma como português (por) pelo pacote tesseract.
+Loop principal:
+
+Para cada pasta em pastas_origem, obtém a lista de PDFs.
+Para cada PDF, lê o conteúdo das páginas (um item de lista por página).
+Nomeia cada item com "Página X".
+Salva em um arquivo .RData de mesmo nome-base do PDF na pasta_saida.
+Observações importantes
+OCR em português: verifique se o pacote Tesseract (ou no sistema operacional) está com o idioma por instalado. Em geral, nos sistemas Debian/Ubuntu, isso se instala com sudo apt-get install tesseract-ocr-por. Em Windows, pode ser necessário instalar o Tesseract manualmente e baixar o traineddata para português.
+Se todos os PDFs forem textuais e você não precisar do OCR, basta remover as partes de fallback que chamam pdf_ocr_text().
+A depender do volume de PDFs e do tamanho de cada um, o OCR pode levar bastante tempo. Verifique também se o resultado está adequado (caso haja PDFs com baixa resolução ou problemas de digitalização).
+Se houver problemas com fontes não-embutidas ou mapeamento de caracteres, o OCR pode ser fundamental para evitar perda de dados textuais.
+Desta forma, o código acima percorre quantas pastas forem necessárias, extrai o texto de todos os PDFs (cada página vira um item numa lista) e salva o resultado em arquivos .RData correspondentes.

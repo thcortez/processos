@@ -1,0 +1,83 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+# Função para remover acentos e normalizar texto
+remover_acentos <- function(texto) {
+  
+  texto1 <- iconv(x = texto,
+                 from = "UTF-8",
+                 to = "ASCII//TRANSLIT") 
+  texto2 <- gsub(pattern = "\\n",
+                 replacement = " ",
+                 x = texto1)
+  texto3 <- add_comma_space(texto2)
+  texto4 <- replace_non_ascii(texto3)
+  texto5 <- replace_html(texto4)
+  texto6 <- rm_white(texto5)
+  texto7 <- replace_email(texto6, pattern = '@.+$', replacement = '<<endereço de e-mail removido automaticamente>>')
+  texto8 <- rm_url(texto7, pattern = "(http[^ ]*)|(www\\.[^ ]*)", replacement = "url_removido" )
+  texto_final <- tolower(texto8)
+  return(texto_final)
+}
+
+```
+`textshape::split_sentence`
+replace_non_ascii
+add_comma_space
+hunspell::hunspell_find` & `hunspell::hunspell_suggest
+# replace_incomplete 
+replace_html
+qdapRegex::ex_tag' (to capture meta-data) and/or replace_hash
+replace_emoticons
+replace_email
+# replace_number
+
+
+```{r}
+texto_teste <- proc003561_jan2025
+
+texto_teste <- remover_acentos(texto_teste)
+
+texto_teste[1804]
+
+proc003561_jan2025 <- texto_teste
+
+rm(texto_teste, texto_paginas)
+
+proc003561_jan2025[951]
+
+tesseract_sub$`002000035612020 Proc Princ em Jan de 2025` <- proc003561_jan2025
+
+```
+
+
+```{r}
+
+texto_teste <- processo_3561_011224$texto_pagina
+
+texto_teste <- remover_acentos(texto_teste)
+
+texto_teste[951]
+
+processo_3561_011224$texto_limpo <- texto_teste
+
+tesseract_sub$`002000035612020 Proc Princ em 01 de dez de 2025 - AUTOS` <- processo_3561_011224
+
+```
+
+
+```{r}
+
+central_de_dados_processuais <- tesseract_sub
+
+arquivo <- "central_de_dados_processuais.rds"
+
+caminho <- "D:/thiag_q/Dropbox/PROCESSOS/ORGANIZAÇÃO"
+
+saveRDS(central_de_dados_processuais, file = file.path(caminho, arquivo))
+
+
+```

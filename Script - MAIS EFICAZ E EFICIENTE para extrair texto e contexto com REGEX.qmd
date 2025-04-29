@@ -1,0 +1,760 @@
+---
+title: "Untitled"
+format: html
+---
+
+# ESSE SCRIPT CRIA UMA REGEX EFICIENTE PARA FAZER A LIMPEZA DE DADOS E PRINCIPALMENTE PARA EXTRAIR AS INFORMAÇÕES DE NORMAS JURÍDICAS, SEPARADAS POR PÁGINAS EM QUE SÃO CITADAS NO PROCESSO.
+
+o PROCESSO TEM MAIS DE 1000 PÁGINAS, E É IMPOSSÍVEL ADMINISTRAR TODA ESSA INFORMAÇÃO - E MUITO MENOS SE PODE ESPERAR QUE ADVOGADO OU SERVIDOR DA JUSTIÇA VÁ LER TODO O MATERIAL. POR ISSO SE TORNA IMPRESCINDÍVEL DOMINAR O CONTEÚDO, E REDUZIR SINTETICAMENTE. 
+
+ESSE É O OBJETIVO DESTE TRABALHO.
+
+mINHA DEMANDA AO GPT:
+dado um vetor que contém vários strings de texto unitários, que estratégia posso adotar para remover deles conteúdos textuais não relativos a legislação (preciso manter, por exemplo, partes como 'art.', 'inciso', 'parágrafo', 'órgão' emissor/autoridade, 'ano', 'numeração', 'tipo')? a tarefa de capturar apenas esses conteúdos com regex nao tem sido eficaz nem eficiente, então eu gostaria de tentar o inverso: eliminar conteúdos desnecessários. o nome do vetor é 'contexto' numa base chamada resultado_filtrado3. Que solução já existente com funções e pacotes do R há para esse tipo de açao? 
+
+
+
+O ChatGPT disse:
+Esse tipo de tarefa – limpar textos mantendo apenas o que é relevante para legislação – é desafiador justamente porque os padrões linguísticos podem ser muito variados. Como você já percebeu que capturar apenas o que é necessário com regex não está funcionando bem, o caminho inverso (remoção do conteúdo irrelevante) pode ser mais eficaz.
+
+Estratégia recomendada: Classificação semântica com modelos de linguagem + regex
+Embora não exista um pacote único em R que “remova conteúdo irrelevante de textos legais”, aqui está uma estratégia combinada com ferramentas existentes:
+
+🔹 Etapas Sugeridas
+1. Pré-processamento básico com stringr e textclean
+Limpar espaços extras, pontuação redundante e caracteres irrelevantes.
+
+```{R}
+
+install.packages("textclean")
+library(stringr)
+library(textclean)
+
+legis_processo1 <- resultado_filtrado3
+
+legis_processo1$contexto_limpo <- resultado_filtrado3$contexto |>
+  str_squish() |>  # remove espaços extras
+  replace_non_ascii() |>  # normaliza caracteres estranhos
+  str_remove_all("\\[.*?\\]|\\(.*?\\)")  # remove conteúdos entre colchetes/parênteses
+
+legis_completo <- meu_documento
+
+legis_completo$texto_limpo <- legis_completo$texto_limpo |>
+  str_squish() |>  # remove espaços extras
+  replace_non_ascii() |>  # normaliza caracteres estranhos
+  str_remove_all("\\[.*?\\]|\\(.*?\\)")  # remove conteúdos entre colchetes/parênteses
+
+```
+
+2. Construir um dicionário de termos relevantes
+Monte uma lista com palavras-chave como:
+
+
+```{R}
+padroes3 <- c(
+  "\\blei\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "\\bres\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "resolu[cç][aã]o) cepe\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "(\\bresolu[cç][aã]o|\\bres\\.?)\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "decreto(-lei)?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "portaria\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "despachos?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)", 
+  "\\bdesp\\.?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "\\bpilb\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "\\bato\\b\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "\\baps\\.?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "\\badg\\.?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "\\bato d[oa] diretor.{0,10}[-\\s]geral\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "(\\bapr\\.?|\\bato do presidente do senado|\\bato da presid[eê]ncia do senado)\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "(\\batc\\.?|\\bato da comiss[aã]o diretora)\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "\\bpil\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "\\bportaria (conjunta )?do ilb\\.?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "\\bres\\.?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "(\\bdec\\.?|\\bdel\\.?)\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+    "of[ií]cio[s]?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "nup[:\\s]+\\d{5}\\.\\d{6}/\\d{4}-\\d{2}",
+  "anexo [ivxlcdmIVXLCDM]+",
+  "constitui[cç][aã]o",
+  #"estatuto",
+  "anexo iv",
+  "regulamento administrativo do senado federal",
+  #"decis[aã]o",
+  #"\\b\\d{4}\\b",
+  "cf",
+  "constitui[cç][aã]o federal",
+  "rasf",
+  "ppgcp"
+  )
+
+```
+
+
+
+
+# DICAS DO GPT
+
+3. Usar modelos de linguagem (opcional, mais avançado)
+Se você quiser ir além, pode usar o pacote text ou textTinyR para embeddings de sentença e aplicar clustering para remover sentenças que não se assemelham a textos jurídicos.
+
+4. (Extra) Classificação supervisionada
+Você pode rotular uma amostra pequena com "jurídico"/"não jurídico" e treinar um classificador com textrecipes + tidymodels para automatizar essa limpeza em grande escala.
+
+🔹 Considerações de performance
+Evite regexes muito genéricas e pesadas. Use stringi::stri_detect_regex se estiver com muitos dados, pois é mais eficiente em grande escala que stringr::str_detect.
+
+Se quiser, posso te ajudar a montar o classificador ou melhorar seu dicionário com base em exemplos concretos. Quer compartilhar alguns trechos do vetor contexto para que eu te ajude a refinar isso?
+
+
+
+
+O ChatGPT disse:
+Ótimo! Com esse trecho do vetor contexto, dá pra propor uma estratégia prática que você pode aplicar direto na sua base resultado_filtrado4. A ideia aqui é fazer uma limpeza geral dos conteúdos irrelevantes, mantendo apenas o que for jurídico/regulatório.
+
+✅ Estratégia proposta: extrair conteúdo jurídico e remover o resto
+A seguir, uma solução que:
+
+Extrai apenas o conteúdo potencialmente normativo (usando regex com foco no que você quer manter).
+
+Ignora trechos de linguagem informal ou narrativa pessoal.
+
+📦 Pacotes necessários
+r
+Copiar
+library(stringr)
+library(dplyr)
+🧠 Função para extrair apenas o conteúdo jurídico
+
+
+
+```{r}
+🧪 Resultado
+Você terá:
+
+conteudo_juridico: apenas o conteúdo normativo extraído
+
+contexto_limpo: mesmo que acima, mas com os itens colados
+
+contexto: original, inalterado
+
+Se quiser melhorar ainda mais a performance, posso ajudar a ajustar as regexes com base em mais exemplos. Também dá pra aplicar NLP com quanteda ou text, caso queira classificar frases inteiras. Quer explorar isso depois?
+  
+```
+
+Pode me ajudar a atualizar o dicionário de conteúdo jurídico para complementar o que você sugeriu com esses termos abaixo que porventura ainda não constem nele: 
+
+ [1] "regulamento"  "ata"          "alíneas"      "instrução"   
+ [5] "ANEXO IV"     "Resolução"    "art"          "RESOLUÇÃO"   
+ [9] "Lei"          "Regulamento"  "Inciso"       "RASF"        
+[13] "decisão"      "Portaria"     "REGULAMENTO"  "Art"         
+[17] "CEPE"         "Parágrafo"    "parágrafo"    "artigos"     
+[21] "artigo"       "Artigo"       "Parecer"      "norma"       
+[25] "alínea"       "PPGCP"        "Decreto"      "Instrução"   
+[29] "resolução"    "dec"          "Despacho"     "inciso"      
+[33] "incisos"      "parecer"      "Res"          "APS"         
+[37] "Artigos"      "lei"          "Constituição" "Estatuto"    
+[41] "Decisão"      "Ofício"       "desp"         "constituição"
+[45] "DECISÃO"      "Alínea"       "Anexo IV"     "ADG"         
+[49] "ATA"          "Oficio"       "ofício"       "DEC"         
+[53] "res"          "§"            "CF"           "RES"         
+[57] "despacho"     "OFÍCIO"       "oficio"       "anexo IV"    
+[61] "Apr"          "DESPACHO"     "Ata"          "Norma" 
+
+pode adotar a mesma lógica que você empregou anteriormente com relação a caracteres espeicias, maiúsculas e minúsculas, pois funcionou bem!
+
+O ChatGPT disse:
+Claro! Vamos atualizar o dicionário de padrões regex para incorporar esses novos termos, usando a mesma lógica de generalização (insensibilidade a caixa, acentuação e variantes comuns). O foco é manter o matching robusto, mesmo com variações textuais ou OCR ruins.
+
+🧠 Atualização do dicionário com os novos termos
+🔎 Regras que vamos aplicar:
+Ignorar maiúsculas/minúsculas: regex insensível a caixa ((?i) ou usando tolower() antes).
+
+Tratar acentuação e variações: al[ií]nea, instru[cç][aã]o, resolu[cç][aã]o, etc.
+
+Incluir siglas relevantes (ex: CEPE, RASF, APS)
+
+Evitar duplicatas com termos já presentes.
+
+✅ Novo vetor de padrões:
+
+```{r DESCONSIDERAR ESSE CHUNK!!!!}  
+
+regex
+
+
+
+artigo_regex <- c("\\bartigo[s]?\\s*\\d+",
+  "\\bart\\.?\\s*\\d+")
+
+miolo_regex <- c("par[aá]grafo\\s*(único)?",
+  "incisos?\\s*[ivxlcdmIVXLCDM]+",
+  "al[ií]neas?",  # nova
+  "\\b§\\s?\\d?")
+
+padroes_tipo_norma <- c("\\blei\\b", "\\bres\\b") 
+
+padroes_data <- c("\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)") #PADRÃO DE DATA MAIS EFICIENTE!! É PADRAO DE NUMÉRO MAIS DATA!!!
+ 
+padroes_numeros <- c("n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*") # esse É O MELHOR FORMATO PARA NÚMEROS DE NORMAS, MAS NÃO PEGA NUMERO OBRIGATORIAMENTE, SÓ SE TIVER
+
+
+  bloco1 <- paste0(padroes_tipo_norma,
+                   artigo_regex, 
+                   miolo_regex, collapse = "|")
+  
+  bloco2 <- paste0(padroes_numeros,
+                   padroes_data, collapse = "|")
+                                       
+  
+  
+  regex_total_vetorizado <- regex(
+    paste0(bloco1,
+           "\\s*(",
+           bloco2,
+           ")?.*",
+           bloco1,
+           "\\s*(",
+           bloco2,
+           ")?",
+           ignore_case = TRUE))
+                                       
+                                       
+  
+  
+# FAZER O TESTE DO CÓDIGO ACIMA, E SE FOR O CASO COMPLEMENTAR COM OS DEMAIS REGEX DE TIPOS DE NORMAS  
+  
+
+               
+               
+               s*.*   
+```
+ 
+ 
+
+```{r ESSE CHUNK CONTÈM A MELHOR REGEX E MAIS EFICIENTE!!! }
+
+ padroes3 <- c(
+  "\\blei\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "\\bres\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  
+   "resolu[cç][aã]o) cepe\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  
+  "(\\bresolu[cç][aã]o|\\bres\\.?)\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  
+  "decreto(-lei)?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  
+  "portaria\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  
+  "despachos?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)", 
+  
+  "\\bdesp\\.?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  
+  "\\bpilb\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  
+  "\\bato\\b\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  
+  "\\baps\\.?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  
+  "\\badg\\.?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  
+  "\\bato d[oa] diretor.{0,10}[-\\s]geral\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "(\\bapr\\.?|\\bato do presidente do senado|\\bato da presid[eê]ncia do senado)\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "(\\batc\\.?|\\bato da comiss[aã]o diretora)\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "\\bpil\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "\\bportaria (conjunta )?do ilb\\.?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "\\bres\\.?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "(\\bdec\\.?|\\bdel\\.?)\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+    "of[ií]cio[s]?\\s*.*n?\\.?\\s*[ºo°]?\\.?\\s*.*\\d*\\.?\\d*[/- ]?(\\d{4}?|\\d{2}?)",
+  "nup[:\\s]+\\d{5}\\.\\d{6}/\\d{4}-\\d{2}",
+  "anexo [ivxlcdmIVXLCDM]+",
+  #"constitui[cç][aã]o",
+  #"estatuto",
+  #"regulamento",
+  #"decis[aã]o",
+  #"\\b\\d{4}\\b",
+  "cf",
+  "Constituição Federal",
+  "rasf",
+  "ppgcp"
+  )
+ 
+
+############ ESTE ABAIXO É O CHUNK MAIS EFICIENTE DE TODOS ##########################
+
+ padroes <- c(
+  "\\blei\\s*n?\\.?\\s*[ºo°]?\\s*\\.?\\s*.*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "(\\bresolu[cç][aã]o|\\bres\\.?)\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "decreto(-lei)?\\s*n?\\.?[ºo°]?\\.?\\s*.*\\d*\\.?\\d*([-/\\s]?|.*)(\\d{4}?|\\d{2}?)",
+  "portaria\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "despachos?\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "desp\\.?\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "\\bpilb\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "\\bato\\b\\s*.*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "\\baps\\.?\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "\\badg\\.?\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "\\bato d[oa] diretor.{0,10}[-\\s]geral\\s*n?\\.?[ºo°]?\\.?\\s\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "(\\bapr\\.?|\\bato do presidente do senado|\\bato da presid[eê]ncia do senado)\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "(\\batc|\\bato da comiss[aã]o diretora)\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "\\bpil\\.?\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "\\bportaria( conjunta)?do ilb\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "\\bres\\.?\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "(\\bdec|\\bdel)\\.?\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "(\\bres\\.?|resolu[cç][aã]o) cepe\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "of[ií]cio[s]?\\s*n?\\.?[ºo°]?\\.?\\s*\\d*\\.?\\d*/?(\\d{4}?|\\d{2}?)",
+  "nup[:\\s]+\\d{5}\\.\\d{6}/?\\d{4}-\\d{2}",
+  "anexo\\s*[ivxlcdmIVXLCDM]*",
+  "\\bartigo[s]?\\s*\\d*",
+  "\\bart\\.?\\s*\\d*",
+  "par[aá]grafo\\s*([úu]nico|[a-zA-Z0-9]*)?",
+  "incisos?\\s*[ivxlcdmIVXLCDM]*",
+  "al[ií]neas?\\s*([a-z]{0,1}\\s?[,e]?)*",  # nova
+  "\\b§\\s?\\d*",
+  "constitui[cç][aã]o",
+  #"\\bestatuto",
+  #"\\bregulamento",
+  #"\\bdecis[aã]o",
+  "\\b\\d{4}\\b",
+  "\\bcf",         # Constituição Federal
+  "\\brasf",
+  "\\bppgcp"
+  )
+
+> siglas_select4
+ [1] "adg"          "apr"          "aps"         
+ [4] "atc"          "atl"          "pdg"         
+ [7] "res"          "ata"          "aci"         
+[10] "acj"          "acl"          "acm"         
+[13] "adv"          "agp"          "dec"         
+[16] "dpr"          "idg"          "pag"         
+[19] "pas"          "pil"          "pli"         
+    "cf"
+[34]  "desp"        
+
+    [37] "artigos?"     "art"          "art\\."      
+[40] "arts\\."            
+```
+
+# EXPRESSÕES GERAIS EFICIENTES PARA CAPTURA DE LEIS E NORMAS COM REGEX
+
+## FORMULAÇÕES GENERALIZADAS
+
+NESTA SEQUÊNCIA, HÁ DUAS PROPOSTAS DE CADA. A PRIMEIRA, EU ELABOREI, E A SEGUNDA SE PROPÕE A SER SIMILAR, COM O MESMO OBJETIVO, E FOI REVISADA PELO GPT.
+
+```{r}
+regex_incisos <- "incisos?\\s*.*([ivxlcdmIVXLCDM]+\\s*[,e]\\s*)+"
+regex_incisos <- "incisos?\\s*.*([ivxlcdmIVXLCDM]+\\s*[,e]\\s*)+"
+
+regex_alineas <-  "al[ií]nea[s]?.*([a-z]{1}\\s*[,e]\\s*)+" 
+regex_alineas <- "al[ií]nea[s]?.*([a-z]\\s*[,e]\\s*)+"
+
+regex_paragrafos <- "((\\b[§]+\\s*\\d*\\s*\\.?\\s*[º°o]?\\s*\\.?)|(((primeiro|segundo|terceiro|quarto|quinto|sexto|sétimo|oitavo|nono|décimo|\\d[0-9]{0-3}\\s*\\.?\\s*[º°o]?\\s*\\.?)?\\s*par[aá]grafo[s]?\\s*)|(par[aá]grafo[s]?\\s*([uú]nico))|(primeiro|segundo|terceiro|quarto|quinto|sexto|sétimo|oitavo|nono|décimo|\\d[0-9]{0-3}\\s*\\.?\\s*[º°o]?\\s*\\.?\\s*par[aá]grafo[s]?)))" 
+regex_paragrafos <- paste0(
+  "(",
+  "(\\b[§]+\\s*\\d*\\s*\\.?\\s*[º°o]?\\s*\\.?)",
+  "|",
+  "(",
+    "(",
+      "(primeiro|segundo|terceiro|quarto|quinto|sexto|sétimo|oitavo|nono|décimo|\\d{1,2}\\s*\\.?\\s*[º°o]?\\s*\\.?)?",
+      "\\s*par[aá]grafo[s]?\\s*",
+    ")",
+    "|(par[aá]grafo[s]?\\s*[uú]nico)",
+    "|(par[aá]grafo[s]?\\s*(primeiro|segundo|terceiro|quarto|quinto|sexto|sétimo|oitavo|nono|décimo|\\d{1,2}\\s*\\.?\\s*[º°o]?\\s*\\.?))",
+  ")",
+  ")"
+)
+
+
+
+
+regex_artigos <- "(\\bartigo[s]?\\s?.*|\\bart[s]?\\s*\\.?\\s*.*)"
+regex_artigos <- "(\\bartigo[s]?\\s?.*|\\bart[s]?\\s*\\.?\\s*.*)"
+
+regex_tipos_legis <- "(\\blei\\b|resolu[çc][ãa]o|\\bato\\b|portaria|despacho|estatuto|\\bata\\b|of[íi]cio|instru[çc][ãa]o|decis[ãa]o|s[úu]mula|decreto|anexo iv do rasf|anexo iv do regulamento administrativo|anexo iv|\\bconstiti[cç][aã]o|regulamento)"
+regex_tipos_legis <- paste(
+  "\\blei\\b", "resolu[çc][ãa]o", "\\bato\\b", "portaria", "despacho",
+  "estatuto", "\\bata\\b", "of[íi]cio", "instru[çc][ãa]o", "decis[ãa]o",
+  "s[úu]mula", "decreto", "anexo iv do rasf", "anexo iv do regulamento administrativo",
+  "anexo iv", "\\bconstitu[ií][çc][ãa]o", "regulamento",
+  sep = "|"
+)
+
+regex_numero_legis <- "(n?\\.?\\s*[ºo°]?|n[uú]meros?|num\\s*\\.?)?\\s*.*\\d*\\s*\\.?\\s*\\d+\\s*[ºo°]?"
+regex_numero_legis <- "(n?\\.?\\s*[ºo°]?|n[uú]meros?|num\\s*\\.?)?\\s*.*\\d+\\s*[ºo°]?"
+
+
+regex_intertermos <- ".*"
+
+regex_ano_legis <- "[-/\\s*]?((\\d{4})|(\\d{2}))"
+regex_ano_legis <- "[-/\\s*]?\\d{2,4}"
+
+
+
+regex_autoridade <- paste0("((([1234]\\s*\\.?\\s*[ºª°oa]?\\s*\\.?\\s*)",
+                           "|(",
+                           "(p\\s*r\\s*i\\s*m\\s*e\\s*i\\s*r\\s*[ao]",
+                           "|s\\s*e\\s*g\\s*u\\s*n\\s*d\\s*[ao]",
+                           "|t\\s*e\\s*r\\s*c\\s*e\\s*i\\s*r\\s*[ao]",
+                           "|q\\s*u\\s*a\\s*r\\s*t\\s*[ao]",
+                           "|v\\s*i\\s*c\\s*e\\s*",
+                           ")",                          
+                           "[-\\s]?))?\\s*", 
+                           "(",
+                           "(p\\s*r\\s*e\\s*s\\s*(\\.?",
+                           "|\\s*i\\s*d\\s*e\\s*n\\s*t\\s*e",
+                           "|i\\s*d\\s*[eê]\\s*n\\s*c\\s*i\\s*a))",
+                           "|(s\\s*e\\s*c\\s*(\\.?\\s*",
+                           "|r\\s*e\\s*t\\s*[áa]\\s*r\\s*i\\s*[oa])?))",
+                           "|((comiss[ãa]o",
+                           "|c\\s*o\\s*m\\s*i\\s*s\\s*s\\s*[aã]\\s*o)\\s*",
+                           "[-\\s]?\\s*(diretora",
+                           "|d\\s*i\\s*r\\s*e\\s*t\\s*o\\s*r\\s*a))",
+                           "|((diretor",
+                           "|d\\s*i\\s*r\\s*e\\s*t\\s*o\\s*r)",
+                           "(ia|a|\\s*i\\s*a)?[s]?.*",
+                           "((\\bilb\\.?)",
+                           "|instituto\\s*legislativo\\s*brasileiro",
+                           "|i\\s*n\\s*s\\s*t\\s*i\\s*t\\s*u\\s*t\\s*o\\s*",
+                           "l\\s*e\\s*g\\s*i\\s*s\\s*l\\s*a\\s*t\\s*i\\s*v\\s*o\\s*",
+                           "b\\s*r\\s*a\\s*s\\s*i\\s*l\\s*e\\s*i\\s*r\\s*o))",      
+                           "|(segp|serh|s\\s*e\\s*g\\s*p|s\\s*e\\s*r\\s*h)",      
+                           "|((dger|d\\s*g\\s*e\\s*r)",
+                           "|((diretor",
+                           "|d\\s*i\\s*r\\s*e\\s*t\\s*o\\s*r)(ia|a|\\s*i\\s*a)?[s]?",
+                           "[-\\s]",
+                           "(gera(l|is)|(g\\s*e\\s*r\\s*a\\s*(l|i\\s*s)))))",
+                           "|cepe|ppgcp|ipol|unb|advosf)")  
+
+#regex_autoridade <- "(p\\s*r\\s*e\\s*s\\s*i\\s*d\\s*e\\s*n\\s*t\\s*e|d\\s*g\\s*e\\s*r|comiss[ãa]o diretora|cepe|ppgcp|ilb|unb|advosf)"
+
+
+regex_siglas <- "\\badg\\b|\\bapr\\b|\\baps\\b|\\batc\\b|\\batl\\b|\\bpdg\\b|\\bres\\b|\\bata\\b|\\baci\\b|\\bacj\\b|\\bacl\\b|\\bacm\\b|\\badv\\b|\\bagp\\b|\\bdec\\b|\\bdpr\\b|\\bidg\\b|\\bpag\\b|\\bpas\\b|\\bpil\\b|\\bpli\\b|\\blei\\b|\\bcf\\b|\\bdesp\\b|\\bpilb\\b|\\breg\\b"
+regex_siglas <- paste("\\badg\\b",
+                      "\\bapr\\b",
+                      "\\baps\\b", 
+                      "\\batc\\b", 
+                      "\\batl\\b",
+                      "\\bpdg\\b", 
+                      "\\bres\\b",
+                      "\\bata\\b",
+                      "\\baci\\b",
+                      "\\bacj\\b",
+                      "\\bacl\\b",
+                      "\\bacm\\b", 
+                      "\\badv\\b",
+                      "\\bagp\\b",
+                      "\\bdec\\b",
+                      "\\bdpr\\b",
+                      "\\bidg\\b",
+                      "\\bpag\\b", 
+                      "\\bpas\\b", 
+                      "\\bpil\\b", 
+                      "\\bpli\\b",
+                      "\\bcf\\b",
+                      "\\bdesp\\b", 
+                      "\\bpilb\\b", 
+                      "\\breg\\b",
+                      sep = "|"
+)
+
+
+
+captura_regex_legis <- regex(paste0(
+  "(",
+  "(",  regex_alineas,      ")?.*",
+  "(",  regex_incisos,      ")?.*",
+  "(",  regex_paragrafos,   ")?.*",
+  "(",  regex_artigos,      ")?.*",
+  "(",  regex_numero_legis, ")?.*",
+  "(",
+  "(","(",  regex_tipos_legis,  ").*","(","(","(", regex_numero_legis,   ").*",
+                                        "(", regex_ano_legis,      ")?.*",
+                                        "(", regex_autoridade,     ")?)",
+  "|.*",
+  "(",                                  "(", regex_autoridade,     ")?.*",
+                                        "(", regex_numero_legis,   ")?.*",
+                                        "(", regex_ano_legis,      ")?.*", 
+  ")))",
+  "|.*",
+  "(",
+  "(",  regex_siglas,        ").*",
+  "(",  regex_numero_legis,  ")?.*",
+  "(",  regex_ano_legis,")?))"  ), ignore_case = TRUE)
+
+# OU
+
+captura_regex_legis <- regex(
+  paste0(
+    "(",
+      "(", regex_alineas, ")?", ".*",
+      "(", regex_incisos, ")?", ".*",
+      "(", regex_paragrafos, ")?", ".*",
+      "(", regex_artigos, ")?", ".*",
+      "(", regex_numero_legis, ")?", ".*",
+      "(",
+        "(", regex_tipos_legis, ").*",
+        "(",
+          "(", regex_numero_legis, ").*",
+          "(", regex_ano_legis, ")?", ".*",
+          "(", regex_autoridade, ")?",
+        ")",
+      "|",
+        ".*(",
+          "(", regex_autoridade, ").*",
+          "(", regex_numero_legis, ")?", ".*",
+          "(", regex_ano_legis, ")?",
+        ")",
+      ")", 
+      "|",
+      "(",
+        "(", regex_siglas, ").*",
+        "(", regex_numero_legis, ")?",
+        "(", regex_ano_legis, ")?",
+      ")",
+    ")"
+  ),
+  ignore_case = TRUE
+)
+
+```
+
+
+
+```{R}
+# Quer ver os matches por linha em coluna separada?
+
+legis_completo <- legis_completo %>%
+  mutate(captura_textual = sapply(captura_geral, function(x) paste(unique(x), collapse = " | ")))
+  
+
+# ESSA É A FÓRMULA USUAL, UTILIZANDO STR_EXTRACT_ALL()
+legis_completo <- legis_completo |> mutate(captura_geral = str_extract_all(tolower(texto_limpo), captura_regex_legis))
+
+
+```
+
+OBS: OS STRINGS DE PESQUISA FICARAM BASTANTE FLEXÍVEIS E APROPRIADOS À VARIEDADE DE OCORRÊNCIAS NÃO ESTRUTURADAS. EM COMPENSAÇÃO, O PROCESSAMENTO DAS OCORRÊNCIAS FICA PREJUDICADO E A DEMORA PODE SER LONGA. CONSIDERE CRIAR COLUNAS COM INFORMAÇOES SEGMENTADAS, E APLICAR OS REGEX POR BLOCO, COMO PROPOSTO A SEGUIR.
+
+# pensando na aplicação por partes blocadas, podemos separar as referências ao 'miolo' das normas, isto é, as referências a artigos, incisos e parágrafos (bloco1), às normas propriamente ditas, isto é, tipo de norma, número e ano de edição (bloco2), autoridade responsável pela edição da norma (bloco3)
+
+```{R}
+
+# versão enxuta e menos permissiva
+regex_autoridade <- paste0("(((([1234]?\\s*\\.?\\s*[ºª°oa]?\\s*\\.?\\s*)",
+                           "|(",
+                           "(primeir[ao]",
+                           "|segund[ao]",
+                           "|terceir[ao]",
+                           "|quart[ao]",
+                           "|vice\\s*",
+                           ")?",                          
+                           "[-\\s]?))?\\s*", 
+                           "(",
+                           "(pres\\s*(\\.?",
+                           "|(idente)?",
+                           "|id[eê]ncia)\\s*)?",
+                           "|(sec\\s*(\\.?",
+                           "|(ret[áa]ri[oa])?))",
+                           "|((comiss[ãa]o",
+                           "|comiss[aã]o)?",
+                           "[-\\s]?(diretora",
+                           "|diretora))",
+                           "|((diretor",
+                           "|diretor)",
+                           "(ia|a|ia))?[s]?.*",
+                           "((\\bilb\\.?)?",
+                           "|instituto\\s*legislativo\\s*brasileiro)",      
+                           "|(segp|serh)",      
+                           "|((dger|dger)",
+                           "|((diretor(ia|a|ia)?)?[s]?",
+                           "[-\\s*]",
+                           "(gera(l|is))))))",
+                           "|cepe|ppgcp|ipol|unb|advosf)")  
+
+
+captura_miolo_legis <- regex(
+  paste0(
+      "(", regex_alineas, ")?", ".*",
+      "(", regex_incisos, ")?", ".*",
+      "(", regex_paragrafos, ")?", ".*",
+      "(", regex_artigos, ")", ".*",
+      "(", regex_numero_legis, ")?"),
+  ignore_case = TRUE
+)
+
+captura_tipo_legis <- regex(
+  paste0(
+      "(",
+      regex_tipos_legis, ")"),
+  ignore_case = TRUE
+)
+
+
+captura_num_ano_aut <- regex(
+  paste0(
+          "(", regex_numero_legis, ").*",
+          "(", regex_ano_legis, ")?", ".*",
+          "(", regex_autoridade, ")?"),
+  ignore_case = TRUE
+)
+
+captura_aut_num_ano <- regex(
+  paste0(
+    "(", regex_autoridade, ").*",
+    "(", regex_numero_legis, ")?", ".*",
+    "(", regex_ano_legis, ")?"),
+  ignore_case = TRUE
+)
+
+captura_sigla_num_ano <- regex(
+  paste0(
+        "(", regex_siglas, ").*",
+        "(", regex_numero_legis, ")?","*.*",
+        "(", regex_ano_legis, ")?"),
+  ignore_case = TRUE
+)
+
+
+
+
+```
+
+
+```{r}
+🔁 Lembre-se: ao aplicar no código, transforme o texto com tolower() para uniformizar.
+
+🧪 Aplicando na função
+Aqui está a função ajustada para usar esse novo dicionário:
+
+r
+Copiar
+```
+
+
+```{r}
+
+
+extrair_conteudo_juridico <- function(texto) {
+  
+  regex_final <- str_c(
+    "(", 
+    str_c(padroes, 
+          collapse = "|"),
+    ")",
+    collapse = "")
+  
+  extraido <- str_extract_all(
+    tolower(texto), 
+    regex_final, 
+    simplify = FALSE)
+  
+  sapply(extraido, 
+         function(x) 
+           paste(unique(x),
+                 collapse = " | "))
+}
+
+```
+
+
+
+```{r}
+remover_nao_juridico <- function(texto) {
+ padroes_limpeza_barrainterroga <- c(
+  "\\blei\\s*n?\\.?[ºo°]?\\.?\\s*\\d+/?(\\d{4}|\\d{2})?",
+  "\\bresolu[cç][aã]o|\\bres\\.?\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "decreto(-lei)?\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "portaria\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "despachos?\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?", 
+  "desp\\.?\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "\\bpilb\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "\\bato\\b\\s*.*n?\\.?[ºo°]?\\.?\\s*\\d+/?(\\d{4}|\\d{2})?",
+  "\\baps\\.?\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "\\badg\\.?\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "\\bato d[oa] diretor.{0,10}[-\\s]geral\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "(\\bapr\\.?|\\bato do presidente do senado|\\bato da presid[eê]ncia do senado)\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "(\\batc|\\bato da comiss[aã]o diretora)\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "\\bpil\\.?\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "\\bportaria( conjunta)?\\sdo ilb\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "\\bres\\.?\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "(\\bdec|\\bdel)\\.?\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "(\\bres\\.?|resolu[cç][aã]o) cepe\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "of[ií]cio[s]?\\s*n?\\.?[ºo°]?\\.?\\s*(\\d+/?(\\d{4}|\\d{2}))?",
+  "nup[:\\s]+\\d{5}\\.\\d{6}/?\\d{4}-\\d{2}",
+  "anexo\\s*[ivxlcdmIVXLCDM]+",
+  "\\bartigo[s]?\\s*\\d+",
+  "\\bart\\.?\\s*\\d+",
+  "par[aá]grafo\\s*([uú]nico|\\d*|[a-zA-Z]*)\\s?",
+  "incisos?\\s*[ivxlcdmIVXLCDM]+",
+  "al[ií]neas?",  # nova
+  "\\b§\\s?\\d?",
+  "constitui[cç][aã]o",
+  "estatuto",
+  "regulamento",
+  "cf",         # Constituição Federal
+  "rasf",
+  "ppgcp"
+  ) 
+  
+  regex_final <- str_c(
+    "(", 
+    str_c(
+      padroes_limpeza_barrainterroga,
+      collapse = "|"),
+    ")", collapse = "")
+  
+  matches <- str_extract_all(
+    tolower(texto), 
+    regex_final)
+  
+  sapply(matches, 
+         function(x) 
+           paste(unique(x),
+                 collapse = " | "))
+ }
+ 
+
+legis_completo <- legis_completo |>
+  mutate(texto_filtrado = remover_nao_juridico(texto_limpo))
+```
+
+
+```{r}
+
+regex_total <- paste(padroes_limpeza_barrainterroga, collapse = "|")
+
+
+legis_completo <- legis_completo |> 
+  mutate(conteudo_juridico = extrair_conteudo_juridico(texto_limpo))
+
+
+resultado_filtrado5 <- resultado_filtrado5 |>
+  mutate(conteudo_juridico5 = extrair_conteudo_juridico(contexto))
+
+
+
+
+
+resultado_filtrado6 <- legis_completo %>%
+  mutate(ocorrencias_normativas = 
+           str_extract_all(
+             tolower(texto_limpo), 
+             regex_total))
+
+
+
+
+filtrado5 <- str_extract_all(tolower(resultado_filtrado4$contexto), regex_total_vetorizado)
+
+
+
+```
+
+
+ Resultado
+Esse novo dicionário cobre todos os termos que você forneceu, com robustez a variações comuns.
+
+Se quiser futuramente "treinar" o dicionário com termos recorrentes na sua base, podemos usar frequência de palavras com tidytext para identificar termos potenciais não cobertos.
+
+Quer que eu monte esse diagnóstico de palavras-chave para você?
+
+
+  

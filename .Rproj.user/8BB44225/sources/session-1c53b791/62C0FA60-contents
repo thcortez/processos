@@ -1,0 +1,15 @@
+project:
+  type: book
+
+book:
+  title: "Memorial Jurídico Completo"
+author: "Nome do Advogado / Escritório"
+chapters:
+  - index.qmd
+- introducao.qmd
+- corpo_memorial.qmd
+
+format:
+  html:
+  toc: true
+number-sections: true

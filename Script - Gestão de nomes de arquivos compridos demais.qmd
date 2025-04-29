@@ -1,0 +1,100 @@
+---
+title: "Como diminuir nomes longos de arquivos no Windows"
+format: html
+---
+
+# Título: Identificando e Gerenciando Arquivos com Nomes Muito Longos em um HD Externo Utilizando R
+
+Este artigo explica como lidar com arquivos que têm nomes muito extensos. É que, em diversas ocasiões, o Windows não deixa o sistema salvar na memória do computador arquivos e documentos que têm nomes muito compridos. E por 'nome' comprido, não necessariamente estamos falando apenas do nome do arquivo, mas do caminho inteiro de pastas, diretórios e drivers (por exemplo "C:\program_files\nome_do_fabricante\nome_do_programa\numero_da_versao_do_programa\pasta_de_projetos_do_programa\ano\mês\dia\finalmente_o_nome_do_arquivo.file")
+
+Em muitas situações, especialmente ao realizar backups ou cópias de arquivos de um HD externo para o disco interno de um computador, podemos nos deparar com o problema de nomes de arquivos ou caminhos excessivamente longos. Em sistemas operacionais como o Windows, o limite para o comprimento do caminho de um arquivo costuma ser de 255 caracteres, o que pode impedir a cópia desses arquivos. Além disso, certas pastas podem ter restrições de acesso, o que pode causar erros ao tentar listar seus arquivos.
+
+Este artigo apresenta um código em R que resolve o problema de identificar arquivos cujo nome completo excede um limite de caracteres. Além disso, ele lida com possíveis restrições de acesso a pastas ou arquivos, garantindo que o processo continue sem interrupções.
+
+## Pacotes necessários
+
+Para este código, utilizamos o pacote `fs`, que facilita o manuseio de arquivos e diretórios no R. Caso ele não esteja instalado, o código verifica e faz a instalação automaticamente.
+
+```{r}
+# Instalar pacote necessário (se ainda não tiver instalado)
+if(!require("fs")) install.packages("fs")
+
+# Carregar o pacote
+library(fs)
+```
+
+## Definindo o diretório do HD externo e o limite de caracteres
+É importante definir corretamente o caminho do HD externo e o limite de caracteres para o nome completo do arquivo. Neste caso, usamos o limite padrão de 255 caracteres.
+
+```{r}
+# Definir o diretório do HD externo
+diretorio_hd_externo <- "G:/"
+
+# Definir o limite de caracteres (geralmente 255)
+limite_caracteres <- 255
+```
+
+## Função para identificar arquivos com nomes longos, ignorando pastas com acesso restrito
+O código abaixo utiliza a função tryCatch para garantir que qualquer erro de acesso a pastas ou arquivos seja ignorado, permitindo que o processo continue para os demais itens.
+
+```{r}
+# Função para identificar arquivos com nomes longos, ignorando erros de acesso
+identificar_arquivos_longos <- function(diretorio, limite) {
+  # Lista todos os arquivos e subpastas do diretório
+  arquivos <- tryCatch({
+    dir_ls(diretorio, recurse = TRUE, type = "file")
+  }, error = function(e) {
+    message("Erro ao acessar o diretório: ", diretorio)
+    return(character(0))  # Retorna um vetor vazio em caso de erro
+  })
+  
+  if (length(arquivos) == 0) {
+    message("Nenhum arquivo foi encontrado ou houve erro de acesso.")
+    return(NULL)
+  }
+  
+  # Calcular o comprimento do caminho completo de cada arquivo
+  tamanhos_arquivos <- nchar(arquivos)
+  
+  # Filtrar os arquivos que excedem o limite de caracteres
+  arquivos_longos <- arquivos[tamanhos_arquivos > limite]
+  
+  # Retornar os arquivos longos e seu comprimento
+  return(data.frame(
+    arquivo = arquivos_longos,
+    tamanho = tamanhos_arquivos[tamanhos_arquivos > limite]
+  ))
+}
+
+```
+
+## Como o código funciona
+
+*dir_ls*: A função dir_ls lista todos os arquivos e subpastas do diretório especificado, incluindo arquivos dentro de subdiretórios, por conta do parâmetro recurse = TRUE.
+
+*tryCatch*: Utilizamos tryCatch para capturar erros que possam ocorrer ao tentar acessar pastas com permissões restritas ou outros tipos de exceções. Se ocorrer um erro, o código exibe uma mensagem de erro e continua o processo, retornando um vetor vazio para essas pastas.
+
+*Filtragem por tamanho*: Em seguida, o código filtra os arquivos cujo nome completo, incluindo o caminho, excede o limite de caracteres especificado (255, neste exemplo).
+
+## Executando a função
+Agora, basta chamar a função identificar_arquivos_longos passando o diretório do HD externo e o limite de caracteres. O resultado será uma tabela com os arquivos que têm nomes muito longos e seu tamanho correspondente.
+
+```{r}
+
+# Identificar arquivos longos no HD externo
+arquivos_longos <- identificar_arquivos_longos(diretorio_hd_externo, limite_caracteres)
+
+# Exibir os arquivos longos encontrados
+print(arquivos_longos)
+
+# Salvar a lista de arquivos longos em um arquivo CSV para revisão
+write.csv(arquivos_longos, "arquivos_longos.csv", row.names = FALSE)
+
+```
+
+
+## Próximos Passos
+Após identificar os arquivos com nomes longos, você pode optar por renomear manualmente os arquivos ou automatizar o processo para encurtar os nomes e reorganizar as pastas. Uma abordagem comum é reduzir o número de níveis de pastas ou encurtar os nomes de arquivos que sejam excessivamente descritivos.
+
+Com esse código, você terá maior controle sobre os arquivos que causam problemas ao tentar copiá-los para outros locais e poderá tomar as medidas adequadas para reorganizá-los.
+
