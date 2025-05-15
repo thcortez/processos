@@ -1,59 +1,60 @@
 project:
   type: book
+  output-dir: docs
+  resources:
+    - autos/
 
-  format:
-    pdf:
-      documentclass: book
-      number-sections: true #numera capítulos
-      toc: true
+book:
+  title: "Memorial Jurídico - Afastamento para Pós-Graduação"
+  author: "Thiago Cortez"
+  date: "2025-04-27"
+  chapters:
+  - index.qmd
+  - texto_para_ADV_20250426.qmd
+  - questao_de_isonomia.qmd
+  - introducao.qmd
+  - corpo_memorial_parte1.qmd
+  - legislacao_de_regencia.qmd
+  - da_autorizacao_ao_inicio.qmd
+  - controle_e_irregularidades.qmd
+  - acusacao_sem_fundamentos.qmd
+  - mais_irregularidades_e_respostas_do_ilb.qmd
+  - servidor_analisa.qmd
+  - servidor_avanca.qmd
+  - dger_perniciosa.qmd
+  - conclusao_e_critica1.qmd
+  - e_mais_irregularidades.qmd
+  - ilb_estoura_prazos.qmd
+  - dger_tambem_estoura.qmd
+  - nova_lista_e_critica.qmd
+  - acusacao_antecipada.qmd
+  - ilb_nova_instrucao.qmd
+  - abusos_processuais_extremos.qmd
+  - dger_decisao_final.qmd
+
+format:
+  pdf:
+    documentclass: book
+    number-sections: true #numera capítulos
+    toc: true
     
-    html:
-      self-contained: false #html será gerada como arquivo único
-      theme: flatly   # Pode ser 'cosmo', 'journal', 'flatly', 'united', etc.
-      toc: true      # Table of contents automático (índice lateral)
-      toc-depth: 3   # Profundidade do índice (3 níveis de títulos)
-      number-sections: true
-      number-depth: 3
-      fontsize: 1.1em
-      monofont: "Calibri"
-      linestretch: 1.6        # Espaçamento de linhas mais agradável
-      mainfont: "Calibri"
-      smooth-scroll: true
-      code-fold: true
-      code-tools: true
-      page-layout: article   # Layout página cheia para melhor visualização
-      grid:
-        sidebar-width: 250px   # Sidebar mais compacta
-        body-width: 800px      # Área de texto mais larga, mas sem perder conforto
-        margin-width: 300px    # Margens largas e bonitas
-  
-    book:
-      title: "Memorial Jurídico - Afastamento para Pós-Graduação"
-      author: "Thiago Cortez"
-      date: "2025-04-27"
-      output-dir: docs
-      chapters:
-      - index.qmd
-      - texto_para_ADV_20250426.qmd
-      - questao_de_isonomia.qmd
-      - introducao.qmd
-      - corpo_memorial_parte1.qmd
-      - legislacao_de_regencia.qmd
-      - da_autorizacao_ao_inicio.qmd
-      - controle_e_irregularidades.qmd
-      - acusacao_sem_fundamentos.qmd
-      - mais_irregularidades_e_respostas_do_ilb.qmd
-      - servidor_analisa.qmd
-      - servidor_avanca.qmd
-      - dger_perniciosa.qmd
-      - conclusao_e_critica1.qmd
-      - e_mais_irregularidades.qmd
-      - ilb_estoura_prazos.qmd
-      - dger_tambem_estoura.qmd
-      - nova_lista_e_critica.qmd
-      - acusacao_antecipada.qmd
-      - ilb_nova_instrucao.qmd
-      - abusos_processuais_extremos.qmd
-      - dger_decisao_final.qmd
-
+  html:
+    self-contained: false #html será gerada como arquivo único
+    theme: flatly   # Pode ser 'cosmo', 'journal', 'flatly', 'united', etc.
+    toc: true      # Table of contents automático (índice lateral)
+    toc-depth: 3   # Profundidade do índice (3 níveis de títulos)
+    number-sections: true
+    number-depth: 3
+    fontsize: 1.1em
+    monofont: "Calibri"
+    linestretch: 1.6        # Espaçamento de linhas mais agradável
+    mainfont: "Calibri"
+    smooth-scroll: true
+    code-fold: true
+    code-tools: true
+    page-layout: article   # Layout página cheia para melhor visualização
+    grid:
+      sidebar-width: 250px   # Sidebar mais compacta
+      body-width: 800px      # Área de texto mais larga, mas sem perder conforto
+      margin-width: 300px    # Margens largas e bonitas
   
