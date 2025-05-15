@@ -1,0 +1,132 @@
+---
+title: "Servidor analisa manifestação da DGER"
+format: html
+---
+
+### Início da análise da manifestação da DGER
+
+No despacho nº 1783/2024-DGER, inserido nas pp. 1353 a 1356 (Processo NUP 00200.003561/2020 00100.084908/2024-15), a Diretoria-Geral do Senado Federal (DGER) apresenta um resumo das respostas fornecidas pelo Instituto Legislativo Brasileiro (ILB) à [primeira lista de itens](pp. 1309 e 1310, Despacho nº 820/2024-DGER, Processo NUP 00200.003561/2020) questionados pela DGER ao ILB e, com base no resumo dessas respostas, instaura prazo para manifestação prévia do servidor.
+
+Entre os pontos destacados no [despacho nº 1783/2024-DGER](pp.1353 e 1354, Processo NUP 00200.003561/2020), constam as seguintes observações:
+
+  - O semestre letivo 2023.1 (de 27/02/2023 a 29/07/2023) não teria sido concluído com êxito em razão de trancamento geral da matrícula;
+ 
+  - Consta nos autos cópia do pedido de trancamento geral datado de 19/07/2023, apresentado pelo servidor e comunicado formalmente ao ILB em 06/10/2023;
+ 
+  - O processo não contém registro de comunicação formal do servidor ao ILB ou a outro órgão da Casa acerca de licença para tratamento de saúde previamente deferida, nos moldes do ATC nº 17/2011.
+
+Apesar disso, a DGER reconhece expressamente que **não se trata de avaliação final do aproveitamento da ação de capacitação**, dado que o afastamento se encontra em curso e dentro do prazo máximo autorizado. Essa avaliação, segundo afirma, ocorrerá apenas ao término do afastamento, nos termos do art. 42 do Anexo IV do RASF:
+
+> “Referida avaliação final se dará ao término do prazo do afastamento concedido, conforme definido no art. 42 do Anexo IV do Regulamento Administrativo do Senado Federal (RASF).” (p. 1354)
+
+Contudo, logo em seguida, o documento da DGER passa a afirmar, alegando basear-se no art. 41 do mesmo Anexo IV do RASF, que **“o servidor não desempenhou quaisquer ações de capacitação com aproveitamento durante o 1º semestre de 2023”**. Tal afirmação é utilizada para justificar a continuidade do processo. Há um grande problema, porém, na fundamentação da DGER para justificar a continuidade do processo e da acusação ao servidor: o referido art. 41 do Anexo IV do RASF não trata de "aproveitamento".
+
+### Incongruências normativas na acusação
+
+Essa construção argumentativa da DGER revela graves contradições e abuso interpretativo. Após reconhecer que a avaliação do aproveitamento é ato reservado ao término do curso (art. 42), invoca o art. 41 como se ele exigisse **“aproveitamento”** em sentido técnico-pedagógico, o que não ocorre.
+
+O art. 41 do Anexo IV do RASF estabelece obrigações claras durante o período de afastamento:
+
+  - Enviar relatório de atividades acadêmicas, incluindo eventual produção;
+
+  - Enviar comprovante de frequência, quando solicitado;
+ 
+  - Prestar outras informações acadêmicas, quando solicitadas.
+
+Em nenhum momento a norma menciona ou exige “ações com aproveitamento” como critério de regularidade.
+
+De fato, conforme levantamento sistemático realizado pelo servidor, a palavra “aproveitamento” **não aparece em nenhum dispositivo** do Capítulo V do Anexo IV do RASF, que trata dos afastamentos para pós-graduação stricto sensu. Em todo o Regulamento Administrativo do Senado Federal, o termo só ocorre três vezes, e em contextos completamente distintos (provimento de cargo, emissão de certificado e licença capacitação).
+
+Além disso, **não existe previsão de aferição semestral de aproveitamento** no ordenamento jurídico aplicável ao afastamento em tela. A única avaliação prevista para afastamento com objetivo de cursar pós-graduação stricto  sensu está determinada no próprio art. 42 invocado pela DGER: se ao final do afastamento o servidor obteve ou não o título que justificou a concessão.
+
+A tentativa de converter o art. 41 em fundamento para responsabilização disciplinar baseada em “ausência de aproveitamento” carece, portanto, de respaldo legal. A invocação normativa genérica pela DGER, somada ao status institucional da autoridade signatária, **confere aparência de legalidade a uma acusação desprovida de base normativa específica**, em clara afronta ao princípio da legalidade estrita e da motivação dos atos administrativos (art. 2º, caput e parágrafo único, incisos I e VII, da Lei nº 9.784/1999).
+
+### Sobre a comunicação de trancamento
+
+Quanto à crítica de que o trancamento da matrícula foi informado tardiamente:
+
+  - O relatório de atividades informa com fundamentos [documentais que o trancamento de matrícula do 1º semestrede 2023 só foi realizado em 28 de agosto daquele ano](p. 1301, Processo NUP 00200.003561/2020). Embora pelo texto de DGER e ILB pareça que se passou um semestre entre a efetivação do trancamento (28/08/2023) e o envio do relatório ao Senado informando o trancamento (06/10/2023), transcorreram somente 39 dias. dependia de deferimento para poder ser devidamente comunicado.
+ 
+  - [**Não há, nas normas, determinação de prazo para envio do relatório de atividades**](pp. 1348, item VII.b, , do Processo NUP 00200.003561/2020), o que foi reconhecido expressamente pelo próprio ILB no [ofício 23/2024-SEPOS/COESUP/ILB](p. 1348, 1339 a 1352, Processo NUP 00200.003561/2020). Por consequência, também não há prazo para comunicar trancamento, uma vez que tal comunicação ou ocorreria [sem prazo determinado](conforme inciso I e caput do art. 40 da RES 13/2018, ou inciso I e caput do art. 41 do ATC 14/2022) no relatório de atividades (como de fato aconteceu); ou estaria condicionada a uma solicitação prévia (que não ocorreu) pelo ILB, já que prestação de informações avulsas pelos servidores afastados para pós-graduação se dá mediante solicitação do ILB, nos termos do [inciso III do art. 40 da RES 13/2018]^() (ou do art. 41 do ATC 14/2022). Não houve pedido de informação avulsa ;
+ 
+  - A greve na Universidade de Brasília, informada em 20/03/2024 (p. 1331 – NUP 00100.054213/2024-17), constituiu fator externo impeditivo da conclusão do 1º semestre de 2024 até a data originalmente prevista de afastamentotinuidade de atividades acadêmicas, circunstância que deve ser considerada nos termos da razoabilidade e da teoria da imprevisão.
+
+### Conclusão deste segmento
+
+A manifestação da DGER, embora reconheça a impossibilidade de avaliação definitiva de desempenho enquanto o curso estiver em andamento, contraditoriamente antecipa julgamento negativo baseado em norma que **não prevê o critério alegado (art. 41)**. Tal conduta:
+
+  - Desrespeita o devido processo legal;
+ 
+  - Aplica exigência inexistente no ordenamento jurídico vigente;
+ 
+  - Revela viés interpretativo e falta de imparcialidade;
+  
+  - Constrange o servidor sob aparência de legalidade não sustentada por norma.
+
+Esses elementos serão retomados adiante para evidenciar o caráter persecutório do procedimento e a gravidade das irregularidades cometidas pela Administração.
+
+---
+
+## Análise Técnica e Jurídica do Servidor sobre os Atos da Diretoria-Geral
+
+Este bloco apresenta a resposta crítica do servidor aos atos da Diretoria-Geral do Senado Federal (DGER), confrontando os fundamentos jurídicos utilizados, suas interpretações e seus efeitos sobre o processo em curso.
+
+### 1. Considerações iniciais sobre a manifestação da DGER
+
+Nas páginas **pp. 1353 a 1356** do processo (NUP 00200.003561/2020-66, documento 00100.084908/2024-15), a DGER resume os dados trazidos pelo relatório do ILB e abre prazo para manifestação do servidor. Entre os pontos destacados pela DGER estão:
+
+  - A ausência de atividades acadêmicas com "conclusão com êxito" no 1º semestre de 2023.
+ 
+  - A alegada inexistência de comunicação prévia sobre licença médica.
+  
+  - A comunicação do trancamento geral da matrícula, realizada somente em 06/10/2023.
+
+Embora a DGER reconheça expressamente que não se trata de avaliação final da ação de capacitação — que ocorrerá ao término do afastamento, nos termos do art. 42 do Anexo IV do RASF —, utiliza esse mesmo contexto para seguir com alegações baseadas em interpretação alargada do art. 41 do mesmo Anexo (p. 1354).
+
+---
+
+### 2. Interpretação indevida do art. 41 do Anexo IV do RASF
+
+A DGER afirma, na **p. 1354**, que "o servidor não desempenhou quaisquer ações de capacitação com aproveitamento durante o 1º semestre de 2023". Para justificar essa afirmação, invoca o art. 41 do Anexo IV do RASF. Entretanto, esse dispositivo **não impõe obrigação de resultado, tampouco exige aferição de "aproveitamento" acadêmico por semestre**.
+
+O art. 41 estabelece obrigações formais durante o afastamento: o envio de relatório de atividades, a apresentação de comprovante de frequência quando solicitado, e a prestação de outras informações acadêmicas, também quando solicitadas. Em nenhuma parte do artigo há menção a "aproveitamento".
+
+---
+
+### 3. Inexistência de exigência normativa de "aproveitamento" semestral
+
+A palavra "aproveitamento" não é utilizada em nenhum ponto do Capítulo V do Anexo IV, que trata dos afastamentos para cursos de pós-graduação stricto sensu. De fato, essa palavra aparece apenas três vezes em todo o RASF, sem qualquer relação com a avaliação de resultados de afastamento de servidor.
+
+Portanto, a insistência da DGER em utilizar esse conceito revela tentativa indevida de atribuir ao servidor uma obrigação inexistente, sem amparo normativo — violando, assim, os princípios da legalidade e da segurança jurídica.
+
+---
+
+### 4. Sobre a avaliação final do afastamento
+
+Conforme expressamente previsto no art. 42 do Anexo IV do RASF (p. 1354), a avaliação do aproveitamento do servidor afastado se dá **após a conclusão do curso**, mediante entrega de cópia da tese ou dissertação e demais obrigações formais. Trata-se de avaliação binária: **obteve ou não o título que justificou o afastamento**.
+
+Qualquer avaliação intermediária, principalmente sem previsão legal, é materialmente inócua e juridicamente inválida.
+
+---
+
+### 5. Comunicação do trancamento e ausência de prazos
+
+Quanto à alegação da DGER de que o servidor teria comunicado o trancamento da matrícula apenas após ser notificado para enviar o relatório do semestre, é necessário destacar:
+
+  - O próprio ILB reconheceu que **não há prazos estabelecidos** para a comunicação de trancamento ou para a entrega de relatórios (p. 1352).
+  
+  - A informação foi devidamente prestada no relatório de atividades entregue em 06/10/2023 (referente ao 1º semestre de 2023).
+
+Dessa forma, novamente, inexiste descumprimento de obrigação por parte do servidor.
+
+---
+
+### 6. Conclusão
+
+Embora reconheça que o curso está em andamento e que a avaliação final ocorrerá ao término do afastamento, a DGER **mantém acusações ambíguas e infundadas**, com base em interpretações incorretas de normas (pp. 1353–1356).
+
+A invocação do art. 41 do RASF para justificar ausência de “aproveitamento” é incompatível com a literalidade e a teleologia do dispositivo. Além disso, a ausência de prazos definidos — confirmada pelo próprio ILB — inviabiliza qualquer alegação de inadimplência.
+
+O tratamento dado ao caso pelo órgão responsável pela gestão do Senado Federal demonstra parcialidade e desprezo pelo devido processo legal. Essa conduta institucional, respaldada apenas pelo peso simbólico do cargo e pela presunção de legitimidade do agente, configura, em si, um fator preocupante de arbitrariedade no seio da Administração Pública.
+
+---

@@ -1,0 +1,762 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+
+ATC14_2022_anxiv <- c("Art. 26. O Instituto Legislativo Brasileiro instruirá os processos relativos à participação de  
+servidores em atividades de capacitação externa, manifestando-se, especialmente, quanto 
+aos seguintes aspectos:
+I - compatibilidade com o PCASF;
+II - ao cumprimento, junto ao Instituto Legislativo Brasileiro, das obrigações decorrentes de 
+eventual participação em atividades anteriores de capacitação;
+III - à disponibilidade de recursos orçamentários para cobrir as despesas, quando couber;
+IV - à avaliação das alternativas de capacitação disponíveis no mercado que poderiam 
+melhor atender às necessidades, especialmente em relação à qualidade e à relação custo‑benefício;
+V - ao atendimento das exigências deste Anexo e da legislação pertinente sobre a matéria;
+VI - ao rendimento satisfatório do servidor em ações de capacitação e desenvolvimento 
+anteriormente realizadas.", "procedimentos e análise de pedidos", "processos capacitação",
+
+"Art. 27. A solicitação para participação em atividades externas de capacitação deve ser 
+protocolada respeitando-se os seguintes prazos mínimos, sob pena de indeferimento do 
+pleito:
+I - trinta dias de antecedência da data de realização do evento, quando se tratar de ações 
+no país;
+II - quarenta e cinco dias de antecedência da data de realização do evento, quando se tratar 
+de ações no exterior.", "procedimentos e análise de pedidos", "solicitação prazos",
+
+"Art. 28. São competentes para autorizar a participação de servidores em ações externas de 
+capacitação e desenvolvimento:
+I - o Presidente do Senado Federal, nos casos de afastamento do país para ações de 
+capacitação, facultada a delegação;
+II - o Diretor-Geral do Senado Federal, nos demais casos.
+§ 1º Da decisão que indeferir o pedido caberá recurso:
+I - na forma do parágrafo único do art. 191 deste Regulamento Administrativo, na hipótese 
+do inciso I do caput;
+Secretaria de Gestão da Informação e Documentação
+II - ao Primeiro-Secretário, na hipótese do inciso II do caput.
+§ 2º Compete ao ILB instruir os requerimentos de participação de servidores, bem como, 
+quando solicitado, os eventuais recursos administrativos destes decorrentes.", "competência autorizativa", "autorizar participação",
+
+"Art. 29. As modalidades de participação do Senado Federal no apoio financeiro à 
+participação de servidores em ações externas de capacitação são as seguintes:
+I - sem ônus, sendo devido o pagamento das parcelas previstas nos incisos I e II do § 2º 
+deste artigo;
+II - com ônus, sendo devido o pagamento definido no inciso I do caput deste artigo e de 
+quaisquer parcelas previstas nos incisos III a VI do § 2º deste artigo.
+§ 1º Os critérios de aplicação das modalidades previstas no caput serão definidos pelo 
+PCASF.
+§ 2º O servidor participante de ação externa de capacitação que implique apoio financeiro 
+poderá receber as seguintes parcelas:
+I - todas as parcelas remuneratórias ordinárias relativas a seu cargo e nível na carreira;
+II - gratificação pelo exercício de função comissionada, nos casos em que permanecer 
+designado durante o afastamento;
+III - diárias;
+IV - taxas de inscrição ou matrícula, mensalidade, semestralidade ou anualidade, conforme 
+o caso;
+V - despesas com passagens do servidor;
+VI - seguro saúde, quando for o caso, nos termos da lei.
+§ 3º Nos casos em que a ação de capacitação for realizada no Distrito Federal e a 
+modalidade prevista no inciso I do caput for aplicável, o servidor poderá receber apenas as 
+parcelas previstas nos incisos I, II e IV do § 2º deste artigo.
+§ 4º Quando o servidor for contemplado com auxílio financeiro da entidade promotora, ou 
+de qualquer outra fonte, esse valor deverá ser informado no requerimento, sob pena de 
+responsabilidade, para que seja deduzido das correspondentes parcelas a que se referem 
+os incisos III, IV, V e VI do § 2º deste artigo.
+Secretaria de Gestão da Informação e Documentação
+§ 5º Os custos da participação de servidor em ações externas de capacitação decorrentes 
+de iniciativa própria, sem a prévia e necessária autorização do Senado Federal, serão de 
+exclusiva responsabilidade do servidor.", "modalidades de financiamento", "apoio financeiro",
+
+"Art. 35. A concessão de afastamento de servidor do Senado Federal para participar de programas de pós-graduação stricto sensu não acarretará ônus adicional, sendo devido o pagamento apenas da parcela prevista no inciso I do § 2º do art. 29 deste Anexo, salvo autorização excepcional do Presidente do Senado Federal.
+§ 1º O Diretor-Geral poderá conceder afastamento para participação de servidor efetivo em programas de pós-graduação stricto sensu no país e que sejam reconhecidos como regulares pelo Ministério da Educação.
+§ 2º O Presidente do Senado Federal poderá conceder afastamento do país para participação de servidor efetivo em programa de pós-graduação stricto sensu realizado por instituição estrangeira, após parecer favorável do Comitê Científico-Pedagógico, que observará sua classificação em ranking internacional de avaliação e o estabelecido no inciso III do art. 36 deste Anexo.
+§ 3º Para instruir o parecer do Comitê Científico-Pedagógico, o candidato deverá providenciar toda a documentação necessária com tradução oficial para a Língua Portuguesa, que deverá conter necessariamente as disciplinas acadêmicas, o quadro de docentes do programa com a respectiva titulação dos professores, bem como a carta de aceitação do coordenador do programa, professor orientador ou equivalente.
+§ 4º O Presidente do Senado Federal poderá, excepcionalmente e mediante critérios de conveniência e oportunidade, autorizar ação de capacitação em hipóteses não previstas neste artigo.", "direito a afastamento para capacitação", "afastamento capacitação",
+
+"Art. 36. A concessão do afastamento para programas de pós-graduação stricto sensu pressupõe manifestação:
+I - do titular do órgão de lotação quanto à pertinência temática da ação de capacitação para o atingimento da missão institucional da unidade, e quanto à conveniência e a oportunidade da liberação do servidor, nos termos do parágrafo único deste artigo;
+Secretaria de Gestão da Informação e Documentação
+II - da unidade responsável pela gestão de pessoas quanto ao direito do servidor à licença e ao atendimento do disposto nos arts. 5º e 54 deste Anexo;
+III - do Comitê Científico Pedagógico quanto à adequação do programa pedagógico, à qualidade e à classificação da Instituição promotora, e à relevância temática da ação de capacitação para o atingimento da missão institucional do Senado Federal.
+Parágrafo único. O titular da unidade de lotação deverá declarar que o afastamento do servidor, caso autorizado:
+I - não acarretará prejuízo às atividades da unidade;
+II - não ensejará o pagamento de horas extras para garantir o cumprimento das atividades da unidade, salvo em caso de necessidade oriunda de evento imprevisto ou imprevisível, devidamente reconhecido pelo Diretor-Geral;
+III - não implicará qualquer tipo de requisição de pessoal para garantir o cumprimento das atividades da unidade, seja de servidor efetivo ou comissionado, seja de funcionário terceirizado.", "procedimentos e análise de pedidos", "pressupõe manifestação",
+
+"Art. 37. A concessão do afastamento para programas de Pós-Graduação poderá ser precedida de processo seletivo interno realizado pelo Instituto Legislativo Brasileiro na forma de Regulamento, aberto à participação de servidores efetivos do Senado Federal que preencham os requisitos deste Anexo.
+§ 1º O PCASF conterá previsão de autorização de afastamentos para participação em curso de mestrado, doutorado e pós-doutorado.
+§ 2º Uma vez realizado o processo seletivo previsto no caput, a autoridade definida nos §§ 1º e 2º do art. 35 deste Anexo poderá autorizar a concessão do afastamento.
+§ 3º Na ausência de processo seletivo para afastamento de servidores na modalidade pós-graduação stricto sensu, as solicitações devem ser instruídas pelo ILB e encaminhadas à Diretoria-Geral para deliberação da autoridade competente.
+§ 4º A concessão do afastamento está condicionada à existência de interesse do Senado Federal na realização da ação de capacitação e à comprovação de que o servidor cumpre todos os requisitos previstos no art. 40 deste Anexo.", "direito a afastamento para capacitação", "processo seletivo",
+
+"Art. 38. Aplica-se o art. 5º deste Anexo aos afastamentos para Pós-Graduação. (Art. 5º O deferimento de solicitações relacionadas à capacitação dos servidores do Senado Federal se dará com base no atendimento de pelo menos uma das seguintes condições:
+
+I - enquadramento da temática da capacitação que subsidia o requerimento às áreas de conhecimento de interesse comum a todos os cargos/especialidades do Senado Federal previstos na Matriz Geral de Correlação do Conhecimento;
+
+II - enquadramento da temática da capacitação que subsidia o requerimento às áreas de interesse relacionadas ao cargo/especialidade do requerente, previstas na Matriz Específica de Correlação do Conhecimento;
+
+III - relação entre a capacitação e as competências inerentes à Função Comissionada exercida pelo requerente;
+
+IV - relação entre a capacitação e as efetivas atividades laborais desenvolvidas pelo requerente.
+
+§ 1º As Matrizes de Correlação do Conhecimento a que se referem os incisos I e II do caput serão definidas por Ato do Diretor-Geral, mediante proposta da unidade responsável pela gestão de pessoas.
+
+§ 2º A verificação do atendimento dos incisos III e IV do caput será feita mediante justificativa do chefe imediato a ser encaminhada para a instrução do ILB e deliberação da unidade responsável pela gestão de pessoas.
+
+§3º O disposto no §2º aplica-se à ação de capacitação que corresponder à ramificação das áreas de interesse previstas nas Matrizes de Correlação do Conhecimento definidas nos incisos I e II do caput.)", "direito a afastamento para capacitação", "Pós-Graduação afastamentos",
+
+"Art. 39. O período do afastamento está adstrito à respectiva duração do programa de estudos, podendo ser prorrogado mediante solicitação justificada, observadas as disposições legais pertinentes.
+Secretaria de Gestão da Informação e Documentação
+§ 1º Compete à autoridade concedente deliberar sobre a prorrogação do período de afastamento, mediante solicitação justificada do servidor afastado, ouvido o titular da unidade na forma do parágrafo único do art. 36 deste Anexo.
+§ 2º O período de afastamento abrangerá, necessariamente, os períodos de férias anuais, de recesso do Senado Federal e será considerado como de efetivo exercício para todos os fins.", "duração e prorrogações", "período prorrogado",
+
+"Art. 40. A concessão de afastamento para participação de programas de Pós-graduação Stricto sensu depende do cumprimento dos seguintes requisitos pelo servidor:
+I - exercer cargo efetivo no Senado Federal pelo período mínimo de três anos para mestrado e quatro anos para doutorado ou pós-doutorado;
+II - assinatura de termo de compromisso de permanência no Senado Federal, na condição de servidor ativo, por período mínimo equivalente ao período concedido, contado da data de retorno do afastamento;
+III - não tenha idade para ser alcançado pela aposentadoria compulsória no espaço de tempo entre o início do curso de pós-graduação e o término do período a que se refere o inciso II deste artigo;
+IV - não tenha se afastado para participação em programa de mestrado ou doutorado nos últimos 2 anos ou, para programa de pós-doutorado, nos últimos 4 anos anteriores à data da solicitação do novo afastamento;
+V - encontre-se em efetivo exercício no período de inscrição e não esteja afastado para exercício de mandato eletivo ou para servir em organismo internacional de que o Brasil participe ou com o qual coopere;
+VI - não tenha descumprido qualquer obrigação assumida em função de afastamentos anteriores, sem que as justificativas tenham sido aceitas pelo Senado Federal.", "direito a afastamento para capacitação", "requisitos afastamento",
+
+"Art. 41. São deveres do servidor, durante o período de afastamento:
+I - enviar ao Instituto Legislativo Brasileiro relatório de atividades acadêmicas, incluindo eventual produção acadêmica já realizada;
+II - enviar ao Instituto Legislativo Brasileiro comprovante de frequência ao curso, quando solicitado;
+III - prestar outras informações a respeito de suas atividades acadêmicas que forem solicitadas pelo Instituto Legislativo Brasileiro.", "deveres em curso", "relatório frequência",
+
+"Art. 42. São deveres do servidor, após a conclusão do curso:
+Secretaria de Gestão da Informação e Documentação
+I - entregar, em até sessenta dias após a conclusão do programa, cópia da dissertação ou tese aprovada para a obtenção da titulação;
+II - executar ação de disseminação e aplicação do conhecimento adquirido na pós-graduação, quando requisitado pelo Instituto Legislativo Brasileiro, nos termos do § 8º do art. 19 deste Anexo;
+III - prestar outras informações a respeito de suas atividades acadêmicas que forem solicitadas pelo Instituto Legislativo Brasileiro.", "deveres pós-curso", "conclusão curso",
+
+"Art. 43. O Diretor-Geral determinará o ressarcimento ao Senado Federal, do valor correspondente ao incentivo concedido, do servidor que:
+I - desistir, sem motivo justificado, da ação de capacitação motivadora do afastamento;
+II - durante o afastamento, aposentar-se voluntariamente, solicitar exoneração ou tomar posse em outro cargo inacumulável;
+III - não permanecer no serviço público federal, na condição de servidor ativo, por período mínimo equivalente ao afastamento concedido, contado da data de retorno do servidor;
+IV - não obtiver o título que justificou seu afastamento, salvo na hipótese comprovada de força maior ou de caso fortuito, na forma da Lei;
+V - não cumprir os deveres impostos no art. 42 deste Anexo.
+Parágrafo único. Não se exigirá o ressarcimento do servidor que se aposentar por invalidez ou que, por motivos alheios à sua vontade, ficar impossibilitado de concluir o curso, mediante justificativa a ser validada pelo Diretor-Geral.", "penalidades e sanções", "ressarcimento desistir",
+
+"Art. 44. Aplicam-se aos afastamentos para capacitação externa em cursos de pós-graduação, no que couber, as disposições do arts. 26, 27, 28 e 29 deste Anexo.", "procedimentos adicionais e outras disposições", "aplicam-se disposições",
+
+"Art. 45. O Presidente do Senado Federal poderá autorizar a participação de Senadores em programas de pós-graduação stricto sensu sem o afastamento do exercício do mandato eletivo.
+§ 1º Os custos da participação de Senadores em ações externas de capacitação decorrentes das taxas de inscrição ou matrícula, mensalidade, semestralidade ou anualidade, conforme o caso, poderão ser arcados pelo Senado.
+§ 2º Quando o Senador for contemplado com algum auxílio financeiro da entidade promotora ou de qualquer outra fonte, deverá informar ao Senado, sob pena de responsabilidade.
+Secretaria de Gestão da Informação e Documentação
+§ 3º O prazo para conclusão da ação externa de capacitação não poderá ultrapassar o término do mandato eletivo.
+§ 4º Após a conclusão do curso, o Senador deverá entregar ao Senado cópia da dissertação ou tese aprovada para a obtenção da titulação, a qual constará do acervo da Biblioteca do Senado, para consulta pública.
+§ 5º O Presidente do Senado Federal determinará o ressarcimento ao Senado Federal do valor correspondente ao incentivo concedido, no caso de o Senador desistir sem motivo justificado da ação de capacitação ou não obtiver a titulação correspondente no prazo previsto.
+§ 6º Aplicam-se, no que couber, as normas para a capacitação dos servidores do Senado Federal.", "tipos de ação de capacitação", "senadores participação")
+
+
+ATC14_2022_anxiv <- as_tibble(ATC14_2022_anxiv, .name_repair = ("unique"))
+
+ATC14_2022_anxiv_tr <- matrix(atc14_2022, ncol = 3, byrow = TRUE)
+ATC14_2022_anxiv_tr
+
+
+atc14_2022 <- c(
+  "Art. 132. São competentes para conceder licenças aos servidores do Senado, após verificação do preenchimento dos requisitos legais e regulamentares: I - o Presidente, nos casos de quaisquer licenças no exterior; II - o Diretor-Geral, nos demais casos. Secretaria de Gestão da Informação e Documentação § 1º A licença capacitação será concedida conforme o disposto no Anexo IV deste Regulamento. § 2º Ato do Diretor-Geral regulamentará os procedimentos e prazos relativos às licenças previstas em lei.", "competência autorizativa", "conceder licenças", 
+
+"Art. 133. Ao servidor ocupante de cargo em comissão não se concederá, nessa qualidade, licença para tratar de interesses particulares.", "infrações e proibições", "não concederá", 
+
+"Art. 134. São competentes para autorizar os afastamentos dos servidores efetivos do Senado Federal, preenchidos os requisitos legais e regulamentares: I - o Presidente, nos casos de: a) cessão para servir outro órgão ou entidade, com exercício de cargo em comissão ou função de confiança, nos moldes do inciso I do caput do art. 93 da Lei nº 8.112, de 1990; b) requisição de servidor para exercício fora do Senado Federal em outro órgão público, em caráter eventual ou transitório, sem exercício de cargo em comissão ou função de confiança, nos moldes do inciso II do caput do art. 93 da Lei nº 8.112, de 1990; c) afastamentos no exterior; II - o Diretor-Geral, nos casos de: a) quaisquer afastamentos do servidor no país, previstos na Lei nº 8.112, de 1990; b) afastamento para realização de missão oficial de representação do Senado Federal. § 1º Entende-se como missão oficial de representação do Senado Federal o afastamento eventual e transitório do servidor, para: I - desempenho de trabalho, atividade ou ação institucional prevista em normas internas; II - para participar, na qualidade de jurista, assessor ou expositor, de atividade de interesse do Senado Federal. § 2º O afastamento para capacitação do servidor será concedido conforme o disposto no Anexo IV deste Regulamento. § 3º Ato do Diretor-Geral regulamentará os procedimentos e prazos relativos aos afastamentos previstos em lei. Secretaria de Gestão da Informação e Documentação", "tipos de afastamentos", "afastamentos para", 
+
+"Art. 135. Os afastamentos para cessão ou requisição de servidor do Senado Federal serão autorizados para fim determinado e a prazo certo, e não poderão ultrapassar o prazo de 60 (sessenta) dias do término do mandato do Presidente que o concedeu. § 1º O período de afastamento correspondente à requisição é considerado para todos os efeitos legais, inclusive para progressão funcional. § 2º A requisição de servidores do Senado Federal poderá ser realizada mediante celebração de convênio ou acordo de cooperação técnica, que deverá prever: I - o fator motivador da assinatura; II - a obrigação dos órgãos ou entidades de informarem qualquer ocorrência na vida funcional do servidor requisitado, para fins de controle cadastral; III - delimitação do marco inicial e final da requisição; IV - a forma de reembolso, quando houver, das despesas decorrentes da assinatura. § 3º Não se aplicam as hipóteses previstas em lei específica de requisição do servidor sem autorização expressa do Presidente do Senado Federal, em observância aos arts. 2º e 52, inciso XIII, ambos da Constituição Federal.", "duração e prorrogações", "prazo certo"
+)
+
+atc14_2022 <- as_tibble(atc14_2022, .name_repair = ("unique"))
+
+atc14_2022 <- matrix(atc14_2022, nrow = 3, byrow = TRUE)
+
+pivot_wider(atc14_2022)
+
+atc14_2022 <- as_tibble(atc14_2022)
+
+atqctest<- table(c(c(atc14_2022[1,1]), c(atc14_2022[1,2]),  c(atc14_2022[1,3]), c(atc14_2022[1,3])),
+                 c(c(atc14_2022[2,1]), c(atc14_2022[2,2]), c(atc14_2022[2,3]), c(atc14_2022[1,3])),
+                 c(c(atc14_2022[3,1]), c(atc14_2022[3,2]), c(atc14_2022[3,3]), c(atc14_2022[1,3])),
+                 c(c(atc14_2022[4,1]), c(atc14_2022[4,2]), c(atc14_2022[4,3]),c(atc14_2022[1,3])))
+
+test <- matrix(test, ncol = 3, byrow = TRUE)
+test
+
+
+    
+atc14_2022_tr <-matrix(atctest, ncol = 3, byrow = TRUE)
+
+l8112 <- c(
+  "Art. 96-A. O servidor poderá, no interesse da Administração, e desde que a participação não possa ocorrer simultaneamente com o exercício do cargo ou mediante compensação de horário, afastar-se do exercício do cargo efetivo, com a respectiva remuneração, para participar em programa de pós-graduação stricto sensu em instituição de ensino superior no País. (Incluído pela Lei nº 11.907, de 2009)", "direito a afastamento para capacitação", "afastar pós-graduação", 
+
+"§ 1o  Ato do dirigente máximo do órgão ou entidade definirá, em conformidade com a legislação vigente, os programas de capacitação e os critérios para participação em programas de pós-graduação no País, com ou sem afastamento do servidor, que serão avaliados por um comitê constituído para este fim. (Incluído pela Lei nº 11.907, de 2009)", "delegacao explicita", "ato definirá", 
+
+"§ 2o  Os afastamentos para realização de programas de mestrado e doutorado somente serão concedidos aos servidores titulares de cargos efetivos no respectivo órgão ou entidade há pelo menos 3 (três) anos para mestrado e 4 (quatro) anos para doutorado, incluído o período de estágio probatório, que não tenham se afastado por licença para tratar de assuntos particulares para gozo de licença capacitação ou com fundamento neste artigo nos 2 (dois) anos anteriores à data da solicitação de afastamento. (Incluído pela Lei nº 11.907, de 2009)", "direito a afastamento para capacitação", "afastamentos mestrado", 
+
+"§ 3o  Os afastamentos para realização de programas de pós-doutorado somente serão concedidos aos servidores titulares de cargos efetivo no respectivo órgão ou entidade há pelo menos quatro anos, incluído o período de estágio probatório, e que não tenham se afastado por licença para tratar de assuntos particulares ou com fundamento neste artigo, nos quatro anos anteriores à data da solicitação de afastamento. (Redação dada pela Lei nº 12.269, de 2010)", "direito a afastamento para capacitação", "afastamentos pós-doutorado", 
+
+"§ 4o  Os servidores beneficiados pelos afastamentos previstos nos §§ 1o, 2o e 3o deste artigo terão que permanecer no exercício de suas funções após o seu retorno por um período igual ao do afastamento concedido. (Incluído pela Lei nº 11.907, de 2009)", "direito a afastamento para capacitação", "permanecer afastamento", 
+
+"§ 5o  Caso o servidor venha a solicitar exoneração do cargo ou aposentadoria, antes de cumprido o período de permanência previsto no § 4o deste artigo, deverá ressarcir o órgão ou entidade, na forma do art. 47 da Lei no 8.112, de 11 de dezembro de 1990, dos gastos com seu aperfeiçoamento. (Incluído pela Lei nº 11.907, de 2009)", "direito a afastamento para capacitação", "exoneração ressarcir", 
+
+"§ 6o  Caso o servidor não obtenha o título ou grau que justificou seu afastamento no período previsto, aplica-se o disposto no § 5o deste artigo, salvo na hipótese comprovada de força maior ou de caso fortuito, a critério do dirigente máximo do órgão ou entidade. (Incluído pela Lei nº 11.907, de 2009)", "direito a afastamento para capacitação", "título afastamento", 
+
+"§ 7o  Aplica-se à participação em programa de pós-graduação no Exterior, autorizado nos termos do art. 95 desta Lei, o disposto nos §§ 1o a 6o deste artigo. (Incluído pela Lei nº 11.907, de 2009)", "direito a afastamento para capacitação", "pós-graduação Exterior"
+)
+
+
+l8112 <- as_tibble(l8112, .name_repair = ("unique"))
+l8112 <- matrix(l8112, ncol = 3, byrow = TRUE)
+
+
+
+ADG17_2021 <- c(
+  "Art. 1º Este Ato estabelece os procedimentos para o requerimento, a autorização e a comprovação das ações de capacitação no âmbito do Senado Federal.", "procedimentos e análise de pedidos", "procedimentos capacitação",
+
+"Art. 2º O processo administrativo que instruir a participação de servidor em capacitação externa em cursos de pós-graduação stricto sensu e na concessão de licença para capacitação conterá: I - o requerimento para a ação de capacitação pretendida, que será assinado pelo servidor, pela chefia imediata e pelo titular da unidade de exercício do servidor, devidamente apensado de termo de compromisso assinado pelo requerente; II - pronunciamento conclusivo da unidade responsável pela gestão de pessoas sobre o atendimento dos requisitos legais e regulamentares sob sua competência; (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). III - indicação de disponibilidade orçamentária pela Secretaria de Finanças, Orçamento e Contabilidade (SAFIN), no caso de a ação de capacitação correspondente gerar ônus ao Senado Federal, de acordo com o inciso II do caput do art. 29 do Anexo IV do RASF; IV - informação do Instituto Legislativo Brasileiro (ILB) que indicará se a ação de capacitação requerida atende aos critérios qualitativos e às demais regras regulamentares estabelecidas no RASF e neste Ato. § 1º Na hipótese de requerimento da parcela prevista no inciso IV do § 2º do art. 29 do Anexo IV do RASF, o processo administrativo sujeitar-se-á ao disposto no Anexo V do RASF. § 2º Sendo requeridas exclusivamente as parcelas previstas na modalidade do inciso I do caput do art. 29 do Anexo IV do RASF, o ILB concluirá quanto à adequação e à completude da instrução processual. § 3º A unidade responsável pela gestão de pessoas informará na instrução processual, quando aplicável, a vedação de pagamento da parcela remuneratória prevista no inciso II do § 2º do art. 29 do Anexo IV do RASF. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). § 4º Em caso de extinção da última unidade de exercício do servidor, a manifestação prevista no § 1º do art. 63 do Anexo IV do RASF será suprida pela manifestação do então Chefe ou Subchefe de Gabinete Parlamentar ou titular de unidade administrativa que permaneça no quadro de servidores do Senado Federal. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023).", "procedimentos e análise de pedidos", "processo administrativo",
+
+"Art. 3º O servidor deverá juntar ao requerimento e ao termo de compromissos firmados: I - comprovante de inscrição ou aceitação junto à instituição promotora da ação de capacitação; II - listagem das ações de capacitação pretendidas e respectivas cargas horárias individuais e total; (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). III - conteúdo programático; e (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). IV - demais documentos requeridos pelo ILB. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). V - (revogado). (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). § 1º Para o estágio sabático, o servidor deverá juntar ao requerimento de participação: I - relatório detalhado do projeto e das atividades previstas para o referido estágio; II - carta de aceitação da instituição a qual se vincula, contendo informação que indique o período do referido estágio, as atividades e os projetos a serem desenvolvidos pelo servidor. § 2º Considerar-se-á como data do pedido a interposição processual de documentação completa e devidamente assinada pelos responsáveis e tramitada para a unidade competente. § 3º Em ação de capacitação na modalidade à distância, para efeitos de licença para capacitação, admitir-se-á a comprovação prevista no inciso I do caput deste artigo até o 5º (quinto) dia útil, contado a partir da data definida para o início do referido curso. (Incluído pelo Ato da Diretoria-Geral nº 30/2023).", "procedimentos e análise de pedidos", "juntar requerimento",
+
+"Art. 4º Para o cumprimento do disposto no inciso I do art. 2º, o ILB, em conjunto com a unidade responsável pela gestão de pessoas, instituirá formulários padronizados para cada modalidade de ação de capacitação requerida, que conterão as informações necessárias à apreciação do pleito, devendo dispor sobre a: I - descrição da chefia imediata de como a ação de capacitação pretendida se relaciona com as competências inerentes à Função Comissionada ou às atividades laborais desenvolvidas pelo requerente; II - declaração do titular da unidade de exercício do servidor que: a) descreva e ateste a pertinência temática da ação de capacitação para o atingimento da missão institucional da unidade; b) declare que o afastamento do servidor, caso autorizado, é oportuno e que: 1. não acarretará prejuízo às atividades da unidade; 2. não ensejará o pagamento de horas extras para garantir o cumprimento das atividades da unidade, salvo em caso de necessidade oriunda de evento imprevisto ou imprevisível, devidamente reconhecida pela Diretoria-Geral; 3. não implicará qualquer tipo de requisição de pessoal para garantir o cumprimento das atividades da unidade, seja de servidor efetivo ou comissionado, seja de qualquer tipo de colaborador; III - indicação da modalidade de apoio financeiro requerido e das parcelas aplicáveis ao pedido. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023).", "Definição de Programas e Critérios", "formulários padronizados",
+
+"Art. 5º O ILB estabelecerá termo de compromisso a ser firmado pelo servidor quando do requerimento da ação de capacitação, o qual consignará declaração expressa do servidor quanto ao conhecimento dos dispositivos legais e regulamentares que regem a ação de capacitação pleiteada e quanto à ciência das cominações em caso de descumprimento dos referidos normativos.", "procedimentos e análise de pedidos", "termo compromisso",
+
+"Art. 6º A ocorrência simultânea de pedidos para a concessão de licença para capacitação que ultrapasse o limite especificado no caput do art. 54 do Anexo IV do RASF será comunicada pelo ILB ao titular da unidade, que definirá a ordem de priorização dos requerimentos. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). Parágrafo único. O servidor que tiver seu requerimento preterido, nos termos deste artigo, será cientificado pelo ILB e o processo será arquivado.", "procedimentos e análise de pedidos", "priorização requerimentos",
+
+"Art. 7º O ILB informará o enquadramento da ação de capacitação entre uma das seguintes categorias: I - ação de capacitação promovida pelo ILB; II - ação de capacitação promovida por escolas de governo das esferas federal, estadual ou municipal; III - elaboração de monografia ou trabalho de conclusão de curso de graduação ou pós-graduação lato sensu, promovido por Instituição de Ensino Superior nacional ou estrangeira, respectivamente avaliadas na forma dos incisos I e II do §1º do art. 49 do Anexo IV do RASF; (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). IV - realização de pesquisa ou elaboração de parte ou conclusão de dissertação ou tese conclusão de curso de pós-graduação stricto sensu, promovido por Instituição de Ensino Superior nacional ou estrangeira, respectivamente avaliadas na forma dos incisos I e II do §1º do art. 49 do Anexo IV do RASF; (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). V - curso de extensão ou aperfeiçoamento promovido por Instituição de Ensino Superior nacional ou estrangeira, respectivamente avaliadas na forma dos incisos I e II do §1º do art. 49 do Anexo IV do RASF; (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). VI - curso livre promovido por instituição previamente avaliada e aprovada pelo ILB, com descrição dos motivos que qualificam o curso como relevante para o atingimento da missão institucional do Senado Federal; (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). VII - estágio sabático em instituição de ensino, avaliada na forma dos incisos I e II do §1º do art. 49 do Anexo IV do RASF, respectivamente em instituição de pesquisa ou em organismo público nacional ou internacional, respectivamente. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). Parágrafo único. O ILB, observado o estabelecido no § 1º do art. 47 do Anexo IV do RASF, dará ciência ao servidor para que formule novo pedido a seu juízo de conveniência quando constatado que o pleito: I - se refira a ação de capacitação que corresponda a curso livre promovido por instituição não avaliada ou não aprovada pelo ILB; ou II - a Instituição de Ensino Superior não esteja qualificada na forma do § 1º do art. 49 do Anexo IV do RASF. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023).", "tipos de ação de capacitação", "enquadramento ação",
+
+"Art. 8º A unidade responsável pela gestão de pessoas comunicará ao servidor a perda da eficácia da licença para capacitação nos casos previstos no § 2º, bem como adotará as providências necessárias ao cumprimento do disposto no § 3º, ambos do art. 47 do Anexo IV do RASF. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023).", "direito a licença para capacitação", "perda eficácia",
+
+"Art. 9º É facultado ao servidor que concluir antecipadamente as ações de capacitação que fundamentaram a concessão da licença requerer o retorno imediato ao serviço, sem prejuízo da efetiva comprovação de sua realização. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). § 1º O servidor deverá requerer a conclusão antecipada da licença para capacitação até a data do seu efetivo retorno ao serviço. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). § 2º Na data do efetivo retorno antecipado ao serviço, nos termos do § 1º, o servidor deverá obter a ciência da sua chefia imediata e comunicá-la ao ILB. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023).", "direito a licença para capacitação", "retorno imediato",
+
+"Art. 10. Na exclusiva hipótese de caso fortuito ou força maior, devidamente justificada e comprovada, o servidor poderá requerer a interrupção da licença para capacitação. § 1º O requerimento de interrupção obriga o servidor à comprovação do evento aludido como caso fortuito ou força maior e da ação de capacitação realizada até a data anterior ao pedido. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). § 2º O servidor deverá retornar imediatamente ao serviço, mediante notificação de sua chefia imediata e comunicação ao ILB.", "direito a licença para capacitação", "interrupção licença",
+
+"Art. 11. Nas situações previstas nos arts. 9º e 10, o ILB encaminhará manifestação conclusiva quanto ao cumprimento dos requisitos normativos à deliberação da Diretoria-Geral.", "procedimentos e análise de pedidos", "manifestação conclusiva",
+
+"Art. 12. O afastamento para a participação em estágio sabático será comprovado pelo servidor mediante a apresentação de relatório emitido pela instituição responsável, que indique o período do estágio e que declare as atividades e os projetos efetivamente desenvolvidos pelo servidor.", "direito a afastamento para capacitação", "estágio sabático",
+
+"Art. 13. Caberá ao ILB o acompanhamento das ações de capacitação que ultrapassarem 180 (cento e oitenta) dias, podendo estabelecer procedimentos para a necessária prestação de contas e comprovação das ações de capacitação autorizadas aos servidores. Parágrafo único. O disposto no caput deste artigo aplica-se à hipótese prevista no § 1º-A do art. 52 do Anexo IV do RASF. (Incluído pelo Ato da Diretoria-Geral nº 30/2023).", "monitoramento e orientações", "acompanhar capacitação",
+
+"Art. 14. O descumprimento dos requisitos normativos e dos termos do deferimento da ação de capacitação deverá ser submetido à deliberação da Diretoria-Geral. § 1º O ILB instruirá os autos para: I - descrever os fatos e indicar o dispositivo regulamentar infringido pelo servidor; II - referenciar o termo de compromisso firmado pelo servidor que contenha declaração de pleno conhecimento e ciência da norma regulamentar e dos termos da ação de capacitação deferida; III - analisar os argumentos apresentados na manifestação prévia do servidor. § 2º O descumprimento das obrigações normativas pelo servidor deverá ser comunicado pelo ILB à Diretoria-Geral no prazo máximo de 30 (trinta) dias, contados de sua ocorrência ou do termo do prazo final para a comprovação da ação de capacitação autorizada.", "infrações e proibições", "descumprimento requisitos",
+
+"Art. 15. A determinação de cassação da licença para capacitação será registrada pela unidade responsável pela gestão de pessoas nos assentamentos funcionais do servidor e acarretará o devido ressarcimento das importâncias devidas ao erário, mediante desconto em folha de pagamento. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). § 1º A cassação de licença para capacitação implicará a perda do direito de gozo do período cassado. § 2º Havendo indício de descumprimento de dever funcional, a Diretoria-Geral executará as medidas disciplinares previstas no RASF.", "penalidades e sanções", "cassação licença",
+
+"Art. 16. Será cassada a licença ou o afastamento: I - no período em que não houver comprovação de qualquer ação de capacitação formal realizada pelo servidor; II - quando a carga horária total executada for inferior à carga horária total autorizada para a referida licença ou afastamento; (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). III - cuja ação de capacitação executada exceder a data inicial ou final da respectiva licença ou afastamento; (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). IV - quando o objeto da ação de capacitação, o período ou a instituição promotora forem divergentes do estabelecido no deferimento da autoridade competente; V - quando houver qualquer alteração unilateral da ação de capacitação deferida, sem a prévia autorização da autoridade competente; VI - quando for averiguado o descumprimento dos requisitos legais e normativos, bem como o descumprimento dos termos do deferimento da ação de capacitação; VII - quando não forem acolhidas as justificativas para a interrupção da ação de capacitação; VIII - quando não houver o efetivo retorno ao serviço decorrente de conclusão antecipada ou interrupção requeridas para a licença para capacitação; (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). IX - quando não houver comprovação formal que ateste a conclusão exitosa da ação de capacitação autorizada, nos termos do RASF, deste Ato e do deferimento. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023). Parágrafo único. Para atendimento ao disposto no § 3º do art. 52 do Anexo IV do RASF: I - na hipótese do § 7º do art. 52 do Anexo IV do RASF, considerar-se-á 1 (um) dia de cassação para cada 1 (um) dia de ação de capacitação excedente às datas inicial ou final da licença ou afastamento deferidos ao servidor; (Incluído pelo Ato da Diretoria-Geral nº 30/2023) II - em se tratando de descumprimento dos demais requisitos regulamentares, considerar-se-á a proporcionalidade entre a carga horária das ações de capacitação reconhecidas pela Administração e a carga horária total contida no deferimento da respectiva licença ou afastamento. (Incluído pelo Ato da Diretoria-Geral nº 30/2023).", "penalidades e sanções", "cassação requisitos",
+
+"Art. 17. Ato conjunto do ILB e da Diretoria-Geral disciplinará o disposto no inciso V do caput do art. 49 do Anexo IV do RASF. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023).", "procedimentos adicionais e outras disposições", "ato conjunto",
+
+"Art. 18. As regras estabelecidas no Ato da Comissão Diretora nº 14, de 2023, aplicar-se-ão aos requerimentos para a concessão de licença para capacitação e para a participação em atividades de capacitação que forem devidamente protocolados a partir da data de vigência do referido Ato. (Redação dada pelo Ato da Diretoria-Geral nº 30/2023).", "direito a licença para capacitação", "requerimentos capacitação",
+
+"Art. 19. Este Ato entra em vigor na data de sua publicação. Senado Federal, 16 de julho de 2021. Ilana Trombka, Diretora-Geral. Publicado: - Boletim Administrativo do Senado Federal, nº 7918, seção 1, de 16/07/2021, p. 6.", "procedimentos adicionais e outras disposições", "entrada vigor"
+)
+
+ADG17_2021 <- as_tibble(ADG17_2021, .name_repair = ("unique"))
+
+rm(ADG17_2021_tbl)
+ADG17_2021 <- matrix(ADG17_2021$value, ncol = 3, byrow = TRUE)
+
+l8112 <- matrix(l8112, ncol = 3, byrow = FALSE)
+
+
+
+```
+
+
+```{r}
+
+# Definição dos vetores com os textos dos dispositivos
+
+tema <- c(
+  "I. Licenças (Norma Infralegal do Senado)",
+  "I. Licenças (Norma Infralegal do Senado)",
+  "II. Afastamentos Gerais (Senado Federal)",
+  "II. Afastamentos Gerais (Senado Federal)",
+  "Competência e Finalidade",
+  "Definição de Programas e Critérios",
+  "Requisitos para Concessão / Condicionantes",
+  "Obrigação de Permanência / Condição Pós-Afastamento",
+  "Ressarcimento em Caso de Desistência ou Não Cumprimento",
+  "Procedimentos Adicionais e Outras Disposições",
+  "Procedimentos Adicionais e Outras Disposições",
+  "Procedimentos Adicionais e Outras Disposições",
+  "Procedimentos Adicionais e Outras Disposições",
+  "Procedimentos Adicionais e Outras Disposições",
+  "Procedimentos Adicionais e Outras Disposições",
+  "IV. Deveres Pós-Curso",
+  "V. Outras Disposições – Instrução e Apoio Financeiro (Capacitação Externa)",
+  "V. Outras Disposições – Instrução e Apoio Financeiro (Capacitação Externa)",
+  "V. Outras Disposições – Instrução e Apoio Financeiro (Capacitação Externa)",
+  "V. Outras Disposições – Instrução e Apoio Financeiro (Capacitação Externa)"
+)
+
+resolucao <- c(
+  "Art. 132: \"São competentes para conceder licenças aos servidores do Senado, após verificação do preenchimento dos requisitos legais e regulamentares:\nI – o Presidente, nos casos de quaisquer licenças no exterior;\nII – o Diretor-Geral, nos demais casos.\n§ 1º A licença capacitação será concedida conforme o disposto no Anexo IV deste Regulamento.\n§ 2º Ato do Diretor-Geral regulamentará os procedimentos e prazos relativos às licenças previstas em lei.\"",
+  "Art. 133: \"Ao servidor ocupante de cargo em comissão não se concederá, nessa qualidade, licença para tratar de interesses particulares.\"",
+  "Art. 134: \"São competentes para autorizar os afastamentos dos servidores efetivos do Senado Federal, preenchidos os requisitos legais e regulamentares:\nI – o Presidente, nos casos de:\na) cessão para servir outro órgão ou entidade, com exercício de cargo em comissão ou função de confiança, nos moldes do inciso I do caput do art. 93 da Lei nº 8.112, de 1990;\nb) requisição de servidor para exercício fora do Senado Federal em outro órgão público, em caráter eventual ou transitório, sem exercício de cargo em comissão ou função de confiança, nos moldes do inciso II do caput do art. 93 da Lei nº 8.112, de 1990;\nc) afastamentos no exterior;\nII – o Diretor-Geral, nos casos de:\na) quaisquer afastamentos do servidor no país, previstos na Lei nº 8.112, de 1990;\nb) afastamento para realização de missão oficial de representação do Senado Federal.\n§ 1º Entende-se como missão oficial de representação do Senado Federal o afastamento eventual e transitório do servidor, para:\nI – desempenho de trabalho, atividade ou ação institucional prevista em normas internas;\nII – para participar, na qualidade de jurista, assessor ou expositor, de atividade de interesse do Senado Federal.\n§ 2º O afastamento para capacitação do servidor será concedido conforme o disposto no Anexo IV deste Regulamento.\n§ 3º Ato do Diretor-Geral regulamentará os procedimentos e prazos relativos aos afastamentos previstos em lei.\"",
+  "Art. 135: \"Os afastamentos para cessão ou requisição de servidor do Senado Federal serão autorizados para fim determinado e a prazo certo, e não poderão ultrapassar o prazo de 60 (sessenta) dias do término do mandato do Presidente que o concedeu.\n§ 1º O período de afastamento correspondente à requisição é considerado para todos os efeitos legais, inclusive para progressão funcional.\n§ 2º A requisição de servidores do Senado Federal poderá ser realizada mediante celebração de convênio ou acordo de cooperação técnica, que deverá prever:\nI – o fator motivador da assinatura;\nII – a obrigação dos órgãos ou entidades de informarem qualquer ocorrência na vida funcional do servidor requisitado, para fins de controle cadastral;\nIII – delimitação do marco inicial e final da requisição;\nIV – a forma de reembolso, quando houver, das despesas decorrentes da assinatura.\n§ 3º Não se aplicam as hipóteses previstas em lei específica de requisição do servidor sem autorização expressa do Presidente do Senado Federal, em observância aos arts. 2º e 52, inciso XIII, ambos da Constituição Federal.\"",
+  "Art. 35: \"A concessão de afastamento de servidor do Senado Federal para participar de programas de pós‑graduação stricto sensu não acarretará ônus adicional, sendo devido o pagamento apenas da parcela prevista no inciso I do § 2º do art. 29 deste Anexo, salvo autorização excepcional do Presidente do Senado Federal.\"",
+  "NA",
+  "Art. 40: \"A concessão de afastamento para participação de programas de Pós‑graduação Stricto sensu depende do cumprimento dos seguintes requisitos pelo servidor:\nI – exercer cargo efetivo no Senado Federal pelo período mínimo de três anos para mestrado e quatro anos para doutorado ou pós‑doutorado;\nII – assinatura de termo de compromisso de permanência no Senado Federal, na condição de servidor ativo, por período mínimo equivalente ao período concedido, contado da data de retorno do afastamento;\nIII – não tenha idade para ser alcançado pela aposentadoria compulsória no espaço de tempo entre o início do curso de pós‑graduação e o término do período a que se refere o inciso II deste artigo;\nIV – não tenha se afastado para participação em programa de mestrado ou doutorado nos últimos 2 anos ou, para programa de pós‑doutorado, nos últimos 4 anos anteriores à data da solicitação do novo afastamento;\nV – encontre-se em efetivo exercício no período de inscrição e não esteja afastado para exercício de mandato eletivo ou para servir em organismo internacional de que o Brasil participe ou com o qual coopere;\nVI – não tenha descumprido qualquer obrigação assumida em função de afastamentos anteriores, sem que as justificativas tenham sido aceitas pelo Senado Federal.\"",
+  "NA",
+  "Art. 43: \"O Diretor‑Geral determinará o ressarcimento ao Senado Federal, do valor correspondente ao incentivo concedido, do servidor que:\nI – desistir, sem motivo justificado, da ação de capacitação motivadora do afastamento;\nII – durante o afastamento, aposentar‑se voluntariamente, solicitar exoneração ou tomar posse em outro cargo inacumulável;\nIII – não permanecer no serviço público federal, na condição de servidor ativo, por período mínimo equivalente ao afastamento concedido, contado da data de retorno do servidor;\nIV – não obtiver o título que justificou seu afastamento, salvo na hipótese comprovada de força maior ou de caso fortuito, na forma da Lei;\nV – não cumprir os deveres impostos no art. 42 deste Anexo.\nParágrafo único. Não se exigirá o ressarcimento do servidor que se aposentar por invalidez ou que, por motivos alheios à sua vontade, ficar impossibilitado de concluir o curso, mediante justificativa a ser validada pelo Diretor‑Geral.\"",
+  "Art. 36: \"A concessão do afastamento para programas de pós‑graduação stricto sensu pressupõe manifestação:\nI – do titular do órgão de lotação quanto à pertinência temática da ação de capacitação para o atingimento da missão institucional da unidade, e quanto à conveniência e a oportunidade da liberação do servidor, nos termos do parágrafo único deste artigo;\nII – da unidade responsável pela gestão de pessoas quanto ao direito do servidor à licença e ao atendimento do disposto nos arts. 5º e 54 deste Anexo;\nIII – do Comitê Científico Pedagógico quanto à adequação do programa pedagógico, à qualidade e à classificação da Instituição promotora, e à relevância temática da ação de capacitação para o atingimento da missão institucional do Senado Federal.\"",
+  "Art. 37: \"A concessão do afastamento para programas de Pós‑Graduação poderá ser precedida de processo seletivo interno realizado pelo Instituto Legislativo Brasileiro na forma de Regulamento, aberto à participação de servidores efetivos do Senado Federal que preencham os requisitos deste Anexo.\n§ 1º O PCASF conterá previsão de autorização de afastamentos para participação em curso de mestrado, doutorado e pós‑doutorado.\n§ 2º Uma vez realizado o processo seletivo previsto no caput, a autoridade definida nos §§ 1º e 2º do art. 35 deste Anexo poderá autorizar a concessão do afastamento.\n§ 3º Na ausência de processo seletivo para afastamento de servidores na modalidade pós‑graduação stricto sensu, as solicitações devem ser instruídas pelo ILB e encaminhadas à Diretoria‑Geral para deliberação da autoridade competente.\"",
+  "Art. 38: \"Aplica‑se o art. 5º deste Anexo aos afastamentos para Pós‑Graduação.\"",
+  "Art. 39: \"O período do afastamento está adstrito à respectiva duração do programa de estudos, podendo ser prorrogado mediante solicitação justificada, observadas as disposições legais pertinentes.\n§ 1º Compete à autoridade concedente deliberar sobre a prorrogação do período de afastamento, mediante solicitação justificada do servidor afastado, ouvido o titular da unidade na forma do parágrafo único do art. 36 deste Anexo.\n§ 2º O período de afastamento abrangerá, necessariamente, os períodos de férias anuais, de recesso do Senado Federal e será considerado como de efetivo exercício para todos os fins.\"",
+  "Art. 44: \"Aplicam‑se aos afastamentos para capacitação externa em cursos de pós‑graduação, no que couber, as disposições do arts. 26, 27, 28 e 29 deste Anexo.\"",
+  "Art. 45: \"O Presidente do Senado Federal poderá autorizar a participação de Senadores em programas de pós‑graduação stricto sensu sem o afastamento do exercício do mandato eletivo.\n§ 1º Os custos da participação de Senadores em ações externas de capacitação decorrentes das taxas de inscrição ou matrícula, mensalidade, semestralidade ou anualidade, conforme o caso, poderão ser arcados pelo Senado.\n§ 2º Quando o Senador for contemplado com algum auxílio financeiro da entidade promotora ou de qualquer outra fonte, deverá informar ao Senado, sob pena de responsabilidade.\n§ 3º O prazo para conclusão da ação externa de capacitação não poderá ultrapassar o término do mandato eletivo.\n§ 4º Após a conclusão do curso, o Senador deverá entregar ao Senado cópia da dissertação ou tese aprovada para a obtenção da titulação, a qual constará do acervo da Biblioteca do Senado, para consulta pública.\n§ 5º O Presidente do Senado Federal determinará o ressarcimento ao Senado Federal do valor correspondente ao incentivo concedido, no caso de o Senador desistir sem motivo justificado da ação de capacitação ou não obtiver a titulação correspondente no prazo previsto.\n§ 6º Aplicam‑se, no que couber, as normas para a capacitação dos servidores do Senado Federal.\"",
+  "Art. 42: \"São deveres do servidor, após a conclusão do curso:\nI – entregar, em até sessenta dias após a conclusão do programa, cópia da dissertação ou tese aprovada para a obtenção da titulação;\nII – executar ação de disseminação e aplicação do conhecimento adquirido na pós‑graduação, quando requisitado pelo Instituto Legislativo Brasileiro, nos termos do § 8º do art. 19 deste Anexo;\nIII – prestar outras informações a respeito de suas atividades acadêmicas que forem solicitadas pelo Instituto Legislativo Brasileiro.\"",
+  "Art. 26: \"O Instituto Legislativo Brasileiro instruirá os processos relativos à participação de servidores em atividades de capacitação externa, manifestando-se, especialmente, quanto aos seguintes aspectos:\nI – compatibilidade com o PCASF;\nII – ao cumprimento, junto ao Instituto Legislativo Brasileiro, das obrigações decorrentes de eventual participação em atividades anteriores de capacitação;\nIII – à disponibilidade de recursos orçamentários para cobrir as despesas, quando couber;\nIV – à avaliação das alternativas de capacitação disponíveis no mercado que poderiam melhor atender às necessidades, especialmente em relação à qualidade e à relação custo‑benefício;\nV – ao atendimento das exigências deste Anexo e da legislação pertinente sobre a matéria;\nVI – ao rendimento satisfatório do servidor em ações de capacitação e desenvolvimento anteriormente realizadas.\"",
+  "Art. 27: \"A solicitação para participação em atividades externas de capacitação deve ser protocolada respeitando‑se os seguintes prazos mínimos, sob pena de indeferimento do pleito:\nI – trinta dias de antecedência da data de realização do evento, quando se tratar de ações no país;\nII – quarenta e cinco dias de antecedência da data de realização do evento, quando se tratar de ações no exterior.\"",
+  "Art. 28: \"São competentes para autorizar a participação de servidores em ações externas de capacitação e desenvolvimento:\nI – o Presidente do Senado Federal, nos casos de afastamento do país para ações de capacitação, facultada a delegação;\nII – o Diretor‑Geral do Senado Federal, nos demais casos.\n§ 1º Da decisão que indeferir o pedido caberá recurso:\nI – na forma do parágrafo único do art. 191 deste Regulamento Administrativo, na hipótese do inciso I do caput;\nII – ao Primeiro‑Secretário, na hipótese do inciso II do caput.\n§ 2º Compete ao ILB instruir os requerimentos de participação de servidores, bem como, quando solicitado, os eventuais recursos administrativos destes decorrentes.\"",
+  "Art. 29: \"As modalidades de participação do Senado Federal no apoio financeiro à participação de servidores em ações externas de capacitação são as seguintes:\nI – sem ônus, sendo devido o pagamento das parcelas previstas nos incisos I e II do § 2º deste artigo;\nII – com ônus, sendo devido o pagamento definido no inciso I do caput deste artigo e de quaisquer parcelas previstas nos incisos III a VI do § 2º deste artigo.\n§ 1º Os critérios de aplicação das modalidades previstas no caput serão definidos pelo PCASF.\n§ 2º O servidor participante de ação externa de capacitação que implique apoio financeiro poderá receber as seguintes parcelas:\nI – todas as parcelas remuneratórias ordinárias relativas a seu cargo e nível na carreira;\nII – gratificação pelo exercício de função comissionada, nos casos em que permanecer designado durante o afastamento;\nIII – diárias;\nIV – taxas de inscrição ou matrícula, mensalidade, semestralidade ou anualidade, conforme o caso;\nV – despesas com passagens do servidor;\nVI – seguro saúde, quando for o caso, nos termos da lei.\n§ 3º Nos casos em que a ação de capacitação for realizada no Distrito Federal e a modalidade prevista no inciso I do caput for aplicável, o servidor poderá receber apenas as parcelas previstas nos incisos I, II e IV do § 2º deste artigo.\n§ 4º Quando o servidor for contemplado com auxílio financeiro da entidade promotora, ou de qualquer outra fonte, esse valor deverá ser informado no requerimento, sob pena de responsabilidade, para que seja deduzido das correspondentes parcelas a que se referem os incisos III, IV, V e VI do § 2º deste artigo.\n§ 5º Os custos da participação de servidor em ações externas de capacitação decorrentes de iniciativa própria, sem a prévia e necessária autorização do Senado Federal, serão de exclusiva responsabilidade do servidor.\""
+)
+
+lei <- c(
+  "NA",
+  "NA",
+  "NA",
+  "NA",
+  "Art. 96‑A: \"O servidor poderá, no interesse da Administração, e desde que a participação não possa ocorrer simultaneamente com o exercício do cargo ou mediante compensação de horário, afastar‑se do exercício do cargo efetivo, com a respectiva remuneração, para participar em programa de pós‑graduação stricto sensu em instituição de ensino superior no País.\"",
+  "Art. 96‑A, § 1º: \"Ato do dirigente máximo do órgão ou entidade definirá, em conformidade com a legislação vigente, os programas de capacitação e os critérios para participação em programas de pós‑graduação no País, com ou sem afastamento do servidor, que serão avaliados por um comitê constituído para este fim.\"",
+  "Art. 96‑A, §§ 2º e 3º: \"Os afastamentos para realização de programas de mestrado e doutorado somente serão concedidos aos servidores titulares de cargos efetivos no respectivo órgão ou entidade há pelo menos 3 (três) anos para mestrado e 4 (quatro) anos para doutorado, incluído o período de estágio probatório, que não tenham se afastado por licença para tratar de assuntos particulares para gozo de licença capacitação ou com fundamento neste artigo nos 2 (dois) anos anteriores à data da solicitação de afastamento.\n\nOs afastamentos para realização de programas de pós‑doutorado somente serão concedidos aos servidores titulares de cargos efetivos no respectivo órgão ou entidade há pelo menos quatro anos, incluído o período de estágio probatório, e que não tenham se afastado por licença para tratar de assuntos particulares ou com fundamento neste artigo, nos quatro anos anteriores à data da solicitação de afastamento.\"",
+  "NA",
+  "Art. 96‑A, §§ 5º e 6º: \"Caso o servidor venha a solicitar exoneração do cargo ou aposentadoria, antes de cumprido o período de permanência previsto no § 4º deste artigo, deverá ressarcir o órgão ou entidade, na forma do art. 47 da Lei nº 8.112, de 11 de dezembro de 1990, dos gastos com seu aperfeiçoamento.\n\nCaso o servidor não obtenha o título ou grau que justificou seu afastamento no período previsto, aplica‑se o disposto no § 5º deste artigo, salvo na hipótese comprovada de força maior ou de caso fortuito, a critério do dirigente máximo do órgão ou entidade.\"",
+  "NA",
+  "NA",
+  "NA",
+  "NA",
+  "NA",
+  "NA",
+  "NA",
+  "NA",
+  "NA",
+  "NA",
+  "NA",
+  "NA"
+)
+
+# Criação do data frame
+df <- data.frame(Tema = tema, Resolucao = resolucao, Lei = lei, stringsAsFactors = FALSE)
+
+# Exibição do data frame
+print(df)
+
+
+
+# Vetor com os temas (já definido anteriormente)
+tema <- c(
+  "I. Licenças (Norma Infralegal do Senado)",
+  "II. Afastamentos Gerais (Senado Federal)",
+  "Competência e Finalidade",
+  "Definição de Programas e Critérios",
+  "Requisitos para Concessão / Condicionantes",
+  "Obrigação de Permanência / Condição Pós-Afastamento",
+  "Ressarcimento em Caso de Desistência ou Não Cumprimento",
+  "Procedimentos Adicionais e Outras Disposições",
+  "IV. Deveres Pós-Curso",
+  "V. Outras Disposições – Instrução e Apoio Financeiro (Capacitação Externa)"
+)
+
+# Vetor "vetor4": dispositivos do Ato da Diretoria-Geral nº 17, de 2021,
+# organizados conforme os temas definidos no vetor "tema".
+vetor4 <- c(
+  # Tema 1: I. Licenças (Norma Infralegal do Senado)
+  "NA",
+  
+  # Tema 2: II. Afastamentos Gerais (Senado Federal)
+  "NA",
+  
+  # Tema 3: Competência e Finalidade
+  "Art. 1º: Este Ato estabelece os procedimentos para o requerimento, a autorização e a comprovação das ações de capacitação no âmbito do Senado Federal.",
+  
+  # Tema 4: Definição de Programas e Critérios
+  paste(
+    "Art. 4º: Para o cumprimento do disposto no inciso I do art. 2º, o ILB, em conjunto com a unidade responsável pela gestão de pessoas, instituirá formulários padronizados para cada modalidade de ação de capacitação requerida, que conterão as informações necessárias à apreciação do pleito, devendo dispor sobre a:",
+    "I - descrição da chefia imediata de como a ação de capacitação pretendida se relaciona com as competências inerentes à Função Comissionada ou às atividades laborais desenvolvidas pelo requerente;",
+    "II - declaração do titular da unidade de exercício do servidor que:",
+    "   a) descreva e ateste a pertinência temática da ação de capacitação para o atingimento da missão institucional da unidade;",
+    "   b) declare que o afastamento do servidor, caso autorizado, é oportuno e que:",
+    "      1. não acarretará prejuízo às atividades da unidade;",
+    "      2. não ensejará o pagamento de horas extras para garantir o cumprimento das atividades da unidade, salvo em caso de necessidade oriunda de evento imprevisto ou imprevisível, devidamente reconhecida pela Diretoria-Geral;",
+    "      3. não implicará qualquer tipo de requisição de pessoal para garantir o cumprimento das atividades da unidade, seja de servidor efetivo ou comissionado, seja de qualquer tipo de colaborador;",
+    "III - indicação da modalidade de apoio financeiro requerido e das parcelas aplicáveis ao pedido.",
+    "",
+    "Art. 7º: O ILB informará o enquadramento da ação de capacitação entre uma das seguintes categorias:",
+    "I - ação de capacitação promovida pelo ILB;",
+    "II - ação de capacitação promovida por escolas de governo das esferas federal, estadual ou municipal;",
+    "III - elaboração de monografia ou trabalho de conclusão de curso de graduação ou pós-graduação lato sensu, promovido por Instituição de Ensino Superior nacional ou estrangeira, respectivamente avaliadas na forma dos incisos I e II do §1º do art. 49 do Anexo IV do RASF;",
+    "IV - realização de pesquisa ou elaboração de parte ou conclusão de dissertação ou tese de conclusão de curso de pós-graduação stricto sensu, promovido por Instituição de Ensino Superior nacional ou estrangeira, respectivamente avaliadas na forma dos incisos I e II do §1º do art. 49 do Anexo IV do RASF;",
+    "V - curso de extensão ou aperfeiçoamento promovido por Instituição de Ensino Superior nacional ou estrangeira, respectivamente avaliadas na forma dos incisos I e II do §1º do art. 49 do Anexo IV do RASF;",
+    "VI - curso livre promovido por instituição previamente avaliada e aprovada pelo ILB, com descrição dos motivos que qualificam o curso como relevante para o atingimento da missão institucional do Senado Federal;",
+    "VII - estágio sabático em instituição de ensino, avaliada na forma dos incisos I e II do §1º do art. 49 do Anexo IV do RASF, respectivamente em instituição de pesquisa ou em organismo público nacional ou internacional, respectivamente.",
+    "Parágrafo único: O ILB, observado o estabelecido no § 1º do art. 47 do Anexo IV do RASF, dará ciência ao servidor para que formule novo pedido a seu juízo de conveniência quando constatado que o pleito:",
+    "I - se refira a ação de capacitação que corresponda a curso livre promovido por instituição não avaliada ou não aprovada pelo ILB; ou",
+    "II - a Instituição de Ensino Superior não esteja qualificada na forma do § 1º do art. 49 do Anexo IV do RASF."
+  ),
+  
+  # Tema 5: Requisitos para Concessão / Condicionantes
+  paste(
+    "Art. 2º: O processo administrativo que instruir a participação de servidor em capacitação externa em cursos de pós-graduação stricto sensu e na concessão de licença para capacitação conterá:",
+    "I - o requerimento para a ação de capacitação pretendida, que será assinado pelo servidor, pela chefia imediata e pelo titular da unidade de exercício do servidor, devidamente apensado de termo de compromisso assinado pelo requerente;",
+    "II - pronunciamento conclusivo da unidade responsável pela gestão de pessoas sobre o atendimento dos requisitos legais e regulamentares sob sua competência;",
+    "III - indicação de disponibilidade orçamentária pela Secretaria de Finanças, Orçamento e Contabilidade (SAFIN), no caso de a ação de capacitação correspondente gerar ônus ao Senado Federal, de acordo com o inciso II do caput do art. 29 do Anexo IV do RASF;",
+    "IV - informação do Instituto Legislativo Brasileiro (ILB) que indicará se a ação de capacitação requerida atende aos critérios qualitativos e às demais regras regulamentares estabelecidas no RASF e neste Ato.",
+    "",
+    "Art. 3º: O servidor deverá juntar ao requerimento e ao termo de compromissos firmados:",
+    "I - comprovante de inscrição ou aceitação junto à instituição promotora da ação de capacitação;",
+    "II - listagem das ações de capacitação pretendidas e respectivas cargas horárias individuais e total;",
+    "III - conteúdo programático;",
+    "IV - demais documentos requeridos pelo ILB;",
+    "V - (revogado).",
+    "",
+    "Art. 5º: O ILB estabelecerá termo de compromisso a ser firmado pelo servidor quando do requerimento da ação de capacitação, o qual consignará declaração expressa do servidor quanto ao conhecimento dos dispositivos legais e regulamentares que regem a ação de capacitação pleiteada e quanto à ciência das cominações em caso de descumprimento dos referidos normativos."
+  ),
+  
+  # Tema 6: Obrigação de Permanência / Condição Pós-Afastamento
+  "NA",
+  
+  # Tema 7: Ressarcimento em Caso de Desistência ou Não Cumprimento
+  "Art. 15: A determinação de cassação da licença para capacitação será registrada pela unidade responsável pela gestão de pessoas nos assentamentos funcionais do servidor e acarretará o devido ressarcimento das importâncias devidas ao erário, mediante desconto em folha de pagamento.\n§ 1º: A cassação de licença para capacitação implicará a perda do direito de gozo do período cassado.\n§ 2º: Havendo indício de descumprimento de dever funcional, a Diretoria-Geral executará as medidas disciplinares previstas no RASF.",
+  
+  # Tema 8: Procedimentos Adicionais e Outras Disposições
+  paste(
+    "Art. 6º: A ocorrência simultânea de pedidos para a concessão de licença para capacitação que ultrapasse o limite especificado no caput do art. 54 do Anexo IV do RASF será comunicada pelo ILB ao titular da unidade, que definirá a ordem de priorização dos requerimentos.",
+    "Parágrafo único: O servidor que tiver seu requerimento preterido, nos termos deste artigo, será cientificado pelo ILB e o processo será arquivado.",
+    "Art. 8º: A unidade responsável pela gestão de pessoas comunicará ao servidor a perda da eficácia da licença para capacitação nos casos previstos no § 2º, bem como adotará as providências necessárias ao cumprimento do disposto no § 3º, ambos do art. 47 do Anexo IV do RASF.",
+    "Art. 9º: É facultado ao servidor que concluir antecipadamente as ações de capacitação que fundamentaram a concessão da licença requerer o retorno imediato ao serviço, sem prejuízo da efetiva comprovação de sua realização.",
+    "§ 1º: O servidor deverá requerer a conclusão antecipada da licença para capacitação até a data do seu efetivo retorno ao serviço.",
+    "§ 2º: Na data do efetivo retorno antecipado ao serviço, o servidor deverá obter a ciência da sua chefia imediata e comunicá-la ao ILB.",
+    "Art. 10: Na exclusiva hipótese de caso fortuito ou força maior, devidamente justificada e comprovada, o servidor poderá requerer a interrupção da licença para capacitação.",
+    "§ 1º: O requerimento de interrupção obriga o servidor à comprovação do evento aludido como caso fortuito ou força maior e da ação de capacitação realizada até a data anterior ao pedido.",
+    "§ 2º: O servidor deverá retornar imediatamente ao serviço, mediante notificação de sua chefia imediata e comunicação ao ILB.",
+    "Art. 11: Nas situações previstas nos arts. 9º e 10, o ILB encaminhará manifestação conclusiva quanto ao cumprimento dos requisitos normativos à deliberação da Diretoria-Geral.",
+    "Art. 12: O afastamento para a participação em estágio sabático será comprovado pelo servidor mediante a apresentação de relatório emitido pela instituição responsável, que indique o período do estágio e que declare as atividades e os projetos efetivamente desenvolvidos pelo servidor.",
+    "Art. 13: Caberá ao ILB o acompanhamento das ações de capacitação que ultrapassarem 180 (cento e oitenta) dias, podendo estabelecer procedimentos para a necessária prestação de contas e comprovação das ações de capacitação autorizadas aos servidores.",
+    "Parágrafo único: O disposto no caput deste artigo aplica-se à hipótese prevista no § 1º-A do art. 52 do Anexo IV do RASF.",
+    "Art. 14: O descumprimento dos requisitos normativos e dos termos do deferimento da ação de capacitação deverá ser submetido à deliberação da Diretoria-Geral.",
+    "§ 1º: O ILB instruirá os autos para: I - descrever os fatos e indicar o dispositivo regulamentar infringido pelo servidor; II - referenciar o termo de compromisso firmado pelo servidor que contenha declaração de pleno conhecimento e ciência da norma regulamentar e dos termos da ação de capacitação deferida; III - analisar os argumentos apresentados na manifestação prévia do servidor.",
+    "§ 2º: O descumprimento das obrigações normativas pelo servidor deverá ser comunicado pelo ILB à Diretoria-Geral no prazo máximo de 30 (trinta) dias, contados de sua ocorrência ou do termo do prazo final para a comprovação da ação de capacitação autorizada.",
+    "Art. 16: Será cassada a licença ou o afastamento:",
+    "I - no período em que não houver comprovação de qualquer ação de capacitação formal realizada pelo servidor;",
+    "II - quando a carga horária total executada for inferior à carga horária total autorizada para a referida licença ou afastamento;",
+    "III - cuja ação de capacitação executada exceder a data inicial ou final da respectiva licença ou afastamento;",
+    "IV - quando o objeto da ação de capacitação, o período ou a instituição promotora forem divergentes do estabelecido no deferimento da autoridade competente;",
+    "V - quando houver qualquer alteração unilateral da ação de capacitação deferida, sem a prévia autorização da autoridade competente;",
+    "VI - quando for averiguado o descumprimento dos requisitos legais e normativos, bem como o descumprimento dos termos do deferimento da ação de capacitação;",
+    "VII - quando não forem acolhidas as justificativas para a interrupção da ação de capacitação;",
+    "VIII - quando não houver o efetivo retorno ao serviço decorrente de conclusão antecipada ou interrupção requeridas para a licença para capacitação;",
+    "IX - quando não houver comprovação formal que ateste a conclusão exitosa da ação de capacitação autorizada, nos termos do RASF, deste Ato e do deferimento.",
+    "Parágrafo único: Para atendimento ao disposto no § 3º do art. 52 do Anexo IV do RASF:",
+    "I - na hipótese do § 7º do art. 52 do Anexo IV do RASF, considerar-se-á 1 (um) dia de cassação para cada 1 (um) dia de ação de capacitação excedente às datas inicial ou final da licença ou afastamento deferidos ao servidor;",
+    "II - em se tratando de descumprimento dos demais requisitos regulamentares, considerar-se-á a proporcionalidade entre a carga horária das ações de capacitação reconhecidas pela Administração e a carga horária total contida no deferimento da respectiva licença ou afastamento.",
+    "Art. 17: Ato conjunto do ILB e da Diretoria-Geral disciplinará o disposto no inciso V do caput do art. 49 do Anexo IV do RASF.",
+    "Art. 18: As regras estabelecidas no Ato da Comissão Diretora nº 14, de 2023, aplicar-se-ão aos requerimentos para a concessão de licença para capacitação e para a participação em atividades de capacitação que forem devidamente protocolados a partir da data de vigência do referido Ato.",
+    "Art. 19: Este Ato entra em vigor na data de sua publicação."
+  ),
+  
+  # Tema 9: IV. Deveres Pós-Curso
+  "NA",
+  
+  # Tema 10: V. Outras Disposições – Instrução e Apoio Financeiro (Capacitação Externa)
+  "Art. 2, item III: indicação de disponibilidade orçamentária pela Secretaria de Finanças, Orçamento e Contabilidade (SAFIN), no caso de a ação de capacitação correspondente gerar ônus ao Senado Federal, de acordo com o inciso II do caput do art. 29 do Anexo IV do RASF."
+)
+
+# Exibe o vetor4
+print(vetor4)
+
+
+vetor5 <- c(
+  # Tema 1: I. Licenças (Norma Infralegal do Senado)
+  "NA",
+  
+  # Tema 2: II. Afastamentos Gerais (Senado Federal)
+  "NA",
+  
+  # Tema 3: Competência e Finalidade
+  "Art. 2º: O Anexo IV do Regulamento Administrativo, consolidado pelo Ato da Comissão Diretora nº 2, de 2018, passa a vigorar com as seguintes alterações:",
+  
+  # Tema 4: Definição de Programas e Critérios
+  paste(
+    "p.2 Parágrafo 5: “Art. 3º ..................................................................................................................",
+    "...............................................................................................................................",
+    "X - submissão à indisponibilidade do interesse público.” (NR)",
+    "p.2 Parágrafo 6: “Art. 5º ..................................................................................................................",
+    "...............................................................................................................................",
+    "§ 1º As Matrizes de Correlação do Conhecimento a que se referem os incisos I e II do caput serão definidas por Ato do Diretor-Geral, mediante proposta da Secretaria de Gestão de Pessoas.",
+    "...............................................................................................................................",
+    "§ 3º O disposto no § 2º aplica-se à ação de capacitação que corresponder à ramificação das áreas de interesse previstas nas Matrizes de Correlação do Conhecimento definidas nos incisos I e II do caput.” (NR)",
+    sep = "\n"
+  ),
+  
+  # Tema 5: Requisitos para Concessão / Condicionantes
+  paste(
+    "p.2 Parágrafo 7: “Art. 17. ................................................................................................................",
+    "...............................................................................................................................",
+    "§ 2º Compete ao ILB analisar o disposto no § 1º deste artigo e, após a manifestação do servidor para a apresentação de defesa prévia, submeter à deliberação da Diretoria-Geral.",
+    "§ 3º O valor do custo por aluno a que se refere o inciso IV do § 1º deste artigo corresponderá ao resultado da divisão do montante gasto com o pagamento de GECC pelo número de alunos matriculados, acrescido do custo do material didático fornecido ao aluno.” (NR)",
+    sep = "\n"
+  ),
+  
+  # Tema 6: Obrigação de Permanência / Condição Pós-Afastamento
+  paste(
+    "p.3 Parágrafo 1: “§ 4º O ressarcimento previsto neste artigo será fixado pelo Diretor-Geral, limitado ao valor previsto no § 3º deste artigo e será descontado diretamente da folha de pagamento do servidor.” (NR)",
+    sep = "\n"
+  ),
+  
+  # Tema 7: Ressarcimento em Caso de Desistência ou Não Cumprimento
+  "p.3 Parágrafo 2: “Art. 23. ................................................................................................................\n...............................................................................................................................\nParágrafo único. (Revogado).” (NR)",
+  
+  # Tema 8: Procedimentos Adicionais e Outras Disposições
+  paste(
+    "p.3 Parágrafo 3: “Art. 28. São competentes para autorizar a participação de servidores em ações externas de capacitação e desenvolvimento:",
+    "I - o Presidente do Senado Federal, nos casos de afastamento do país para ações de capacitação, facultada a delegação;",
+    "II - o Diretor-Geral do Senado Federal, nos demais casos.",
+    "§ 1º Da decisão que indeferir o pedido caberá recurso:",
+    "I - na forma do parágrafo único do art. 191 deste Regulamento Administrativo, na hipótese do inciso I do caput;",
+    "II - ao Primeiro-Secretário, na hipótese do inciso II do caput.",
+    "...............................................................................................................................",
+    "Art. 29. ..................................................................................................................",
+    "I - sem ônus, sendo devido o pagamento das parcelas previstas nos incisos I e II do § 2º deste artigo;",
+    "II - com ônus, sendo devido o pagamento definido no inciso I do caput deste artigo e de quaisquer parcelas previstas nos incisos III a VI do § 2º deste artigo.",
+    "...............................................................................................................................",
+    "§ 2º O servidor participante de ação externa de capacitação que implique apoio financeiro poderá receber as seguintes parcelas:",
+    "...............................................................................................................................",
+    "Art. 30. O prazo de afastamento de servidor para ações externas de capacitação será limitado à duração do respectivo programa educacional, adicionado o tempo necessário para o seu deslocamento.",
+    "§ 1º Em caso de solicitação justificada e com a anuência do titular da unidade de lotação, a autoridade competente, na forma do art. 28 deste Anexo, poderá prorrogar o prazo de afastamento concedido originalmente.",
+    "p.3 Parágrafo 4: “Art. 34................................................................................................................",
+    "Parágrafo único. As normas deste Capítulo aplicam-se exclusivamente às ações de capacitação externa em atividades de extensão, salvo disposição expressa em contrário.” (NR)",
+    "p.3 Parágrafo 5: “CAPÍTULO V",
+    "DA CAPACITAÇÃO EXTERNA EM CURSOS DE PÓS-GRADUAÇÃO STRICTO SENSU",
+    "Art. 35. A concessão de afastamento de servidor do Senado Federal para participar de programas de Pós-Graduação stricto sensu não acarretará ônus adicional, sendo devido o pagamento apenas da parcela prevista no inciso I do",
+    "p.4 Parágrafo 1: “§ 2º do art. 29 deste Anexo, salvo autorização excepcional do Presidente do Senado Federal.",
+    "§ 1º O Diretor-Geral poderá conceder afastamento para participação de servidor efetivo em programas de Pós-Graduação stricto sensu no país e que sejam reconhecidos como regulares pelo Ministério da Educação.",
+    "§ 2º O Presidente do Senado Federal poderá conceder afastamento do país para participação de servidor efetivo em programa de Pós-Graduação stricto sensu realizado por instituição estrangeira, após parecer favorável do Comitê Científico-Pedagógico, que observará sua classificação em ranking internacional de avaliação e o estabelecido no inciso III do art. 35-A deste Anexo.",
+    "§ 3º Para instruir o parecer do Comitê Científico-Pedagógico, o candidato deverá providenciar toda a documentação necessária com tradução oficial para a Língua Portuguesa, que deverá conter necessariamente as disciplinas acadêmicas, o quadro de docentes do programa com a respectiva titulação dos professores, bem como a carta de aceitação do coordenador do programa, professor orientador ou equivalente.",
+    "§ 4º O Presidente do Senado Federal poderá, excepcionalmente e mediante critérios de conveniência e oportunidade, autorizar ação de capacitação em hipóteses não previstas neste artigo.",
+    "p.5 Parágrafo 2: “Art. 38. ................................................................................................................",
+    "§ 1º Compete à autoridade concedente deliberar sobre a prorrogação do período de afastamento, mediante a solicitação justificada do servidor afastado, ouvido o titular da unidade na forma do parágrafo único do art. 35-A deste Anexo.",
+    "....................................................................................................................” (NR)",
+    "p.5 Parágrafo 3: “Art. 42. O Diretor-Geral determinará o ressarcimento ao Senado Federal, do valor correspondente ao incentivo concedido, do servidor que:",
+    "...............................................................................................................................",
+    "Parágrafo único. Não se exigirá o ressarcimento do servidor que se aposentar por invalidez ou que, por motivos alheios à sua vontade, ficar impossibilitado de concluir o curso, mediante justificativa a ser validada pelo Diretor-Geral.” (NR)",
+    "p.5 Parágrafo 4: “Art. 44. ................................................................................................................",
+    "...............................................................................................................................",
+    "§ 2º O período de afastamento para a licença será vinculado à duração efetiva da respectiva ação de capacitação.",
+    "§ 3º Poderá ser concedido o afastamento para a conclusão de ação de capacitação cujo início seja anterior ao período da licença, respeitada a carga horária disposta no inciso III do art. 44-A deste Anexo.",
+    "§ 4º Não serão consideradas para fins de comprovação da efetividade da licença as ações de capacitação executadas antes do início ou após o término do período autorizado para afastamento.” (NR)"
+    , sep = "\n"
+  ),
+  
+  # Tema 9: IV. Deveres Pós-Curso
+  "NA",
+  
+  # Tema 10: V. Outras Disposições – Instrução e Apoio Financeiro (Capacitação Externa)
+  paste(
+    "p.6 Parágrafo 1: “Art. 46. As ações de capacitação motivadoras da licença nas modalidades presencial ou à distância deverão observar pelo menos um dos seguintes requisitos, respeitado o disposto no art. 5º deste Anexo:",
+    "I - ação de capacitação promovida pelo ILB;",
+    "II - ação de capacitação promovida por escolas de governo das esferas federal, estadual ou municipal;",
+    "III - elaboração de monografia, dissertação, tese ou trabalho de conclusão de curso de graduação ou pós-graduação, em cursos promovidos por Instituição de Ensino Superior;",
+    "IV - curso de extensão ou aperfeiçoamento promovido por Instituição de Ensino Superior;",
+    "V - curso livre promovido por instituições previamente avaliadas e aprovadas pelo ILB quanto à qualidade das capacitações, nos termos do § 3º deste artigo;",
+    "VI - estágio sabático em instituição de ensino, pesquisa ou organismo público nacional ou internacional.",
+    "§ 1º Para fins do disposto neste artigo, admitir-se-á Instituição de Ensino Superior:",
+    "I - nacional avaliada pelo Ministério da Educação com Índice Geral de Cursos Avaliados da Instituição (IGC), em faixa igual ou superior a quatro;",
+    "II - estrangeira avaliada nos rankings internacionais Academic Ranking of World Universities, QS World University Rankings ou Times Higher Education World University Rankings, em posição igual ou superior a uma das instituições referidas no inciso I deste parágrafo;",
+    "§ 2º Para aferição do IGC deverá ser considerada a avaliação mais recente do Ministério da Educação;",
+    "§ 3º O disposto no inciso V do caput dar-se-á após a manifestação conclusiva do ILB quanto à qualidade da instituição promotora e à relevância do curso para o atingimento da missão institucional do Senado Federal, nos termos do inciso IV do art. 26 deste Anexo;",
+    "§ 4º Não será admitido o afastamento para a participação em cursos preparatórios para concursos públicos e similares ou com carga horária restrita aos finais de semana;",
+    "§ 5º Na hipótese de pedidos de afastamento para a participação em cursos de idiomas estrangeiros, a instrução processual deverá indicar expressamente a necessidade do uso do idioma no trabalho desenvolvido pelo servidor;",
+    "§ 6º O Conselho de Supervisão do ILB poderá, excepcionalmente e mediante critérios de conveniência e oportunidade, autorizar licença para capacitação em hipóteses não previstas neste artigo.",
+    "p.6 Parágrafo 2: “Art. 47. ..................................................................................................................",
+    "I - do titular do órgão de lotação quanto ao disposto no inciso I do art. 35-A deste Anexo;",
+    "p.7 Parágrafo 1: “II - da Secretaria de Gestão de Pessoas quanto ao disposto no inciso II do art. 35-A deste Anexo;",
+    "III - do ILB quanto ao atendimento das demais condições previstas nesta norma e em regulamentação específica.",
+    "Parágrafo único: As autoridades definidas no art. 28 deste Anexo decidirão sobre a concessão de licença para capacitação com fundamento nas manifestações previstas neste artigo, consideradas as normas internas e a legislação aplicável.”",
+    "p.7 Art. 48: “Compete ao Diretor-Geral deliberar sobre a interrupção e a conclusão antecipada da licença, após manifestação conclusiva do ILB quanto ao cumprimento dos requisitos normativos.",
+    "§ 1º O servidor poderá requerer a interrupção da licença para capacitação, a qualquer tempo, desde que impedido de participar do curso, em virtude de caso fortuito ou de força maior, sem prejuízo da comprovação de sua participação até o momento da interrupção.",
+    "§ 2º O servidor deverá comunicar ao ILB a conclusão antecipada da ação de capacitação.",
+    "§ 3º O requerimento de interrupção da licença e a conclusão antecipada da ação de capacitação obrigam o servidor ao retorno imediato ao serviço.",
+    "§ 4º O não retorno ao serviço, o descumprimento dos requisitos normativos ou o não acolhimento das justificativas referidas no caput ensejarão a cassação da licença, na forma prevista no § 5º do art. 49 deste Anexo, observado o disposto no § 4º do mesmo artigo.”",
+    "p.7 Art. 49: “No prazo máximo de 60 (sessenta) dias após o término da licença, o servidor deverá encaminhar ao ILB a documentação comprobatória da efetiva conclusão da ação de capacitação, com aproveitamento, na qual conste:",
+    "I - o período da ação de capacitação;",
+    "II - a carga horária ou a frequência;",
+    "III - para a ação de capacitação prevista no inciso III do caput do art. 46 deste Anexo, relatório de atividades realizadas durante o período do afastamento, assinado pelo servidor e pelo orientador do trabalho acadêmico.",
+    "§ 1º O prazo estabelecido no caput deste artigo poderá ser prorrogado uma única vez, por igual período, mediante solicitação prévia e comprovação de justo motivo ao ILB.",
+    "§ 2º A ação de capacitação está vinculada aos termos da autorização concedida.",
+    "§ 3º A não apresentação de documentação comprobatória ou sua apresentação em desacordo com o deferimento ensejará a cassação da licença.",
+    "§ 4º O servidor que, injustificadamente, não apresentar a documentação referida no caput deste artigo poderá ser submetido à apuração de responsabilidade na esfera administrativa, nos termos do art. 138 deste Regulamento Administrativo.",
+    "§ 5º A cassação da licença para capacitação implicará a perda do direito de gozo da licença e da remuneração correspondente ao período cassado.",
+    "§ 6º A ausência de comprovação de atividade formal de capacitação durante o período autorizado para afastamento ensejará a cassação integral do período não comprovado.”",
+    "p.8 Parágrafo 1: “§ 7º A ação de capacitação que ultrapassar a data definida para o término do período autorizado para afastamento acarretará a cassação da licença equivalente ao número total de dias que excederem o termo originalmente previsto.” (NR)",
+    "p.8 Parágrafo 2: “Art. 51. O afastamento de servidores do cargo para quaisquer ações de capacitação deve respeitar o limite quantitativo global de até cinco por cento dos servidores de cada órgão integrante da estrutura do Senado Federal.",
+    "§ 1º Considera-se órgão a unidade cujo titular ocupe função comissionada FC-4, ou equivalente, e os órgãos superiores de execução.",
+    "§ 2º Para o cálculo dos limites de que trata o caput deste artigo, as frações serão arredondadas para o número inteiro imediatamente superior.",
+    "§ 3º O limite estabelecido no caput deste artigo não se aplica aos períodos de recesso parlamentar.” (NR)",
+    "p.8 Parágrafo 3: “Art. 58. A assunção de encargo de curso ou concurso por servidor do Senado Federal em outro órgão da administração pública, ou por servidor de outro órgão da administração pública no Senado Federal, está condicionada à autorização prévia do Diretor-Geral.",
+    "Parágrafo único: Na ausência da autorização prevista no caput deste artigo, não será devido o pagamento da GECC, sendo as atividades desempenhadas pelo servidor consideradas voluntárias, nos termos do § 8º do art. 19 deste Anexo.” (NR)",
+    "Art. 59: “Respeitadas as disposições pertinentes, o Presidente do Senado Federal poderá deferir o apoio financeiro referido no art. 29 deste Anexo ao servidor que concilie a frequência ao evento de capacitação stricto sensu com o exercício do cargo, hipótese que não significará o afastamento de suas funções para todos os efeitos legais.” (NR)",
+    "Art. 60: “A instrução de processos de solicitação de licença para capacitação e de concessão de outras espécies de afastamento para capacitação de servidores do Senado Federal cedidos para exercício em outros órgãos ou de servidores de outros órgãos em exercício no Senado Federal deve ser realizado pelo ILB e deliberado pela autoridade competente, conforme o caso.",
+    "§ 1º No caso de afastamento para capacitação de servidores do Senado Federal cedidos para exercício em outros órgãos, exigir-se-á a manifestação do titular da última unidade de lotação do servidor no Senado Federal, para o cumprimento do disposto no inciso I do art. 35-A e no inciso I do art. 47.",
+    "§ 2º No caso de afastamento para capacitação de servidor cedido para exercício no Senado Federal, exigir-se-á, adicionalmente às demais regras dispostas neste Anexo, a manifestação do órgão de origem.",
+    "§ 3º A verificação do atendimento dos incisos III e IV do art. 5º deste Anexo será feita mediante a justificativa do chefe imediato do órgão de exercício do servidor.” (NR)",
+    "Art. 61: “O Diretor-Geral poderá regulamentar o disposto neste Anexo.” (NR)",
+    "Art. 62: “Os casos omissos serão decididos pelo Diretor-Geral, ouvida a Diretoria-Executiva do ILB, o Conselho de Supervisão do ILB ou o Comitê Científico-Pedagógico, conforme o caso.” (NR)"
+    , sep = "\n"
+  )
+)
+
+print(vetor5)
+
+
+vetor5 <- c(
+  # Tema 1: I. Licenças (Norma Infralegal do Senado)
+  "NA",
+  
+  # Tema 2: II. Afastamentos Gerais (Senado Federal)
+  "NA",
+  
+  # Tema 3: Competência e Finalidade
+  "Art. 2º: O Anexo IV do Regulamento Administrativo, consolidado pelo Ato da Comissão Diretora nº 2, de 2018, passa a vigorar com as seguintes alterações:",
+  
+  # Tema 4: Definição de Programas e Critérios
+  paste(
+    "p.2 Parágrafo 5: “Art. 3º ..................................................................................................................",
+    "...............................................................................................................................",
+    "X - submissão à indisponibilidade do interesse público.” (NR)",
+    "p.2 Parágrafo 6: “Art. 5º ..................................................................................................................",
+    "...............................................................................................................................",
+    "§ 1º As Matrizes de Correlação do Conhecimento a que se referem os incisos I e II do caput serão definidas por Ato do Diretor-Geral, mediante proposta da Secretaria de Gestão de Pessoas.",
+    "...............................................................................................................................",
+    "§ 3º O disposto no § 2º aplica-se à ação de capacitação que corresponder à ramificação das áreas de interesse previstas nas Matrizes de Correlação do Conhecimento definidas nos incisos I e II do caput.” (NR)",
+    sep = "\n"
+  ),
+  
+  # Tema 5: Requisitos para Concessão / Condicionantes
+  paste(
+    "p.2 Parágrafo 7: “Art. 17. ................................................................................................................",
+    "...............................................................................................................................",
+    "§ 2º Compete ao ILB analisar o disposto no § 1º deste artigo e, após a manifestação do servidor para a apresentação de defesa prévia, submeter à deliberação da Diretoria-Geral.",
+    "§ 3º O valor do custo por aluno a que se refere o inciso IV do § 1º deste artigo corresponderá ao resultado da divisão do montante gasto com o pagamento de GECC pelo número de alunos matriculados, acrescido do custo do material didático fornecido ao aluno.” (NR)",
+    sep = "\n"
+  ),
+  
+  # Tema 6: Obrigação de Permanência / Condição Pós-Afastamento
+  paste(
+    "p.3 Parágrafo 1: “§ 4º O ressarcimento previsto neste artigo será fixado pelo Diretor-Geral, limitado ao valor previsto no § 3º deste artigo e será descontado diretamente da folha de pagamento do servidor.” (NR)",
+    sep = "\n"
+  ),
+  
+  # Tema 7: Ressarcimento em Caso de Desistência ou Não Cumprimento
+  "p.3 Parágrafo 2: “Art. 23. ................................................................................................................\n...............................................................................................................................\nParágrafo único. (Revogado).” (NR)",
+  
+  # Tema 8: Procedimentos Adicionais e Outras Disposições
+  paste(
+    "p.3 Parágrafo 3: “Art. 28. São competentes para autorizar a participação de servidores em ações externas de capacitação e desenvolvimento:",
+    "I - o Presidente do Senado Federal, nos casos de afastamento do país para ações de capacitação, facultada a delegação;",
+    "II - o Diretor-Geral do Senado Federal, nos demais casos.",
+    "§ 1º Da decisão que indeferir o pedido caberá recurso:",
+    "I - na forma do parágrafo único do art. 191 deste Regulamento Administrativo, na hipótese do inciso I do caput;",
+    "II - ao Primeiro-Secretário, na hipótese do inciso II do caput.",
+    "...............................................................................................................................",
+    "Art. 29. ..................................................................................................................",
+    "I - sem ônus, sendo devido o pagamento das parcelas previstas nos incisos I e II do § 2º deste artigo;",
+    "II - com ônus, sendo devido o pagamento definido no inciso I do caput deste artigo e de quaisquer parcelas previstas nos incisos III a VI do § 2º deste artigo.",
+    "...............................................................................................................................",
+    "§ 2º O servidor participante de ação externa de capacitação que implique apoio financeiro poderá receber as seguintes parcelas:",
+    "...............................................................................................................................",
+    "Art. 30. O prazo de afastamento de servidor para ações externas de capacitação será limitado à duração do respectivo programa educacional, adicionado o tempo necessário para o seu deslocamento.",
+    "§ 1º Em caso de solicitação justificada e com a anuência do titular da unidade de lotação, a autoridade competente, na forma do art. 28 deste Anexo, poderá prorrogar o prazo de afastamento concedido originalmente.",
+    "p.3 Parágrafo 4: “Art. 34................................................................................................................",
+    "Parágrafo único. As normas deste Capítulo aplicam-se exclusivamente às ações de capacitação externa em atividades de extensão, salvo disposição expressa em contrário.” (NR)",
+    "p.3 Parágrafo 5: “CAPÍTULO V",
+    "DA CAPACITAÇÃO EXTERNA EM CURSOS DE PÓS-GRADUAÇÃO STRICTO SENSU",
+    "Art. 35. A concessão de afastamento de servidor do Senado Federal para participar de programas de Pós-Graduação stricto sensu não acarretará ônus adicional, sendo devido o pagamento apenas da parcela prevista no inciso I do",
+    "p.4 Parágrafo 1: “§ 2º do art. 29 deste Anexo, salvo autorização excepcional do Presidente do Senado Federal.",
+    "§ 1º O Diretor-Geral poderá conceder afastamento para participação de servidor efetivo em programas de Pós-Graduação stricto sensu no país e que sejam reconhecidos como regulares pelo Ministério da Educação.",
+    "§ 2º O Presidente do Senado Federal poderá conceder afastamento do país para participação de servidor efetivo em programa de Pós-Graduação stricto sensu realizado por instituição estrangeira, após parecer favorável do Comitê Científico-Pedagógico, que observará sua classificação em ranking internacional de avaliação e o estabelecido no inciso III do art. 35-A deste Anexo.",
+    "§ 3º Para instruir o parecer do Comitê Científico-Pedagógico, o candidato deverá providenciar toda a documentação necessária com tradução oficial para a Língua Portuguesa, que deverá conter necessariamente as disciplinas acadêmicas, o quadro de docentes do programa com a respectiva titulação dos professores, bem como a carta de aceitação do coordenador do programa, professor orientador ou equivalente.",
+    "§ 4º O Presidente do Senado Federal poderá, excepcionalmente e mediante critérios de conveniência e oportunidade, autorizar ação de capacitação em hipóteses não previstas neste artigo.",
+    "p.5 Parágrafo 2: “Art. 38. ................................................................................................................",
+    "§ 1º Compete à autoridade concedente deliberar sobre a prorrogação do período de afastamento, mediante a solicitação justificada do servidor afastado, ouvido o titular da unidade na forma do parágrafo único do art. 35-A deste Anexo.",
+    "....................................................................................................................” (NR)",
+    "p.5 Parágrafo 3: “Art. 42. O Diretor-Geral determinará o ressarcimento ao Senado Federal, do valor correspondente ao incentivo concedido, do servidor que:",
+    "...............................................................................................................................",
+    "Parágrafo único. Não se exigirá o ressarcimento do servidor que se aposentar por invalidez ou que, por motivos alheios à sua vontade, ficar impossibilitado de concluir o curso, mediante justificativa a ser validada pelo Diretor-Geral.” (NR)",
+    "p.5 Parágrafo 4: “Art. 44. ................................................................................................................",
+    "...............................................................................................................................",
+    "§ 2º O período de afastamento para a licença será vinculado à duração efetiva da respectiva ação de capacitação.",
+    "§ 3º Poderá ser concedido o afastamento para a conclusão de ação de capacitação cujo início seja anterior ao período da licença, respeitada a carga horária disposta no inciso III do art. 44-A deste Anexo.",
+    "§ 4º Não serão consideradas para fins de comprovação da efetividade da licença as ações de capacitação executadas antes do início ou após o término do período autorizado para afastamento.” (NR)"
+    , sep = "\n"
+  ),
+  
+  # Tema 9: IV. Deveres Pós-Curso
+  "NA",
+  
+  # Tema 10: V. Outras Disposições – Instrução e Apoio Financeiro (Capacitação Externa)
+  paste(
+    "p.6 Parágrafo 1: “Art. 46. As ações de capacitação motivadoras da licença nas modalidades presencial ou à distância deverão observar pelo menos um dos seguintes requisitos, respeitado o disposto no art. 5º deste Anexo:",
+    "I - ação de capacitação promovida pelo ILB;",
+    "II - ação de capacitação promovida por escolas de governo das esferas federal, estadual ou municipal;",
+    "III - elaboração de monografia, dissertação, tese ou trabalho de conclusão de curso de graduação ou pós-graduação, em cursos promovidos por Instituição de Ensino Superior;",
+    "IV - curso de extensão ou aperfeiçoamento promovido por Instituição de Ensino Superior;",
+    "V - curso livre promovido por instituições previamente avaliadas e aprovadas pelo ILB quanto à qualidade das capacitações, nos termos do § 3º deste artigo;",
+    "VI - estágio sabático em instituição de ensino, pesquisa ou organismo público nacional ou internacional.",
+    "§ 1º Para fins do disposto neste artigo, admitir-se-á Instituição de Ensino Superior:",
+    "I - nacional avaliada pelo Ministério da Educação com Índice Geral de Cursos Avaliados da Instituição (IGC), em faixa igual ou superior a quatro;",
+    "II - estrangeira avaliada nos rankings internacionais Academic Ranking of World Universities, QS World University Rankings ou Times Higher Education World University Rankings, em posição igual ou superior a uma das instituições referidas no inciso I deste parágrafo;",
+    "§ 2º Para aferição do IGC deverá ser considerada a avaliação mais recente do Ministério da Educação;",
+    "§ 3º O disposto no inciso V do caput dar-se-á após a manifestação conclusiva do ILB quanto à qualidade da instituição promotora e à relevância do curso para o atingimento da missão institucional do Senado Federal, nos termos do inciso IV do art. 26 deste Anexo;",
+    "§ 4º Não será admitido o afastamento para a participação em cursos preparatórios para concursos públicos e similares ou com carga horária restrita aos finais de semana;",
+    "§ 5º Na hipótese de pedidos de afastamento para a participação em cursos de idiomas estrangeiros, a instrução processual deverá indicar expressamente a necessidade do uso do idioma no trabalho desenvolvido pelo servidor;",
+    "§ 6º O Conselho de Supervisão do ILB poderá, excepcionalmente e mediante critérios de conveniência e oportunidade, autorizar licença para capacitação em hipóteses não previstas neste artigo.",
+    "p.6 Parágrafo 2: “Art. 47. ..................................................................................................................",
+    "I - do titular do órgão de lotação quanto ao disposto no inciso I do art. 35-A deste Anexo;",
+    "p.7 Parágrafo 1: “II - da Secretaria de Gestão de Pessoas quanto ao disposto no inciso II do art. 35-A deste Anexo;",
+    "III - do ILB quanto ao atendimento das demais condições previstas nesta norma e em regulamentação específica.",
+    "Parágrafo único: As autoridades definidas no art. 28 deste Anexo decidirão sobre a concessão de licença para capacitação com fundamento nas manifestações previstas neste artigo, consideradas as normas internas e a legislação aplicável.”",
+    "p.7 Art. 48: “Compete ao Diretor-Geral deliberar sobre a interrupção e a conclusão antecipada da licença, após manifestação conclusiva do ILB quanto ao cumprimento dos requisitos normativos.",
+    "§ 1º O servidor poderá requerer a interrupção da licença para capacitação, a qualquer tempo, desde que impedido de participar do curso, em virtude de caso fortuito ou de força maior, sem prejuízo da comprovação de sua participação até o momento da interrupção.",
+    "§ 2º O servidor deverá comunicar ao ILB a conclusão antecipada da ação de capacitação.",
+    "§ 3º O requerimento de interrupção da licença e a conclusão antecipada da ação de capacitação obrigam o servidor ao retorno imediato ao serviço.",
+    "§ 4º O não retorno ao serviço, o descumprimento dos requisitos normativos ou o não acolhimento das justificativas referidas no caput ensejarão a cassação da licença, na forma prevista no § 5º do art. 49 deste Anexo, observado o disposto no § 4º do mesmo artigo.”",
+    "p.7 Art. 49: “No prazo máximo de 60 (sessenta) dias após o término da licença, o servidor deverá encaminhar ao ILB a documentação comprobatória da efetiva conclusão da ação de capacitação, com aproveitamento, na qual conste:",
+    "I - o período da ação de capacitação;",
+    "II - a carga horária ou a frequência;",
+    "III - para a ação de capacitação prevista no inciso III do caput do art. 46 deste Anexo, relatório de atividades realizadas durante o período do afastamento, assinado pelo servidor e pelo orientador do trabalho acadêmico.",
+    "§ 1º O prazo estabelecido no caput deste artigo poderá ser prorrogado uma única vez, por igual período, mediante solicitação prévia e comprovação de justo motivo ao ILB.",
+    "§ 2º A ação de capacitação está vinculada aos termos da autorização concedida.",
+    "§ 3º A não apresentação de documentação comprobatória ou sua apresentação em desacordo com o deferimento ensejará a cassação da licença.",
+    "§ 4º O servidor que, injustificadamente, não apresentar a documentação referida no caput deste artigo poderá ser submetido à apuração de responsabilidade na esfera administrativa, nos termos do art. 138 deste Regulamento Administrativo.",
+    "§ 5º A cassação da licença para capacitação implicará a perda do direito de gozo da licença e da remuneração correspondente ao período cassado.",
+    "§ 6º A ausência de comprovação de atividade formal de capacitação durante o período autorizado para afastamento ensejará a cassação integral do período não comprovado.”",
+    "p.8 Parágrafo 1: “§ 7º A ação de capacitação que ultrapassar a data definida para o término do período autorizado para afastamento acarretará a cassação da licença equivalente ao número total de dias que excederem o termo originalmente previsto.” (NR)",
+    "p.8 Parágrafo 2: “Art. 51. O afastamento de servidores do cargo para quaisquer ações de capacitação deve respeitar o limite quantitativo global de até cinco por cento dos servidores de cada órgão integrante da estrutura do Senado Federal.",
+    "§ 1º Considera-se órgão a unidade cujo titular ocupe função comissionada FC-4, ou equivalente, e os órgãos superiores de execução.",
+    "§ 2º Para o cálculo dos limites de que trata o caput deste artigo, as frações serão arredondadas para o número inteiro imediatamente superior.",
+    "§ 3º O limite estabelecido no caput deste artigo não se aplica aos períodos de recesso parlamentar.” (NR)",
+    "p.8 Parágrafo 3: “Art. 58. A assunção de encargo de curso ou concurso por servidor do Senado Federal em outro órgão da administração pública, ou por servidor de outro órgão da administração pública no Senado Federal, está condicionada à autorização prévia do Diretor-Geral.",
+    "Parágrafo único: Na ausência da autorização prevista no caput deste artigo, não será devido o pagamento da GECC, sendo as atividades desempenhadas pelo servidor consideradas voluntárias, nos termos do § 8º do art. 19 deste Anexo.” (NR)",
+    "Art. 59: “Respeitadas as disposições pertinentes, o Presidente do Senado Federal poderá deferir o apoio financeiro referido no art. 29 deste Anexo ao servidor que concilie a frequência ao evento de capacitação stricto sensu com o exercício do cargo, hipótese que não significará o afastamento de suas funções para todos os efeitos legais.” (NR)",
+    "Art. 60: “A instrução de processos de solicitação de licença para capacitação e de concessão de outras espécies de afastamento para capacitação de servidores do Senado Federal cedidos para exercício em outros órgãos ou de servidores de outros órgãos em exercício no Senado Federal deve ser realizado pelo ILB e deliberado pela autoridade competente, conforme o caso.",
+    "§ 1º No caso de afastamento para capacitação de servidores do Senado Federal cedidos para exercício em outros órgãos, exigir-se-á a manifestação do titular da última unidade de lotação do servidor no Senado Federal, para o cumprimento do disposto no inciso I do art. 35-A e no inciso I do art. 47.",
+    "§ 2º No caso de afastamento para capacitação de servidor cedido para exercício no Senado Federal, exigir-se-á, adicionalmente às demais regras dispostas neste Anexo, a manifestação do órgão de origem.",
+    "§ 3º A verificação do atendimento dos incisos III e IV do art. 5º deste Anexo será feita mediante a justificativa do chefe imediato do órgão de exercício do servidor.” (NR)",
+    "Art. 61: “O Diretor-Geral poderá regulamentar o disposto neste Anexo.” (NR)",
+    "Art. 62: “Os casos omissos serão decididos pelo Diretor-Geral, ouvida a Diretoria-Executiva do ILB, o Conselho de Supervisão do ILB ou o Comitê Científico-Pedagógico, conforme o caso.” (NR)"
+    , sep = "\n"
+  )
+)
+
+print(vetor5)
+
+
+
+
+```
+
+
+
+

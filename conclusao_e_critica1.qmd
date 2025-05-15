@@ -1,0 +1,57 @@
+---
+title: "Análise crítica da decisão da DGER"
+format: html
+---
+
+#### Texto final da decisão da DGER
+
+No despacho registrado nas páginas 1355-1356 dos autos (00200.003561/2020-66, VOLUME 1, NUP 00100.084908/2024-15), a DGER concluiu:
+
+> "Diante do exposto, nos termos da competência estabelecida no art. 58 do Anexo IV do Regulamento Administrativo do Senado Federal (RASF) e considerado o disposto no art. 132 do RASF, nos arts. 42, inciso III, e 43, inciso V, do Anexo IV do mesmo Regulamento e no Ato da Diretoria-Geral (ADG) n° 26/2017, ENCAMINHO os autos a Vossa Senhoria para que notifique o servidor (...) para manifestação prévia quanto à ausência de atividades acadêmicas no 1º semestre de 2023."
+
+#### Comentários críticos do servidor
+
+##### a) Citação deslocada do art. 132 do RASF
+
+A referência ao art. 132 do RASF é imprópria. Trata-se de mais um dispositivo que referenciado pela DGER inapropriadamente, por tratar de licenças. Na versão do RASF utilizada pela DGER, a do ATC 14/2022, os afastamentos são tratados pelo art. 134, § 2º do RASF. Na versão vigente à época do início do afastamento, o dispositivo equivalente era o art. 132, §2º do RASF (RES 13/2018), que remetem diretamente ao Anexo IV. 
+
+Apesar da competência para conceder o afastamento, a DGER requeriu que o processo passasse pela autorização do Presidente do Senado, o que configura a imposição de empecilho não respaldado nas normas - a menos que o Presidente houvesse avocado a competência, o que não ocorreu. Em casos semelhantes, de outros servidores, assinam como chefia imediata o chefe de gabinete da Presidência ou a Diretora da Secretaria de Transparência.
+
+##### b) Utilização maliciosa dos arts. 42 e 43 do Anexo IV do RASF
+
+A DGER invoca o art. 42, inciso III (deveres após a conclusão do curso), e o art. 43, inciso V (penalidades pela inobservância desses deveres) para justificar a continuidade da acusação. Contudo:
+
+  - O **art. 41** do Anexo IV regula as obrigações durante o afastamento (em curso), e não há previsão de penalidade para descumprimento nele prevista.
+  - Já o **art. 42** refere-se expressamente às obrigações **após a conclusão** do curso.
+
+A DGER reconheceu, no mesmo despacho, que o curso ainda está em andamento e que não é cabível a avaliação final de aproveitamento neste momento. Apesar disso, baseou-se no art. 42 para imputar ao servidor infrações relativas a deveres pós-conclusão, ignorando que o servidor ainda se encontra regido pelo art. 41.
+
+##### c) Configuração do viés e da parcialidade administrativa
+
+A escolha consciente da DGER de citar o art. 42, e não o art. 41, demonstra a intenção de dar suporte jurídico artificial à aplicação de penalidades. Essa estratégia evidencia:
+
+  - A tentativa deliberada de imputar ao servidor obrigações que só surgiriam **após** a conclusão do curso.
+  - A utilização de dispositivos normativos de forma inadequada para justificar medidas sancionatórias antecipadas.
+  - A falta de aderência lógica entre os fatos descritos e as normas citadas, configurando evidente vício de motivação.
+
+##### d) Ausência de fundamentação para acusação baseada no ADG nº 26/2017
+
+Apesar de citar o ADG nº 26/2017, relativo a procedimentos para licença para tratamento de saúde, a DGER:
+
+  - Não indica qual dispositivo teria sido infringido pelo servidor;
+  
+  - Não descreve fato que configurasse necessidade de licença médica perante o Senado Federal, visto que o servidor estava afastado para pós-graduação;
+  
+  - Ignora que o servidor, agindo de boa-fé, solicitou à UnB a continuidade dos estudos mediante exercícios domiciliares, atitude que demonstra diligência, boa conduta e intenção de mitigar os efeitos de sua enfermidade.
+
+### Conclusão
+
+A conclusão apresentada pela DGER carece de sustentação jurídica, lógica e fática:
+
+  - Baseia-se em dispositivos normativos inaplicáveis ao caso concreto;
+  
+  - Faz uso distorcido de normas internas para tentar legitimar imputações infundadas;
+  
+  - Viola os princípios constitucionais da legalidade, da motivação, da boa-fé administrativa e da ampla defesa.
+
+Esses vícios estruturais comprometem a validade do encaminhamento realizado e serão elementos fundamentais para a impugnação do procedimento administrativo instaurado contra o servidor.

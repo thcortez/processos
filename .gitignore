@@ -1,0 +1,50 @@
+# Ignora tudo
+*
+# Ignora arquivos temporários e da IDE
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+.quarto/
+
+# Ignora grupo de arquivos utilizados como scriptbook, e outros selecionados eventualmente
+Script - *
+
+
+# Ignora arquivos muito grandes, se existirem
+# Você pode afinar esse filtro se quiser
+*.zip
+*.mp4
+*.mov
+*.tar.gz
+*.7z
+*.exe
+*.iso
+
+# Evita rastrear arquivos gerados por build fora do Quarto
+*_cache/
+.cache/
+__pycache__/
+
+
+# Mas inclui o que interessa
+!_book/
+!docs/
+!autos/
+!docs/**
+!autos/**
+!images/
+!_quarto.yml
+!*.qmd
+!*.Rproj
+!.gitignore
+!.gitattributes
+!.Rproj.user/
+
+# Ignora arquivos temporários e IDEs
+.quarto/
+
+
+
+/.quarto/

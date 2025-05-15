@@ -1,0 +1,111 @@
+---
+title: "Introdução"
+format: html
+---
+# Apresentação
+
+Este documento compila fatos, normas e argumentos contextualizados para subsidiar a elaboração da defesa do servidor afastado para cursar doutorado, conforme autorizado pelo Senado Federal, nos termos da Lei nº 8.112/1990. 
+
+Os blocos a seguir apresentam de forma narrativa e analítica os eventos, as manifestações técnicas, as decisões e as argumentações ocorridas durante o processo, sempre que necessário seguido das provas (ou de instruções para as obter).
+
+
+## DOCUMENTOS INDICAM NORMAS DE REGÊNCIA DO AFASTAMENTO, E DIFEREM DAQUELAS CITADAS PELA ADMINISTRAÇÃO NO PROCESSO
+
+Normas referenciadas no formulário e no termo de compromisso diferem das citadas pela Administração ao longo do processo 
+
+A esse respeito, note-se a fundamentação normativa estampada no formulário padrão para requisição de afastamento para pós-graduação stricto sensu:
+
+### 1º FORMULÁRIO DE SOLICITAÇÃO E TERMO DE COMPROMISSO
+
+. O que contém de importante: 
+
+  - Indica as normas que fundamentam o afastamento e principalmente as que estabelecem direitos, deveres e penalidades (ver termo de compromisso).
+
+### Visualização do formulário no processo
+
+```{=html}
+<style>
+  /* Contêiner principal em duas colunas */
+  .pdf-preview-container {
+    display: flex;
+    gap: 1em;
+    align-items: flex-start;
+  }
+  .pdf-preview-sidebar {
+    flex: 0 0 200px;
+  }
+  .pdf-preview-main {
+    flex: 1;
+  }
+  .pdf-preview-main iframe {
+    width: 100%;
+    height: 800px;
+    border: 1px solid #ccc;
+  }
+</style>
+
+<h3>Visualização do formulário no processo</h3>
+
+<div class="pdf-preview-container">
+  <div class="pdf-preview-sidebar">
+    <label for="page_input">Digite o número da página:</label><br>
+    <input type="number" id="page_input" min="1" max="9999" value="2" style="width: 100%;" />
+    <button onclick="carregarPaginaPDF()">Ir</button>
+  </div>
+  <div class="pdf-preview-main">
+    <iframe id="pdf_viewer" src="autos/003561/_0002.pdf"></iframe>
+  </div>
+</div>
+
+<script>
+function carregarPaginaPDF() {
+  const numero = document.getElementById('page_input')
+                       .value
+                       .padStart(4, '0');
+  const caminho = `autos/003561/_${numero}.pdf`;
+  document.getElementById('pdf_viewer').src = caminho;
+}
+</script>
+```
+
+. p. 1, Item 1."FUNDAMENTAÇÃO LEGAL": "ANEXO IV DO REGULAMENTO ADMINISTRATIVO DO SENADO FEDERAL¹".
+. P. 1, nota de rodapé: "1 Atualmente (17/08/2018) consolidado pela Resolução do Senado Federal nº 13/2018. Considerar a última atualização da norma no dia do 
+requerimento" (Processo NUP 00200.003561/2020)
+
+
+. O [Formulário](https://intranet.senado.leg.br/pessoas/servidor-efetivo/arquivos/formularios/formulario-para-solicitacao-de-afastamento-para-cursar-programa-de-pos-graduacao-1/) atualmente disponibilizado na intranet (conforme [link](https://intranet.senado.leg.br/pessoas/servidor-efetivo/arquivos/formularios/formulario-para-solicitacao-de-afastamento-para-cursar-programa-de-pos-graduacao-1/) ou também disponível [aqui](/images/formulario_20_05_2024_editavel.pdf)) informa a mesma fundamentação normativa: Anexo IV do Regulamento Administrativo do Senado Federal, arts. 40 a 42 (versão da RES 13/2018) ou arts. 41 a 43 (versão do ATC 14/2022).
+
+## ULTERIDADE AFIRMADA NO FORMULÁRIO
+
+. Localização: Processo 00200.003561/2020, pp. 175 a 178
+
+## Visualização do formulário no processo
+
+<div style="margin-bottom: 1em;">
+  <label for="page_input">Digite o número da página:</label><br>
+  <input type="number" id="page_input" min="1" max="9999" value="175" style="width: 80px;" />
+  <button onclick="carregarPaginaPDF()">Ir</button>
+</div>
+
+<iframe id="pdf_viewer"
+        src="autos/003561/_0175.pdf"
+        width="600" height="800"
+        style="border: 1px solid #ccc;">
+</iframe>
+
+<script>
+function carregarPaginaPDF() {
+  const numero = document.getElementById('page_input').value.padStart(4, '0');
+  const caminho = `autos/003561/_${numero}.pdf`;
+  document.getElementById('pdf_viewer').src = caminho;
+}
+</script>
+
+. Esse segundo formulário consta do processo porque o Senado não concluiu o processo de autorização a tempo do curso começar em março de 2020, quando o primeiro formulário foi protocolado. 
+
+. tanto esse quanto o primeiro, ambos indicam a ulteridade das normas relativas ao afastamento que se iniciará:
+
+> "Atualmente (17/08/2018) consolidado pela Resolução do Senado Federal n^ 13/2018. Considerar a última atualização da norma no dia do requerimento" (p. 175, NUP 00200.003561/2020).           
+## PRAZOS 
+
+P. 176: prazo indicado no formulario - 24/10/2020 a 16/08/2024.

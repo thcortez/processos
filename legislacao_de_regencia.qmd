@@ -1,0 +1,103 @@
+---
+title: "Legislação Aplicável ao Afastamento"
+format: html
+---
+
+A seguir, apresenta-se a legislação que rege o caso do servidor afastado para cursar doutorado no Brasil, reconhecida e aplicada pelos próprios órgãos do Senado Federal durante o trâmite do processo de autorização:
+
+### 1. **Lei nº 8.112/1990, Art. 96-A**
+Dispositivo central que trata do afastamento de servidores públicos para participação em programas de pós-graduação stricto sensu no país, com exigências específicas sobre tempo de exercício, retorno, e ressarcimento em caso de descumprimento ou não conclusão do curso.
+
+**Reconhecimento expresso pela SEGP** (p. 180, Processo NUP 00200.003561/2020, também em NUP 00100.086462/2020-30):
+> "Art. 96-A. O servidor poderá, no interesse da Administração [...] afastar-se do exercício do cargo efetivo, com a respectiva remuneração, para participar em programa de pós-graduação stricto sensu [...]"
+
+A SEGP reconheceu que o pedido atendia aos requisitos legais do art. 96-A, inclusive no tocante ao tempo de exercício no cargo e à inexistência de afastamentos recentes.
+
+---
+
+### 2. **Regulamento Administrativo do Senado Federal – RASF (Resolução nº 13/2018, Anexo IV)**
+Norma interna expressamente invocada em:
+
+- **Formulário padrão de afastamento (p. 175, Processo NUP 00200.003561/2020)];**
+
+- **Termo de compromisso (p. 179, Processo NUP 00200.003561/2020);**
+
+- **Parecer da SEGP (p. 180, Processo NUP 00200.003561/2020);**
+
+- **Reconhecimento pelo ILB e demais instâncias (p. 634-638, Processo NUP 00200.003561/2020).**
+
+**Dispositivos:**
+- **Arts. 26 a 29:** são regras para participação em ação de capacitação aplicadas também aos afastamentos para pós-graduação, conforme determinação expressa do texto (conferir a numeração exata dos artigos)
+- **Arts. 35 a 39:** estabelecem as condições que habilitam o servidor a obter o afastamento para pós-graduação
+- **Art. 35:** define que o afastamento se dá sob ônus limitado;
+- **Art. 39:** elenca os requisitos específicos que o servidor deve cumprir (mínimo de 4 anos de exercício, ausência de afastamentos recentes, efetivo exercício, entre outros);
+- **Art. 40, 41 e 42:** definem obrigações durante e após o afastamento, e hipóteses de ressarcimento.
+- **Art. 52 (ou 55 ou 58?):** define que ILB e SEGP elaborem procedimentos de acompanhamento dos servidores em capacitação, e estabelece punição no caso dos artigos que cita. Há variação do número  deste artigo, a depender da versão do RASF. No ATC 14/2022, é o art. 58, na RES 13/2018, creio que é o art. 55, mas ja vi citações do art. 52. 
+
+A SEGP também confirmou o **cumprimento dos critérios para afastamento pelo servidor**.
+
+---
+
+### 3. [**Resolução CEPE nº 59/2020 da UnB**]^(https://dpg.unb.br/images/Resolu%C3%A7%C3%A3o_CEPE_N%C2%BA_0059_2020.pdf)  
+Proveniente da Universidade de Brasília, essa norma foi [**anexada ao processo antes mesmo dos resultados do edital de seleção da pós-graduação**](pp. 158 a 163, Processo NUP 00200.003561/2020). **Foi analisada no Senado** durante [procedimentos prévios](ver itens 10 a 13, pp. 624 a 629, Processo NUP 00200.003561/2020), nos quais a Resolução CEPE 59/2020 da UnB recebeu bastante atenção, sendo ressaltada tanto em seus aspectos relativos a medidas de proteção e isolamento social em conformidade com o ADG nº 5/2020 devido à pandemia de prevenção e contenção do alastramento da COVID-19, passando pela proteção  enfrentamento aprovada nas decisões [colegiadas](Ata de Reunião do Comitê Científico-Pedagógico, p. 630, Processo NUP 00200.003561/2020)**, e também nas **decisões individuais** de autoridades que apreciaram e se manifestaram favoravelmente ao pedido de afastamento, dentre elas o [chefe do Serviço dos Cursos de Pós-Graduação, o coordenador de Educação Superior](p. 627 a 629, Processo NUP 00200.003561/2020), o [coordenador geral do ILB](p. 631, Processo NUP 00200.003561/2020) ,  em que aprovaram a participação do servidor**.
+
+- **Art. 6º, §3º:** exclui o semestre 1/2020 do cômputo do tempo total;
+- **Art. 7º:** impõe prorrogação obrigatória dos prazos finais para conclusão da pós-graduação em quantidade de meses equivalente ao prazo passado em suspensão das aulas (março a agosto de 2020) e passado em modalidade de aulas não-presenciais (agosto de 2020 a maio de 2022).
+
+**Localização no processo:** pp. 158 a 166, anexo ao documento NUP 00100.075779/2020-41-2.
+
+---
+
+### 4. **Regulamento Interno do Programa de Pós-Graduação em Ciência Política (UnB)**
+- **Art. 28:** estabelece como condições para titulação a publicação de dois artigos e a defesa pública da tese aprovada.
+
+**Localização no processo:** pp. 16 a 22 do NUP 00200.003651/2020.
+
+---
+
+### 5. **Reconhecimento Formal do Impacto da Pandemia pela Administração**
+A própria SEGP reconheceu que o curso sofreu [**adiamento por força do Ato da Diretoria-Geral nº 05/2020**]^(https://adm.senado.gov.br/normas/ui/pub/normaConsultada?14&idNorma=14345351#:~:text=Download-,Original,-Download), que impediu início de atividades presenciais. Ainda assim, a SEGP exigiu reenvio do pedido com novo prazo, **causando um atraso adicional de 30 dias**, conforme registrado nos autos (pp. 184 a 187).
+
+---
+
+### 6. **Compatibilidade Temática e Relevância Institucional da Formação**
+A compatibilidade entre a formação pleiteada e as atribuições do cargo foi reconhecida formalmente pela Administração:
+
+- **p. 188:** Ciência Política é área de conhecimento de interesse comum, conforme Anexo II do Ato Conjunto DGER/ILB/SEGP nº 1/2018;
+- **p. 189:** compatibilidade com o cargo/especialidade do servidor, com fulcro no art. 5º do Anexo IV da Resolução nº 13/2018 e art. 2º do Ato do 1º Secretário nº 3/2014.
+
+---
+
+### 7. **Declaração da Universidade sobre o Curso e a Dedicação Exclusiva**
+A UnB declarou em 26/10/2020 (p. 193, NUP 00100.100088/2020-92) que o curso exige **dedicação exclusiva**, incluindo aulas, pesquisa e produção acadêmica. A previsão de término era **julho de 2024**, coerente com a reorganização de calendário provocada pela pandemia.
+
+---
+
+### **Documentos que confirmam a norma correta:**
+- Formulário de requerimento – p. 175 (ILB);
+- Termo de compromisso – p. 179;
+- Parecer SEGP – NUP 00100.086462/2020-30;
+- Reconhecimento do impacto da pandemia – pp. 184-187;
+- Parecer ILB – NUP 00100.106506/2020-55;
+- Aprovação pelo Comitê Científico-Pedagógico do ILB – p. 631-632;
+- Aprovação pela DGER – p. 634-638;
+- Publicação da autorização – p. 639-643.
+
+Todos esses documentos demonstram que:
+- a Administração, ao autorizar o afastamento, o fez com base nas normas referenciadas
+- que o Senado estava desde o início ciente dos efeitos da Resolução da UnB e dos efeitos da pandemia sobre o programa de doutoramento do servidor, e o aprovou
+- tais fatos apontam para a incoerência da decisão que alegou a improrrogabilidade do prazo de afastamento do servidor, em decisão que estava destinada a corrigir a inconstitucionalidade de ato da própria Administração. 
+- ao deferir o afastamento, ciente da Resolução CEPE 59/2020O, o Senado firmou um compromisso com o servidor e com a Universidade, gerando expectativas em ambos de que garantiria as condições para a conclusão do curso de forma adequada.  
+- além disso, está inscrito nas próprias regras da Casa que "o prazo de afastamento está adstrito à duração da ação de capacitação". E a ação de capacitação não terminou.   
+
+
+---
+
+## **Senado reconhece gravidade e protege servidores com a mesma enfermidade que acometeu o servidor**
+
+A enfermidade que debilitou o servidor no primeiro semestre de 2023 é reconhecida pelo próprio Senado como grave. Isto se verifica, por exemplo, [no anexo I do ADG nº 5/2020](https://www.senado.leg.br/transparencia/SECRH/BASF/Anexo/A_01_2020_1367621.pdf), o qual [reconhecia e listava doenças e situações graves](images/lista_doencas.pdf) pelas quais um(a) servidor(a) acometido deveria ter o ponto atestado pela chefia, [nos termos do ADG nº 5/2020]^(https://adm.senado.gov.br/normas/ui/pub/normaConsultada?14&idNorma=14345351#:~:text=Art.%205%C2%BA%20Nas%20situa%C3%A7%C3%B5es%20previstas%20neste%20Ato%2C%20os%20gestores%20de%20ponto%20de%20cada%20servidor%20dever%C3%A3o%20realizar%20o%20atesto%20informando%20individualmente%20a%20condi%C3%A7%C3%A3o%20para%20o%20abono%20de%20frequ%C3%AAncia%3A). 
+
+---
+
+Este bloco de legislação de regência visa estabelecer com precisão os parâmetros legais efetivamente válidos no caso concreto, e demonstrar o equívoco na base normativa da acusação posteriormente formulada contra o servidor.
+

@@ -1,0 +1,115 @@
+---
+title: "Controle, Irregularidades e Práticas Abusivas no Acompanhamento"
+format: html
+---
+
+
+Desde o início da execução do afastamento autorizado, o acompanhamento das atividades do servidor pelo órgão responsável (SEPOS/ILB) esteve marcado por práticas ilegítimas que incluem a citação de deveres de fazer extraídos de normas de outros tipos de licenças, afastamentos e ações de capacitação, e utilizou as penalidades previstas nesses outros casos para ameaçar o servidor com, por exemplo, suspensão imediata do pagamento da remuneração mensal, cancelamento da ação de capacitação, etc., alegando que, para prevenir isso para isso, que o servidor deveria apresentar relatório semestral próximo à data que o ILB solicitasse.  ameaças com base em normas indevidas,  de documentos e manipulações que comprometem a integridade processual.
+
+
+---
+
+
+## A Norma Invocada Inadequadamente pela Acusação
+
+Já no início do processo de acompanhamento, instaurou-se contexto de constrangimento ilegal, mediante o uso de referências normativas não aplicáveis ao servidor, para intimidá-lo e ameaçá-lo de punições atípicas. Nesses expedientes administrativos, passaram a **invocar indevidamente o art. 49 do RASF**, dispositivo **relativo à licença capacitação** — instituto distinto, regulado em capítulo próprio do Regulamento Administrativo do Senado Federal, com requisitos e finalidades diferentes. Licenças para capacitação duram 90 dias no máximo, e têm regras específicas. Afastamentos para capacitação são para cursos formais, com vistas à obtenção de formação em nível de pós-graduação stricto sensu (mestrado, doutorado ou pós-doutorado). São propósitos diferentes, com regras diferentes.
+
+#### **Irregularidade identificada:**
+- O **art. 49** trata exclusivamente da **licença para capacitação**, e não do afastamento para pós-graduação.
+- O servidor estava afastado nos termos do **art. 96-A da Lei nº 8.112/1990**, e dos [**arts. 40 a 42 do Anexo IV do RASF**](https://legis.senado.leg.br/norma/27410175/publicacao/27411313) (na versão da RES 13/2018, ou arts. 41 a 43, do [Anexo IV do ATC 14/2022]^(https://adm.senado.leg.br/normas/ui/pub/normaConsultada?0&idNorma=14380502#:~:text=A.%20%E2%80%93%20N%C3%A3o%20Aplic%C3%A1vel-,ANEXO%20IV,-POL%C3%8DTICA%20DE%20CAPACITA%C3%87%C3%83O)), cuja aplicação correta foi reconhecida em todos os pareceres iniciais.
+- A licença capacitação, por sua vez, é tratada pela [Lei 8112/1990 no art. 87]^(https://www.planalto.gov.br/ccivil_03/LEIS/L8112cons.htm#:~:text=pelo%20Congresso%20Nacional)-,Art.%C2%A087.%C2%A0,-Ap%C3%B3s%20cada%20q%C3%BCinq%C3%BC%C3%AAnio).
+
+---
+
+### **Citação indevida do art. 49 do RASF**
+Logo nos primeiros ofícios e comunicações, o SEPOS passou a invocar o art. 49 do anexo IV do Regulamento Administrativo do Senado Federal (RASF) – dispositivo que trata **exclusivamente de licença para capacitação**, instituto diverso do afastamento para pós-graduação stricto sensu regido pelo art. 96-A da Lei nº 8.112/90 e arts.35 a 45 do Anexo IV do RASF.
+
+#### Documentos:
+
+   - [**pp. 644-645**]^(images/conteudo_processos/002000035612020_autos_completos_30_04_2025.pdf), Processo NUP 00200.003561/2020: E-mail do SEPOS cita o art. 49, §§ 3º a 6º, que tratam da cassação de licença por ausência de comprovação de atividades – dispositivos **inaplicáveis** ao caso;
+
+   - [**p. 657 e p. 662:**]^(images/conteudo_processos/002000035612020_autos_completos_30_04_2025.pdf), Processo NUP 00200.003561/2020: Reiteração da citação do mesmo artigo como fundamento para ameaça de cassação ou apuração de responsabilidade.
+
+Essa conduta viola os princípios da legalidade e da segurança jurídica, ao empregar regras que **não regem o vínculo do servidor** com a Administração naquele contexto. Foi um comportamento repetido ao longo de todo o afastamento, sobretudo via e-mails.
+
+---
+
+### 2. **Ocultação seletiva de documentos e duplicação de peças processuais**
+
+Depois dos questionamentos que o servidor fez acerca da legalidade na prática de o SEPOS/COESUP/ILB duplicar relatórios antigos no processo, e de reiterar cobranças de relatórios já enviados pelo servidor, as páginas correspondentes a tais duplicatas e cobranças começaram a serem ocultadas no processo. 
+
+#### Ocultações identificadas:
+   
+   - [**Páginas 669-682 e 990-995:**]^(images/conteudo_processos/002000035612020_autos_completos_30_04_2025.pdf), Processo NUP 00200.003561/2020: relatórios de atividades cobrados pelo SEPOS em ofícios ao longo dos autos, mas já entregues. **Posteriormente foram ocultados sem justificativa**;
+
+   - [**Páginas 1044 a 1294:**]^(images/conteudo_processos/002000035612020_autos_completos_30_04_2025.pdf), Processo NUP 00200.003561/2020: incluem os relatórios repetidos que o próprio órgão inseriu e depois que o servidor as apontou como indício da manipulação documental, foram ocultadas sob sigilo. 
+
+#### Relatórios visíveis:
+
+   - [**p. 683:**]^(images/conteudo_processos/002000035612020_autos_completos_30_04_2025.pdf), Processo NUP 00200.003561/2020: Relatório regular protocolado (NUP 00100.100844/2023-26);
+
+   - [**p. 741:**]^(images/conteudo_processos/002000035612020_autos_completos_30_04_2025.pdf), Processo NUP 00200.003561/2020: Novo relatório de atividades (Anexo: 001);
+
+   - [**p. 933:**]^(images/conteudo_processos/002000035612020_autos_completos_30_04_2025.pdf), Processo NUP 00200.003561/2020: Relatório datado de 08/06/2023 – **demonstra que o servidor se manteve em comunicação e prestando informações ao SEPOS**;
+
+Essa estratégia de ocultação e seleção de provas fere o direito à ampla defesa e ao contraditório, conforme garantido pelo art. 5º, LV, da Constituição Federal.
+
+### 3. **Aplicação da norma correta**
+Na comunicação de [**p. 996***]^(images/conteudo_processos/002000035612020_autos_completos_30_04_2025.pdf) do Processo NUP 00200.003561/2020, o ILB cita corretamente o art. 41 do Anexo IV do RASF (atualização promovida pelo ATC nº 14/2022), que define os deveres do servidor durante o afastamento:
+
+> “I - Enviar relatório de atividades acadêmicas; II - comprovar frequência, quando solicitado; III - prestar outras informações a respeito de suas atividades acadêmicas que forem solicitadas pelo ILB.”
+
+*Essa referência na Resolução 13/2018 estava no art. 40 do anexo IV. A numeração citada (art. 41) **decorre de reorganização do texto promovida por ato infralegal (ATC 14/2022)**, cuja aplicação automática ao caso é discutível:
+
+   - O afastamento foi deferido com base na **Resolução nº 13/2018**;
+
+   - O ATC nº 14/2022 é ato infralegal **não aprovado pelo Plenário do Senado** conforme exige o Regimento Interno (art. 97), e só veio a ser plenamente referendado na Resolução 6/2024 (a confirmar o número exato).
+
+   - Importância da questão: posteriormente, a Administração irá utilizar o art. 58 do anexo IV, do RASF para punir o servidor. Contudo, o art. 58, com a redação que utilizam, só existe a partir do ATC 14/2022. Não existia na norma original que baseou o afastamento.
+
+### 4. **Violação da intimidade do servidor, dados de saúde guardados por sigilo médico**
+
+   - **pp. 1035 a 1043:** Relatório de 05/10/2023 apresenta informações sensíveis sobre saúde, atestado médico e justificativa formal para trancamento do semestre. Apesar dos pedidos do servidor, esse relatório **permaneceu público**, enquanto outros, sem dados sigilosos, **foram ocultados**. Violação da LGPD.
+
+   - Sem o devido grau de sigilo atribuído, uma terceirizada eventualmente acessou o processo, retirou os documentos médicos e os anexou a e-mail que circulou entre outros servidoress do Senado que não fazem parte do fluxo de análise do processo.
+
+   - Tais fatos já foram denunciados nos autos pelo servidor, porém nada foi feito a respeito, nem para contenção da informação vazada, nem para guarda devida em sigilo das informações expostas, nem para apuração dos responsáveis.
+
+   - Violação da LGPD
+
+   - Violaçao do art. 143 da Lei 8112/1990
+
+### 5. **Manipulação do contexto processual e finalidade punitiva velada**
+
+   Os documentos com acesso dificultado sob os documentos repetidos são justamente aqueles que demonstram **a regularidade do envio dos relatórios e as atividades acadêmicas realizadas**. 
+
+   A desordem processual promovida logo antes de acusar o servidor e encaminhar processo à apuração para penalidade sugere **intenção deliberada de manipulação processual e perseguição institucional**. 
+   
+   Possivelmente configura-se crime previsto no inciso II, art. 23, da Lei nº 13.869/2019.
+
+   Nenhuma apuração foi aberta contra o autor dessas práticas denunciadas pelo servidor no curso do processo.
+
+### 6. **Omissão de atividades e falta de fundamentação legal no encaminhamento acusatório**
+
+   - **pp. 1295 a 1301:** Relatório do SEPOS sobre o 1º semestre de 2023 omitiu seletivamente as atividades acadêmicas realizadas pelo servidor, enfatizando exclusivamente a enfermidade e o trancamento do período letivo. Possivelmente configura-se crime previsto no inciso II, art. 23, da Lei nº 13.869/2019.
+
+ O servidor destaca que:
+ 
+   - O SEPOS/ILB não formulou denúncia nem representação formal
+   - Também não indicou qual norma teria sido infringida pelo servidor
+   - Nem qual conduta específica do servidor teria configurado infração
+   
+   O encaminhamento da questão para deliberação pela DGER baseava-se apenas em um "possível impacto" (ou seja, ainda não ocorrido) no cumprimento do objetivo do afastamento (i.e. na conclusão do curso) - sendo que ainda havia cerca de um ano de prazo até a data limite para se formar. A alegação não satisfaz o requisitO de materialidade, tipicidade, motivação factual e jurídica exigidos pela Constituição e pela Lei nº 9.784/99.
+
+   O ILB, como órgão técnico e estruturado, com equipe especializada (SEPOS/COESUP), tem **dever funcional de distinguir entre fato indesejado e irregularidade**. A ausência de clareza, fundamentação normativa e informações fundamentais num ato de ofício que desencadeia apuração contra alguém **viola o princípio da legalidade e caracteriza abuso de poder**, conforme os incisos III, V, VII, VIII, X, do art. 2º da Lei nº 9.784/99 e o arts. 27 e 30,  da Lei nº 13.869/2019.
+
+> Um cidadão comum pode apresentar denúncia vaga, por desconhecimento técnico
+> Um servidor pode apresentar uma denúncia imcompleta, por não ter acesso a todas as informações
+> Um órgão público especializado **tem o dever de apresentar fundamentação clara e adequada**. 
+
+Na falta desses elementos mínimos de informação ('quem fez', 'o que fez", "qual regra foi violada", e "como se deu, logicamente, a violação"), a denúncia deve ser arquivada (parágrafo único, art. 144, Lei 8112/1990). Quando isso não ocorre, o procedimento instaurado configura desvio de finalidade e abuso de poder (arts. 27 e 30 da Lei nº 13.869/2019) 
+
+---
+
+Este bloco revela a conduta **arbitrária e antijurídica** do órgão responsável pelo acompanhamento do afastamento do servidor, evidenciando abusos, ilegalidades normativas, ocultações processuais, distorções de contexto e violação de direitos fundamentais. Todos esses elementos serão centrais na argumentação da defesa, para demonstrar a inexistência de justa causa para sanções ou imputações ao servidor, além da parcialidade e do viés demonstrado por certas instâncias envolvidas.
+
